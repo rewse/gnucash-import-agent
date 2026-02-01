@@ -4,10 +4,9 @@ Suica Statement Importer
 
 Usage:
 1. Copy raw data from Mobile Suica browser snapshot into RAW_DATA
-2. Set NEAREST_STATION to your nearest station
-3. Set MANUAL_OVERRIDES for any transactions that need custom accounts/descriptions
-4. Run: python3 scripts/suica_import.py review    # Review transactions
-5. Run: python3 scripts/suica_import.py sql       # Generate SQL
+2. Set MANUAL_OVERRIDES for any transactions that need custom accounts/descriptions
+3. Run: python3 scripts/suica_import.py review    # Review transactions
+4. Run: python3 scripts/suica_import.py sql       # Generate SQL
 """
 import json
 import uuid
@@ -52,10 +51,11 @@ TOKYO_METRO_STATIONS = ['溜池山王', '赤坂見附']
 # Keio stations
 KEIO_STATIONS = ['南大沢']
 
-# ============================================================
-# EDIT BELOW: Set your nearest station for business expense detection
-# ============================================================
-NEAREST_STATION = ""
+# Load personal settings
+PERSONAL_FILE = Path(__file__).parent.parent / '.kiro/skill/gnucash-import/references/personal.json'
+with open(PERSONAL_FILE) as f:
+    _personal = json.load(f)
+NEAREST_STATION = _personal.get('nearest_station', '')
 
 # ============================================================
 # EDIT BELOW: Paste raw data from browser snapshot

@@ -80,7 +80,7 @@ LIMIT 50;
 
 ## Personal Settings
 
-See [references/personal.md](references/personal.md) for personal settings (nearest station, etc.).
+See [references/personal.json](references/personal.json) for personal settings.
 
 This file is in `.gitignore`. If it does not exist, ask the user for the following and create it:
-- Nearest station (for business expense detection)
+- `nearest_station`: Nearest station name (for business expense detection)

@@ -1,16 +1,12 @@
 # Amazon Gift Certificate Statement Import
 
-## Statement URL
+## GnuCash Account
 
-https://www.amazon.co.jp/gp/css/gc/balance
+`Assets:JPY - Current Assets:Prepaid:Amazon Gift Certificate`
 
 ## Credentials
 
 Passkey is required. You MUST use `agent-browser --headed` and ask the user to input Passkey manually.
-
-## GnuCash Account
-
-`Assets:JPY - Current Assets:Prepaid:Amazon Gift Certificate`
 
 ## Import Workflow
 

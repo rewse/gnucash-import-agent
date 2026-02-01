@@ -1,16 +1,12 @@
 # Mobile Suica Statement Import
 
-## Statement URL
+## GnuCash Account
 
-https://www.mobilesuica.com/
+`Root Account:Assets:JPY - Current Assets:Prepaid:Suica iPhone`
 
 ## Credentials
 
 CAPTCHA is required. You MUST use `agent-browser --headed` and ask the user to input CAPTCHA manually.
-
-## GnuCash Account
-
-`Root Account:Assets:JPY - Current Assets:Prepaid:Suica iPhone`
 
 ## Import Workflow
 

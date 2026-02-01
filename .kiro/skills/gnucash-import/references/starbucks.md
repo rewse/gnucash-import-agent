@@ -1,18 +1,13 @@
 # Starbucks Card Statement Import
 
-## Statement URL
+## GnuCash Account
 
-https://sbcard.starbucks.co.jp/card/history
+`Assets:JPY - Current Assets:Prepaid:Starbucks`
 
 ## Credentials
 
 - Username: `op://gnucash/Starbucks/username`
 - Password: `op://gnucash/Starbucks/password`
-- Login URL: https://login.starbucks.co.jp/login
-
-## GnuCash Account
-
-`Assets:JPY - Current Assets:Prepaid:Starbucks`
 
 ## Import Workflow
 

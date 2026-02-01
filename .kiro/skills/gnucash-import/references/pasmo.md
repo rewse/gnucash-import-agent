@@ -1,16 +1,12 @@
 # Mobile PASMO Statement Import
 
-## Statement URL
+## GnuCash Account
 
-https://www.mobile.pasmo.jp/
+`Assets:JPY - Current Assets:Prepaid:PASMO Child`
 
 ## Credentials
 
 CAPTCHA is required. You MUST use `agent-browser --headed` and ask the user to input CAPTCHA manually.
-
-## GnuCash Account
-
-`Assets:JPY - Current Assets:Prepaid:PASMO Kayano`
 
 ## Import Workflow
 
@@ -58,7 +54,7 @@ Notes:
 |------|---------|-----------------|-------------|
 | 入/出 | Train entry/exit | Expenses:Transit | Railway company |
 | ＊入 | Transfer entry | Expenses:Transit | Railway company |
-| 物販 | Shopping | Assets:JPY - Current Assets:Reimbursement:Kayano (default) | Vending Machine (default) |
+| 物販 | Shopping | Assets:JPY - Current Assets:Reimbursement:Child (default) | Vending Machine (default) |
 | ｵｰﾄ | Auto-charge | Liabilities:Credit Card:TOKYU CARD ClubQ JMB | NULL |
 | 繰 | Carried balance | (skip) | - |
 

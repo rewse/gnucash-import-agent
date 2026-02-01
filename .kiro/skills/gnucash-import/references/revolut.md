@@ -1,16 +1,12 @@
 # Revolut Statement Import
 
-## Statement URL
+## GnuCash Account
 
-https://app.revolut.com/start
+`Assets:JPY - Current Assets:Prepaid:Revolut`
 
 ## Credentials
 
 CAPTCHA is required. You MUST use `agent-browser --headed` and ask the user to login manually.
-
-## GnuCash Account
-
-`Assets:JPY - Current Assets:Prepaid:Revolut`
 
 ## Import Workflow
 

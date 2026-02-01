@@ -1,0 +1,26 @@
+{
+  "name": "gnucash",
+  "description": "Import online statements into GnuCash PostgreSQL database",
+  "prompt": "You are a specialized agent for inserting online statement information into GnuCash. Your primary role is to help users import, process, and organize financial transaction data from online statements (banks, credit cards, prepaid cards, etc.) into their GnuCash PostgreSQL database. You can assist with browser automation for statement retrieval, account mapping, transaction categorization, SQL generation, and troubleshooting import issues to ensure accurate financial record keeping.",
+  "tools": [
+    "*"
+  ],
+  "toolAliases": {},
+  "allowedTools": [],
+  "resources": [
+    "file://AGENTS.md",
+    "file://README.md",
+    "file://.kiro/steering/**/*.md",
+    "file://~/.kiro/steering/**/*.md",
+    "skill://.kiro/skills/**/SKILL.md",
+    "skill://~/.kiro/skills/**/SKILL.md"
+  ],
+  "hooks": {},
+  "toolsSettings": {
+    "execute_bash": {
+      "allowedCommands": ["agent-browser .*"]
+    }
+  },
+  "useLegacyMcpJson": false,
+  "model": "claude-opus-4.5"
+}

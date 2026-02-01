@@ -1,0 +1,9 @@
+.DS_Store
+*.swp
+*.swo
+*~
+
+.kiro/skill/gnucash-statement-importer/references/accounts.md
+.kiro/skill/gnucash-statement-importer/references/personal.md
+
+tmp/

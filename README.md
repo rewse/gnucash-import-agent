@@ -43,6 +43,6 @@ Automates the import of transaction data from various online sources (banks, cre
 │   └── suica_import.py         # Mobile Suica statement importer
 └── .kiro/
     ├── agents/                 # Custom agent configurations
-    ├── skill/                  # Skill definitions
+    ├── skills/                  # Skill definitions
     └── steering/               # Steering rules
 ```

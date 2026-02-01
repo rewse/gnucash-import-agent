@@ -64,7 +64,7 @@ SELECT json_build_object(
   'updated_at', NOW(),
   'accounts', (SELECT json_object_agg(path, guid) FROM path_list WHERE path NOT LIKE 'Template Root%' AND hidden = 0)
 );
-" | python3 -m json.tool > .kiro/skill/gnucash-import/references/accounts.json
+" | python3 -m json.tool > .kiro/skills/gnucash-import/references/accounts.json
 ```
 
 ## Check Last Imported Transaction

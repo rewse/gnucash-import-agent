@@ -15,7 +15,7 @@ from datetime import datetime
 from pathlib import Path
 
 # Load accounts from JSON
-ACCOUNTS_FILE = Path(__file__).parent.parent / '.kiro/skill/gnucash-import/references/accounts.json'
+ACCOUNTS_FILE = Path(__file__).parent.parent / '.kiro/skills/gnucash-import/references/accounts.json'
 with open(ACCOUNTS_FILE) as f:
     _data = json.load(f)
     ACCOUNTS = {k.replace('Root Account:', ''): v for k, v in _data['accounts'].items()}

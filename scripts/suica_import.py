@@ -15,7 +15,7 @@ from datetime import datetime
 from pathlib import Path
 
 # Load accounts from JSON
-ACCOUNTS_FILE = Path(__file__).parent.parent / '.kiro/skill/gnucash-import/references/accounts.json'
+ACCOUNTS_FILE = Path(__file__).parent.parent / '.kiro/skills/gnucash-import/references/accounts.json'
 with open(ACCOUNTS_FILE) as f:
     _data = json.load(f)
     ACCOUNTS = {k.replace('Root Account:', ''): v for k, v in _data['accounts'].items()}
@@ -52,7 +52,7 @@ TOKYO_METRO_STATIONS = ['溜池山王', '赤坂見附']
 KEIO_STATIONS = ['南大沢']
 
 # Load personal settings
-PERSONAL_FILE = Path(__file__).parent.parent / '.kiro/skill/gnucash-import/references/personal.json'
+PERSONAL_FILE = Path(__file__).parent.parent / '.kiro/skills/gnucash-import/references/personal.json'
 with open(PERSONAL_FILE) as f:
     _personal = json.load(f)
 NEAREST_STATION = _personal.get('nearest_station', '')

@@ -29,15 +29,12 @@ python3 tmp/*_import_*.py review
 python3 tmp/*_import_*.py sql
 ```
 
-### Connect to Database
+## Connect to Database
 
 ```bash
-op run --env-file=<(cat <<EOF
-DB_HOST=op://gnucash/gnucash-db/server
-DB_PORT=op://gnucash/gnucash-db/port
-DB_NAME=op://gnucash/gnucash-db/database
-DB_USER=op://gnucash/gnucash-db/username
-PGPASSWORD=op://gnucash/gnucash-db/password
-EOF
-) -- psql -h "\$DB_HOST" -p "\$DB_PORT" -U "\$DB_USER" -d "\$DB_NAME"
+DB_HOST=$(op read "op://gnucash/gnucash-db/server")
+DB_PORT=$(op read "op://gnucash/gnucash-db/port")
+DB_NAME=$(op read "op://gnucash/gnucash-db/database")
+DB_USER=$(op read "op://gnucash/gnucash-db/username")
+PGPASSWORD=$(op read "op://gnucash/gnucash-db/password") psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME"
 ```

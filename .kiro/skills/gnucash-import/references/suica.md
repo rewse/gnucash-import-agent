@@ -31,7 +31,7 @@ CAPTCHA is required. You MUST use `agent-browser --headed` and ask the user to i
 
 - `scripts/suica_import.py`
 
-## Source Table Structure
+## Source Data Structure
 
 Columns from Mobile Suica website:
 - 月日: Date (MM/DD format)

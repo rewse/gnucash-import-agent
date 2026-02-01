@@ -29,6 +29,7 @@ Rules:
 - Mobile PASMO - See [references/pasmo.md](references/pasmo.md)
 - Mobile Suica - See [references/suica.md](references/suica.md)
 - Revolut - See [references/revolut.md](references/revolut.md)
+- Starbucks - See [references/starbucks.md](references/starbucks.md)
 
 ## GnuCash Schema
 

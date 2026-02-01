@@ -33,7 +33,7 @@ CAPTCHA is required. You MUST use `agent-browser --headed` and ask the user to l
 
 - `scripts/revolut_import.py`
 
-## Source Table Structure
+## Source Data Structure
 
 Columns from Revolut app:
 - Month header: Month (YYYY年M月 or M月 format)

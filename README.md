@@ -28,6 +28,7 @@ Automates the import of transaction data from various online sources (banks, cre
 - Mobile PASMO
 - Mobile Suica
 - Revolut
+- Starbucks
 
 ## Usage
 

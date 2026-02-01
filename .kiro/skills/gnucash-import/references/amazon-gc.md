@@ -31,7 +31,7 @@ Passkey is required. You MUST use `agent-browser --headed` and ask the user to i
 
 `scripts/amazon_gc_import.py`
 
-## Source Table Structure
+## Source Data Structure
 
 Columns from Amazon website:
 - 日付: Date (YYYY年M月D日 format)

@@ -25,6 +25,8 @@ Rules:
 
 ## Supported Sources
 
+- Amazon Gift Certificate - See [references/amazon-gc.md](references/amazon-gc.md)
+- Mobile PASMO - See [references/pasmo.md](references/pasmo.md)
 - Mobile Suica - See [references/suica.md](references/suica.md)
 
 ## GnuCash Schema

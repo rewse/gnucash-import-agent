@@ -1,50 +1,51 @@
-# Mobile Suica Statement Import
+# Mobile PASMO Statement Import
 
 ## Statement URL
 
-https://www.mobilesuica.com/
+https://www.mobile.pasmo.jp/
 
 ## Credentials
 
 ```bash
-op read "op://gnucash/Mobile Suica/username"
-op read "op://gnucash/Mobile Suica/password"
+op read "op://gnucash/Mobile PASMO/username"
+op read "op://gnucash/Mobile PASMO/password"
 ```
 
 CAPTCHA is required. You MUST use `agent-browser --headed` and ask the user to input CAPTCHA manually.
 
 ## GnuCash Account
 
-`Root Account:Assets:JPY - Current Assets:Prepaid:Suica iPhone`
+`Assets:JPY - Current Assets:Prepaid:PASMO Kayano`
 
 ## Import Workflow
 
 1. Check if `accounts.json` exists and `updated_at` is within 1 month; regenerate if needed (see SKILL.md)
 2. Check DB for last imported transaction date to determine how far back to fetch
-3. `agent-browser --headed open https://www.mobilesuica.com/`
+3. `agent-browser --headed open https://www.mobile.pasmo.jp/
 4. Manual login (CAPTCHA required)
-5. Click "SF（電子マネー） 利用履歴"
-6. `agent-browser snapshot` to get table data
-7. Prepare RAW_DATA
-8. Copy RAW_DATA into `tmp/suica_import_YYYYMMDD.py`
-9. Run `python3 tmp/suica_import_YYYYMMDD.py review` to show review table
-10. User reviews and specifies manual overrides by ID
-11. Run `python3 tmp/suica_import_YYYYMMDD.py sql > tmp/import_suica.sql` to generate SQL
-12. Execute SQL to insert transactions
+5. Click "次へ"
+6. Click "SF（電子マネー） 利用履歴"
+7. `agent-browser snapshot` to get table data
+8. Prepare RAW_DATA
+9. Copy RAW_DATA into `tmp/pasmo_import_YYYYMMDD.py`
+10. Run `python3 tmp/pasmo_import_YYYYMMDD.py review` to show review table
+11. User reviews and specifies manual overrides by ID
+12. Run `python3 tmp/pasmo_import_YYYYMMDD.py sql > tmp/import_pasmo.sql` to generate SQL
+13. Execute SQL to insert transactions
 
 ## Script Template
 
-- `scripts/suica_import.py`
+- `scripts/suica_import.py` (same format as Mobile Suica)
 
 ## Source Table Structure
 
-Columns from Mobile Suica website:
+Columns from Mobile PASMO website:
 - 月日: Date (MM/DD format)
 - 種別: Type (入/出/＊入/物販/ｵｰﾄ/繰)
 - 利用場所: Entry station
 - 種別: Type (出 for exit)
 - 利用場所: Exit station
-- 残高: Balance after transaction
+- 残額: Balance after transaction
 - 入金・利用額: Amount (+charge / -expense)
 
 ## Review Table Structure
@@ -81,25 +82,9 @@ Parsing rules:
 |------|---------|-----------------|-------------|
 | 入/出 | Train entry/exit | Expenses:Transit or Expenses:Business Expenses | Railway company |
 | ＊入 | Transfer entry | Expenses:Transit or Expenses:Business Expenses | Railway company |
-| 物販 | Shopping | Expenses:Foods:Dining (default) | NULL (ask user for merchant if known) |
-| ｵｰﾄ | Auto-charge | Liabilities:Credit Card:LUMINE CARD | NULL |
+| 物販 | Shopping | Assets:JPY - Current Assets:Reimbursement:Kayano (default) | Vending Machine (default) |
+| ｵｰﾄ | Auto-charge | Liabilities:Credit Card:TOKYU CARD ClubQ JMB | NULL |
 | 繰 | Carried balance | (skip) | - |
-
-## Business Expense Detection
-
-On weekdays, if the following pattern appears on the same day, classify ALL transit transactions on that day as `Expenses:Business Expenses`:
-
-1. {nearest_station} → 地 新宿
-2. 新宿 → 目黒
-3. 目黒 → 新宿
-4. 地 新宿 → {nearest_station} (Optional)
-
-See [references/personal.md](references/personal.md) for the nearest station.
-
-Rules:
-- Check all transit transactions on the same date, not just sequential ones
-- 物販 or ｵｰﾄ transactions do not affect the pattern
-- If pattern matches, ALL transit transactions on that day become business expenses
 
 ## Railway Company Detection
 

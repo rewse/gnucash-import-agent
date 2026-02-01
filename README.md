@@ -25,6 +25,7 @@ Automates the import of transaction data from various online sources (banks, cre
 ## Supported Sources
 
 - Amazon Gift Certificate
+- Mobile PASMO
 - Mobile Suica
 
 ## Usage

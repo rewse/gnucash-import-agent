@@ -17,16 +17,16 @@
 
 ## Common Commands
 
-### Run Suica Import (Review Mode)
+### Run Import Script (Review Mode)
 
 ```bash
-python3 scripts/suica_import.py review
+python3 tmp/*_import_*.py review
 ```
 
-### Run Suica Import (SQL Generation)
+### Run Import Script (SQL Generation)
 
 ```bash
-python3 scripts/suica_import.py sql
+python3 tmp/*_import_*.py sql
 ```
 
 ### Connect to Database

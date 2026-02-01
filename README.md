@@ -24,6 +24,7 @@ Automates the import of transaction data from various online sources (banks, cre
 
 ## Supported Sources
 
+- Amazon Gift Certificate
 - Mobile Suica
 
 ## Usage
@@ -36,6 +37,7 @@ Automates the import of transaction data from various online sources (banks, cre
 ```
 .
 ├── scripts/                    # Import scripts
+│   ├── amazon_gc_import.py     # Amazon Gift Certificate statement importer
 │   └── suica_import.py         # Mobile Suica statement importer
 └── .kiro/
     ├── agents/                 # Custom agent configurations

@@ -1,6 +1,6 @@
 # Product Overview
 
-GnuCash Statement Importer - A tool for importing online financial statements into GnuCash PostgreSQL database.
+GnuCash Import Agenet - An agent for importing online financial statements into GnuCash PostgreSQL database.
 
 ## Purpose
 

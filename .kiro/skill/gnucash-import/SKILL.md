@@ -1,5 +1,5 @@
 ---
-name: gnucash-statement-importer
+name: gnucash-import
 description: Import online statement data into GnuCash PostgreSQL database. Use when inserting transactions from Mobile Suica, credit cards, or bank statements into GnuCash. Handles browser automation for statement retrieval and SQL generation for transaction insertion.
 ---
 
@@ -46,7 +46,7 @@ This file is in `.gitignore` and should be regenerated if:
 To regenerate:
 
 ```bash
-cat > .kiro/skill/gnucash-statement-importer/references/accounts.md << 'EOF'
+cat > .kiro/skill/gnucash-import/references/accounts.md << 'EOF'
 # GnuCash Account List
 
 Last updated: $(date +%Y-%m-%d)
@@ -66,7 +66,7 @@ WITH RECURSIVE path_list AS (
    FROM accounts c JOIN path_list p ON p.guid = c.parent_guid
 )
 SELECT '- ' || path || ' | ' || guid FROM path_list WHERE path NOT LIKE 'Template Root%' AND hidden = 0 ORDER BY path;
-" >> .kiro/skill/gnucash-statement-importer/references/accounts.md
+" >> .kiro/skill/gnucash-import/references/accounts.md
 ```
 
 ## Personal Settings

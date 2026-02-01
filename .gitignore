@@ -3,7 +3,7 @@
 *.swo
 *~
 
-.kiro/skill/gnucash-statement-importer/references/accounts.md
-.kiro/skill/gnucash-statement-importer/references/personal.md
+.kiro/skill/gnucash-import/references/accounts.md
+.kiro/skill/gnucash-import/references/personal.md
 
 tmp/

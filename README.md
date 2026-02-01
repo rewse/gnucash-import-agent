@@ -1,6 +1,6 @@
-# GnuCash Statement Importer
+# GnuCash Import Agent
 
-A tool for importing online financial statements into GnuCash PostgreSQL database.
+An agent for importing online financial statements into GnuCash PostgreSQL database.
 
 ## Overview
 

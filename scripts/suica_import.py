@@ -9,19 +9,31 @@ Usage:
 4. Run: python3 scripts/suica_import.py review    # Review transactions
 5. Run: python3 scripts/suica_import.py sql       # Generate SQL
 """
+import json
 import uuid
 import sys
 from datetime import datetime
+from pathlib import Path
+
+# Load accounts from JSON
+ACCOUNTS_FILE = Path(__file__).parent.parent / '.kiro/skill/gnucash-import/references/accounts.json'
+with open(ACCOUNTS_FILE) as f:
+    _data = json.load(f)
+    ACCOUNTS = {k.replace('Root Account:', ''): v for k, v in _data['accounts'].items()}
+
+def get_guid(path):
+    """Get GUID for account path."""
+    return ACCOUNTS.get(path) or ACCOUNTS.get('Root Account:' + path)
 
 # Account GUIDs
-SUICA_ACCOUNT = '877c55f020af4dda978b451cd88865d4'
-TRANSIT_ACCOUNT = '283560543bf6c05b9a9788983cf0f8fc'
-BUSINESS_ACCOUNT = 'be3d3970b18b6264fa9e696b94536538'
-DINING_ACCOUNT = '4410b4bef21aefd154d0a33935a42e27'
-LUMINE_CARD_ACCOUNT = '7b5ddf7803f60445299f056fff86536c'
-MEDICAL_TRANSIT_ACCOUNT = '7d61e3435a19574989a9a1064314a4e6'
-AWS_REIMBURSEMENT_ACCOUNT = '413bf1fcef1c0b36cef7986ea743603d'
-GROCERIES_ACCOUNT = 'e37db4ce483a749c27d9a3e5bee12981'
+SUICA_ACCOUNT = get_guid('Assets:JPY - Current Assets:Prepaid:Suica iPhone')
+TRANSIT_ACCOUNT = get_guid('Expenses:Transit')
+BUSINESS_ACCOUNT = get_guid('Expenses:Business Expenses')
+DINING_ACCOUNT = get_guid('Expenses:Foods:Dining')
+LUMINE_CARD_ACCOUNT = get_guid('Liabilities:Credit Card:LUMINE CARD')
+MEDICAL_TRANSIT_ACCOUNT = get_guid('Expenses:Medical Expenses:Transit')
+AWS_REIMBURSEMENT_ACCOUNT = get_guid('Assets:JPY - Current Assets:Reimbursement:AWS Japan')
+GROCERIES_ACCOUNT = get_guid('Expenses:Groceries')
 JPY_CURRENCY = 'a77d4ee821e04f02bb7429e437c645e4'
 
 ACCOUNT_NAMES = {

@@ -19,21 +19,22 @@ CAPTCHA is required. You MUST use `agent-browser --headed` and ask the user to i
 
 ## Import Workflow
 
-1. `agent-browser --headed open https://www.mobilesuica.com/`
-2. Manual login (CAPTCHA required)
-3. Click "SF（電子マネー） 利用履歴"
-4. `agent-browser snapshot` to get table data
-5. Parse raw data into `scripts/suica_import.py` RAW_DATA and set NEAREST_STATION
-6. Run `python3 scripts/suica_import.py review` to show review table
-7. User reviews and specifies manual overrides by ID
-8. Run `python3 scripts/suica_import.py sql > tmp/import_suica.sql` to generate SQL
-9. Execute SQL to insert transactions
+1. Check if `accounts.json` exists and `updated_at` is within 1 month; regenerate if needed (see SKILL.md)
+2. Check DB for last imported transaction date to determine how far back to fetch
+3. `agent-browser --headed open https://www.mobilesuica.com/`
+4. Manual login (CAPTCHA required)
+5. Click "SF（電子マネー） 利用履歴"
+6. `agent-browser snapshot` to get table data
+7. Prepare RAW_DATA
+8. Copy RAW_DATA into `tmp/suica_import_YYYYMMDD.py`
+9. Run `python3 tmp/suica_import_YYYYMMDD.py review` to show review table
+10. User reviews and specifies manual overrides by ID
+11. Run `python3 tmp/suica_import_YYYYMMDD.py sql > tmp/import_suica.sql` to generate SQL
+12. Execute SQL to insert transactions
 
-## Scripts
+## Script Template
 
-- `scripts/suica_import.py` - Review and generate SQL for import
-  - `python3 scripts/suica_import.py review` - Display review table
-  - `python3 scripts/suica_import.py sql` - Generate SQL statements
+- `scripts/suica_import.py`
 
 ## Source Table Structure
 

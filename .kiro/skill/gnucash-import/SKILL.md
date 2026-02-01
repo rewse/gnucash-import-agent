@@ -37,36 +37,45 @@ See [references/gnucash-schema.md](references/gnucash-schema.md) for:
 
 ## Account List
 
-See [references/accounts.md](references/accounts.md) for account paths and GUIDs.
+See [references/accounts.json](references/accounts.json) for account paths and GUIDs.
 
 This file is in `.gitignore` and should be regenerated if:
 - File does not exist
-- File is older than 1 month
+- `updated_at` is older than 1 month
 
 To regenerate:
 
 ```bash
-cat > .kiro/skill/gnucash-import/references/accounts.md << 'EOF'
-# GnuCash Account List
-
-Last updated: $(date +%Y-%m-%d)
-
-Hidden accounts are excluded.
-
-Format: `Account Path | GUID`
-
-## All Accounts
-
-EOF
-PGPASSWORD=$(op read "op://gnucash/gnucash-db/password") psql -h $(op read "op://gnucash/gnucash-db/server") -p $(op read "op://gnucash/gnucash-db/port") -U $(op read "op://gnucash/gnucash-db/username") -d $(op read "op://gnucash/gnucash-db/database") -t -A -c "
+DB_HOST=$(op read "op://gnucash/gnucash-db/server")
+DB_PORT=$(op read "op://gnucash/gnucash-db/port")
+DB_NAME=$(op read "op://gnucash/gnucash-db/database")
+DB_USER=$(op read "op://gnucash/gnucash-db/username")
+PGPASSWORD=$(op read "op://gnucash/gnucash-db/password") psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -t -A -c "
 WITH RECURSIVE path_list AS (
    SELECT guid, parent_guid, name, name::text AS path, hidden FROM accounts WHERE parent_guid IS NULL
    UNION ALL
    SELECT c.guid, c.parent_guid, c.name, path || ':' || c.name, c.hidden
    FROM accounts c JOIN path_list p ON p.guid = c.parent_guid
 )
-SELECT '- ' || path || ' | ' || guid FROM path_list WHERE path NOT LIKE 'Template Root%' AND hidden = 0 ORDER BY path;
-" >> .kiro/skill/gnucash-import/references/accounts.md
+SELECT json_build_object(
+  'updated_at', NOW(),
+  'accounts', (SELECT json_object_agg(path, guid) FROM path_list WHERE path NOT LIKE 'Template Root%' AND hidden = 0)
+);
+" | python3 -m json.tool > .kiro/skill/gnucash-import/references/accounts.json
+```
+
+## Check Last Imported Transaction
+
+Replace `{account_name}` with the account name (e.g., 'Amazon Gift Certificate', 'Suica iPhone'):
+
+```sql
+SELECT t.post_date::date, t.description, s.value_num as amount
+FROM transactions t
+JOIN splits s ON t.guid = s.tx_guid
+JOIN accounts a ON s.account_guid = a.guid
+WHERE a.name = '{account_name}'
+ORDER BY t.post_date DESC
+LIMIT 50;
 ```
 
 ## Personal Settings

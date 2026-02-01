@@ -28,6 +28,7 @@ Rules:
 - Amazon Gift Certificate - See [references/amazon-gc.md](references/amazon-gc.md)
 - Mobile PASMO - See [references/pasmo.md](references/pasmo.md)
 - Mobile Suica - See [references/suica.md](references/suica.md)
+- Revolut - See [references/revolut.md](references/revolut.md)
 
 ## GnuCash Schema
 

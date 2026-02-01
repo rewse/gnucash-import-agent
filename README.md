@@ -27,6 +27,7 @@ Automates the import of transaction data from various online sources (banks, cre
 - Amazon Gift Certificate
 - Mobile PASMO
 - Mobile Suica
+- Revolut
 
 ## Usage
 

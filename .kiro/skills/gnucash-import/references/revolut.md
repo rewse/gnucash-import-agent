@@ -33,40 +33,28 @@ CAPTCHA is required. You MUST use `agent-browser --headed` and ask the user to l
 
 - `scripts/revolut_import.py`
 
-## Source Data Structure
+## Browser Data Format
 
-Columns from Revolut app:
-- Month header: Month (YYYY年M月 or M月 format)
-- Merchant: Merchant name or transaction type
-- Time: Transaction time (HH:MM format)
-- JPY Amount: Amount in JPY (+￥N for income, -￥N for expense)
-- USD Amount: Amount in USD (optional, for foreign transactions)
+Button list on home screen, each button contains: Merchant, Date, Time, JPY Amount, USD Amount (optional)
 
-## Review Table Structure
-
-Display transactions sorted by date descending (newest first) with:
-- ID: Sequential number for user to reference
-- Date: YYYY-MM-DD with weekday (Mon, Tue, etc.)
-- Desc: Merchant name
-- Transfer: Target account
-- Increase/Decrease: Amount (JPY)
-
-## Data Parsing
-
-Expected RAW_DATA format (from initial home screen, not "すべて表示"):
+Example (from snapshot):
 ```
 AliExpress 1月3日 15:21 -￥2,060.00 -$12.96
 Apple Pay経由でチャージされました 2025年12月26日 14:40 +￥30,000.00
+Apple Pay経由でチャージされました 失敗しました · 2025年12月26日 14:39 +￥30,000.00
 Www.lumesca.com 2025年12月26日 13:40 -￥6,256.00 -$39.99
+AliExpress 2025年12月14日 22:09 -￥5,163.00 -$32.69
+Kiro Pro+ 2025年12月1日 14:00 -￥3,437.00 -$22.00
 ```
 
-Parsing rules:
-- Date format: `YYYY年M月D日` or `M月D日` (year inferred from current date)
-- Amount: `-￥N` (expense), `+￥N` (income)
-- Skip transactions with `￥0.00` amount
-- Skip transactions with `失敗しました` or `取り消されました` status
+Notes:
+- Click "すべて表示" to see full transaction history
+- Failed transactions show "失敗しました" status
+- Multi-currency transactions show both JPY and USD amounts
 
-## Transaction Types
+## Conversion Rules
+
+### Transaction Types
 
 | Pattern | GnuCash Account | Description |
 |---------|-----------------|-------------|
@@ -81,9 +69,33 @@ Parsing rules:
 
 If you don't know the account or the merchant, search emails with the amount. See [email-lookup.md](email-lookup.md).
 
+## Script Input Format
+
+Same as Browser Data Format (one transaction per line):
+```
+AliExpress 1月3日 15:21 -￥2,060.00 -$12.96
+Apple Pay経由でチャージされました 2025年12月26日 14:40 +￥30,000.00
+Www.lumesca.com 2025年12月26日 13:40 -￥6,256.00 -$39.99
+```
+
+Parsing rules:
+- Date format: `YYYY年M月D日` or `M月D日` (year inferred from current date)
+- Amount: `-￥N` (expense), `+￥N` (income)
+- Skip transactions with `￥0.00` amount
+- Skip transactions with `失敗しました` or `取り消されました` status
+
+## Review Table Structure
+
+Display transactions sorted by date descending (newest first) with:
+- ID: Sequential number for user to reference
+- Date: YYYY-MM-DD with weekday (Mon, Tue, etc.)
+- Merchant: Merchant name from browser
+- Desc: Description for GnuCash
+- Transfer: Target account
+- Increase/Decrease: Amount (JPY)
+
 ## Notes
 
 - Multi-currency: Transactions show both JPY and USD amounts; use JPY for GnuCash
-- Date is shown only in month header; individual transactions show time only
 - Always show review table before inserting to database
 - User can specify manual overrides by ID for account and/or description

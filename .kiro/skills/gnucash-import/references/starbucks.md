@@ -6,7 +6,7 @@ https://sbcard.starbucks.co.jp/card/history
 
 ## Credentials
 
-- Username: `op://gnucash/Starbucks/useranem`
+- Username: `op://gnucash/Starbucks/username`
 - Password: `op://gnucash/Starbucks/password`
 - Login URL: https://login.starbucks.co.jp/login
 
@@ -18,7 +18,7 @@ https://sbcard.starbucks.co.jp/card/history
 
 1. Check if `accounts.json` exists and `updated_at` is within 1 month; regenerate if needed (see SKILL.md)
 2. Check DB for last imported transaction date to determine how far back to fetch
-3. `agent-browser open https://login.starbucks.co.jp/login`
+3. `agent-browser --headed open https://login.starbucks.co.jp/login`
 4. Login with 1Password credentials
 5. `agent-browser open https://sbcard.starbucks.co.jp/card/history`
 6. `agent-browser snapshot` to get transaction data
@@ -33,54 +33,31 @@ https://sbcard.starbucks.co.jp/card/history
 
 - `scripts/starbucks_import.py`
 
-## Source Data Structure
+## Browser Data Format
 
-Data from browser snapshot (list items):
-- Description: Transaction type or store name
-- Amount and Date: `¥N YYYY/MM/DD` or `- ¥N YYYY/MM/DD`
+List items grouped by month, each item contains: Description (line 1), Amount and Date (line 2)
 
-Example:
+Example (from snapshot):
 ```
+2026年01月
 オートチャージ
 ¥2,000 2026/01/27
-
 モバイルオーダー&ペイ
 - ¥481 2026/01/27
-
 晴海 トリトンスクエア店
 - ¥496 2025/12/19
+他社ポイント交換
+¥4,000 2025/11/25
 ```
 
-## Review Table Structure
-
-Display transactions sorted by date descending (newest first) with:
-- ID: Sequential number for user to reference
-- Date: YYYY-MM-DD with weekday (Mon, Tue, etc.)
-- Type: Charge/Payment
-- Desc: Transaction description
-- Transfer: Target account
-- Increase/Decrease: Amount
-
-## Data Parsing
-
-RAW_DATA format (tab-separated):
-```
-{description}\t{amount}\t{date}
-```
-
-Example:
-```
-オートチャージ	¥2,000	2026/01/27
-モバイルオーダー&ペイ	- ¥481	2026/01/27
-晴海 トリトンスクエア店	- ¥496	2025/12/19
-```
-
-Parsing rules:
-- Fields are tab-separated
+Notes:
+- Transactions are grouped by month (YYYY年MM月)
 - Amount: `¥N` (positive = charge), `- ¥N` (negative = payment)
-- Date format: YYYY/MM/DD
+- No pagination; all history loads on single page
 
-## Transaction Types
+## Conversion Rules
+
+### Transaction Types
 
 | Pattern | Type | Transfer Account | Description |
 |---------|------|------------------|-------------|
@@ -93,8 +70,33 @@ Parsing rules:
 
 If you don't know the account or the merchant, search emails with the amount. See [email-lookup.md](email-lookup.md).
 
+## Script Input Format
+
+Tab-separated format with 3 columns: `{description}\t{amount}\t{date}`
+
+```
+オートチャージ	¥2,000	2026/01/27
+モバイルオーダー&ペイ	- ¥481	2026/01/27
+晴海 トリトンスクエア店	- ¥496	2025/12/19
+他社ポイント交換	¥4,000	2025/11/25
+```
+
+Parsing rules:
+- Fields are tab-separated
+- Amount: `¥N` (positive = charge), `- ¥N` (negative = payment)
+- Date format: YYYY/MM/DD
+
+## Review Table Structure
+
+Display transactions sorted by date descending (newest first) with:
+- ID: Sequential number for user to reference
+- Date: YYYY-MM-DD with weekday (Mon, Tue, etc.)
+- Type: Charge/Payment
+- Desc: Transaction description
+- Transfer: Target account
+- Increase/Decrease: Amount
+
 ## Notes
 
 - History shows approximately 4 months of transactions
-- No pagination; all history loads on single page
 - Amount sign: positive = charge (入金), negative with `- ` prefix = payment (支払い)

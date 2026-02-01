@@ -6,11 +6,6 @@ https://www.amazon.co.jp/gp/css/gc/balance
 
 ## Credentials
 
-```bash
-op read "op://gnucash/Amazon/username"
-op read "op://gnucash/Amazon/one-time password"
-```
-
 Passkey is required. You MUST use `agent-browser --headed` and ask the user to input Passkey manually.
 
 ## GnuCash Account

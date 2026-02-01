@@ -6,11 +6,6 @@ https://www.mobilesuica.com/
 
 ## Credentials
 
-```bash
-op read "op://gnucash/Mobile Suica/username"
-op read "op://gnucash/Mobile Suica/password"
-```
-
 CAPTCHA is required. You MUST use `agent-browser --headed` and ask the user to input CAPTCHA manually.
 
 ## GnuCash Account

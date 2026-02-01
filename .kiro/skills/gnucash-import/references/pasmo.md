@@ -6,11 +6,6 @@ https://www.mobile.pasmo.jp/
 
 ## Credentials
 
-```bash
-op read "op://gnucash/Mobile PASMO/username"
-op read "op://gnucash/Mobile PASMO/password"
-```
-
 CAPTCHA is required. You MUST use `agent-browser --headed` and ask the user to input CAPTCHA manually.
 
 ## GnuCash Account

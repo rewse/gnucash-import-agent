@@ -3,7 +3,7 @@
 *.swo
 *~
 
-.kiro/skill/gnucash-import/references/accounts.json
-.kiro/skill/gnucash-import/references/personal.json
+.kiro/skills/gnucash-import/references/accounts.json
+.kiro/skills/gnucash-import/references/personal.json
 
 tmp/

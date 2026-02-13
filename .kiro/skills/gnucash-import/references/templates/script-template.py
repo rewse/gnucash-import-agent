@@ -26,9 +26,19 @@ def get_guid(path):
 
 # TODO: Define account GUIDs for this source
 SOURCE_ACCOUNT = get_guid('{ACCOUNT_PATH}')
+# For multi-currency sources, use SOURCE_ACCOUNTS dict instead:
+# SOURCE_ACCOUNTS = {
+#     'JPY': get_guid('Assets:JPY - Current Assets:Banks:Example'),
+#     'USD': get_guid('Assets:USD - Current Assets:Banks:Example'),
+# }
 # TRANSFER_ACCOUNT_1 = get_guid('{TRANSFER_ACCOUNT_PATH_1}')
 # TRANSFER_ACCOUNT_2 = get_guid('{TRANSFER_ACCOUNT_PATH_2}')
-JPY_CURRENCY = 'a77d4ee821e04f02bb7429e437c645e4'
+
+CURRENCIES = {
+    'JPY': 'a77d4ee821e04f02bb7429e437c645e4',
+    # 'USD': '327c5a1bcfb147ceba2370ee17093159',
+}
+CURRENCY_DENOM = {'JPY': 1, 'USD': 100, 'EUR': 100, 'AUD': 100}
 
 ACCOUNT_NAMES = {
     # TODO: Map GUIDs to display names for review table
@@ -99,6 +109,13 @@ def output_sql(transactions):
     for idx, tx in enumerate(transactions, 1):
         expense_account, description = get_transaction_info(idx, tx)
 
+        currency = tx.get('currency', 'JPY')
+        currency_guid = CURRENCIES[currency]
+        denom = CURRENCY_DENOM.get(currency, 1)
+        # For multi-currency sources, replace SOURCE_ACCOUNT with:
+        # SOURCE_ACCOUNTS[currency]
+        value_num = round(tx['amount'] * denom)
+
         tx_guid = uuid.uuid4().hex
         split1_guid = uuid.uuid4().hex
         split2_guid = uuid.uuid4().hex
@@ -108,11 +125,11 @@ def output_sql(transactions):
         desc_sql = f"'{description}'" if description else 'NULL'
 
         print(f"INSERT INTO transactions (guid, currency_guid, num, post_date, enter_date, description)")
-        print(f"VALUES ('{tx_guid}', '{JPY_CURRENCY}', '', '{date_str}', NOW(), {desc_sql});")
+        print(f"VALUES ('{tx_guid}', '{currency_guid}', '', '{date_str}', NOW(), {desc_sql});")
         print(f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)")
-        print(f"VALUES ('{split1_guid}', '{tx_guid}', '{SOURCE_ACCOUNT}', '', '', 'n', NULL, {tx['amount']}, 1, {tx['amount']}, 1, NULL);")
+        print(f"VALUES ('{split1_guid}', '{tx_guid}', '{SOURCE_ACCOUNT}', '', '', 'n', NULL, {value_num}, {denom}, {value_num}, {denom}, NULL);")
         print(f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)")
-        print(f"VALUES ('{split2_guid}', '{tx_guid}', '{expense_account}', '', '', 'n', NULL, {-tx['amount']}, 1, {-tx['amount']}, 1, NULL);")
+        print(f"VALUES ('{split2_guid}', '{tx_guid}', '{expense_account}', '', '', 'n', NULL, {-value_num}, {denom}, {-value_num}, {denom}, NULL);")
         print()
 
     print("COMMIT;")

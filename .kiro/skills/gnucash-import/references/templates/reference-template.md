@@ -4,6 +4,10 @@
 
 `{ACCOUNT_PATH}`
 
+For multi-currency sources, list each currency account:
+- JPY: `Assets:JPY - Current Assets:Banks:Example`
+- USD: `Assets:USD - Current Assets:Banks:Example`
+
 ## Credentials
 
 {CREDENTIAL_INSTRUCTIONS}

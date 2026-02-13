@@ -67,6 +67,7 @@ Naming: source-slug uses kebab-case for reference files, snake_case for scripts 
 - If mapping is ambiguous, the reference file MUST instruct to ask the user
 - Reference `email-lookup.md` when the source may need email-based transaction lookup
 - Reference the shared gnucash-schema.md for SQL patterns; do not duplicate schema details
+- Amounts in Browser Data Format examples in reference files MUST be replaced with dummy values to avoid exposing real financial data
 
 ## Supported Sources
 

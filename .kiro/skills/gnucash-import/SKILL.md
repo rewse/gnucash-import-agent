@@ -38,7 +38,7 @@ Gather from user before creating files. Ask incrementally, not all at once.
 
 Essential:
 - Source name (e.g., "Mobile Suica", "Revolut")
-- GnuCash account path (e.g., `Assets:JPY - Current Assets:Prepaid:Suica iPhone`)
+- GnuCash account path (infer from [account-uuid-cache.json](references/account-uuid-cache.json))
 - Login URL and authentication method (CAPTCHA, passkey, 1Password)
 - Browser data format (ask user to show a sample snapshot)
 - Transaction types and their GnuCash account mappings

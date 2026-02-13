@@ -6,4 +6,5 @@
 .kiro/skills/gnucash-import/references/account-uuid-cache.json
 .kiro/skills/gnucash-import/references/personal.json
 
+__pycache__/
 tmp/

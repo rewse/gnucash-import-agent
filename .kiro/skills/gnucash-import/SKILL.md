@@ -72,6 +72,7 @@ Naming: source-slug uses kebab-case for reference files, snake_case for scripts 
 ## Supported Sources
 
 - Amazon Gift Certificate - See [references/accounts/amazon-gc.md](references/accounts/amazon-gc.md)
+- Amazon Point - See [references/accounts/amazon-point.md](references/accounts/amazon-point.md)
 - JRE Bank - See [references/accounts/jre-bank.md](references/accounts/jre-bank.md)
 - Mobile PASMO - See [references/accounts/pasmo.md](references/accounts/pasmo.md)
 - Mobile Suica - See [references/accounts/suica.md](references/accounts/suica.md)

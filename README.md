@@ -25,6 +25,7 @@ Automates the import of transaction data from various online sources (banks, cre
 ## Supported Sources
 
 - Amazon Gift Certificate
+- JRE Bank
 - Mobile PASMO
 - Mobile Suica
 - Revolut
@@ -39,11 +40,31 @@ Automates the import of transaction data from various online sources (banks, cre
 
 ```
 .
-├── scripts/                    # Import scripts
-│   ├── amazon_gc_import.py     # Amazon Gift Certificate statement importer
-│   └── suica_import.py         # Mobile Suica statement importer
+├── scripts/                        # Import scripts
+│   ├── amazon_gc_import.py         # Amazon Gift Certificate
+│   ├── jre_bank_import.py          # JRE Bank
+│   ├── revolut_import.py           # Revolut
+│   ├── starbucks_import.py         # Starbucks
+│   └── suica_import.py             # Mobile Suica
 └── .kiro/
-    ├── agents/                 # Custom agent configurations
-    ├── skills/                  # Skill definitions
-    └── steering/               # Steering rules
+    ├── agents/                     # Custom agent configurations
+    ├── skills/
+    │   └── gnucash-import/         # Statement import skill
+    │       ├── SKILL.md
+    │       └── references/
+    │           ├── accounts/       # Per-source reference files
+    │           │   ├── amazon-gc.md
+    │           │   ├── jre-bank.md
+    │           │   ├── pasmo.md
+    │           │   ├── revolut.md
+    │           │   ├── starbucks.md
+    │           │   └── suica.md
+    │           ├── templates/      # Templates for new sources
+    │           │   ├── reference-template.md
+    │           │   └── script-template.py
+    │           ├── account-uuid-cache.json
+    │           ├── email-lookup.md
+    │           ├── gnucash-schema.md
+    │           └── personal.json
+    └── steering/                   # Steering rules
 ```

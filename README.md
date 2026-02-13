@@ -28,6 +28,7 @@ Automates the import of transaction data from various online sources (banks, cre
 - JRE Bank
 - Mobile PASMO
 - Mobile Suica
+- MUFG Bank
 - Revolut
 - Starbucks
 
@@ -43,6 +44,7 @@ Automates the import of transaction data from various online sources (banks, cre
 ├── scripts/                        # Import scripts
 │   ├── amazon_gc_import.py         # Amazon Gift Certificate
 │   ├── jre_bank_import.py          # JRE Bank
+│   ├── mufg_bank_import.py         # MUFG Bank
 │   ├── revolut_import.py           # Revolut
 │   ├── starbucks_import.py         # Starbucks
 │   └── suica_import.py             # Mobile Suica
@@ -55,6 +57,7 @@ Automates the import of transaction data from various online sources (banks, cre
     │           ├── accounts/       # Per-source reference files
     │           │   ├── amazon-gc.md
     │           │   ├── jre-bank.md
+    │           │   ├── mufg-bank.md
     │           │   ├── pasmo.md
     │           │   ├── revolut.md
     │           │   ├── starbucks.md

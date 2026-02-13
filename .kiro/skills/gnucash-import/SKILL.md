@@ -30,7 +30,7 @@ Add a new financial source (bank, credit card, prepaid card, etc.) to the import
 1. Gather account information from user (see Information Checklist below)
 2. Create reference file from template: [references/templates/reference-template.md](references/templates/reference-template.md)
 3. Create import script from template: [references/templates/script-template.py](references/templates/script-template.py)
-4. Register the new source under "Supported Sources" below
+4. Register the new source under "Supported Sources" and "Project Structure" below
 
 ### Information Checklist
 

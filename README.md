@@ -47,6 +47,7 @@ Automates the import of transaction data from various online sources (banks, cre
 - Sony Bank
 - Starbucks
 - V Point
+- World of Hyatt
 
 ## Usage
 
@@ -79,7 +80,8 @@ Automates the import of transaction data from various online sources (banks, cre
 │   ├── sony_bank_import.py         # Sony Bank
 │   ├── starbucks_import.py         # Starbucks
 │   ├── suica_import.py             # Mobile Suica
-│   └── v_point_import.py           # V Point
+│   ├── v_point_import.py           # V Point
+│   └── world_of_hyatt_import.py   # World of Hyatt
 └── .kiro/
     ├── agents/                     # Custom agent configurations
     ├── skills/
@@ -109,7 +111,8 @@ Automates the import of transaction data from various online sources (banks, cre
     │           │   ├── sony-bank.md
     │           │   ├── starbucks.md
     │           │   ├── suica.md
-    │           │   └── v-point.md
+    │           │   ├── v-point.md
+│           │   └── world-of-hyatt.md
     │           ├── templates/      # Templates for new sources
     │           │   ├── reference-template.md
     │           │   └── script-template.py

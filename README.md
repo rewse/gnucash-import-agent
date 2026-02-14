@@ -26,6 +26,7 @@ Automates the import of transaction data from various online sources (banks, cre
 
 - Amazon Gift Certificate
 - Amazon Point
+- d NEOBANK
 - JRE Bank
 - Mobile PASMO
 - Mobile Suica
@@ -49,6 +50,7 @@ Automates the import of transaction data from various online sources (banks, cre
 ├── scripts/                        # Import scripts
 │   ├── amazon_gc_import.py         # Amazon Gift Certificate
 │   ├── amazon_point_import.py      # Amazon Point
+│   ├── d_neobank_import.py         # d NEOBANK
 │   ├── jre_bank_import.py          # JRE Bank
 │   ├── mufg_bank_import.py         # MUFG Bank
 │   ├── revolut_import.py           # Revolut
@@ -67,6 +69,7 @@ Automates the import of transaction data from various online sources (banks, cre
     │           ├── accounts/       # Per-source reference files
     │           │   ├── amazon-gc.md
 │           │   ├── amazon-point.md
+    │           │   ├── d-neobank.md
     │           │   ├── jre-bank.md
     │           │   ├── mufg-bank.md
     │           │   ├── pasmo.md

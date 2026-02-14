@@ -93,7 +93,7 @@ Display transactions sorted by date descending (newest first) with:
 ## Notes
 
 - Unit is pt (Marriott Bonvoy points)
-- Transaction currency is JPY (1 point = 1 JPY for accounting)
+- Transaction currency is JPY (1 point = 0.33 JPY for accounting)
 - Date format from browser is MMM DD, YYYY (needs conversion to YYYY/MM/DD for script input)
 - Hotel names are in English on the activity page
 - Points expiration: must earn or redeem within 24 months of last qualifying activity

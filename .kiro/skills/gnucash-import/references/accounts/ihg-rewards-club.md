@@ -92,6 +92,6 @@ Display transactions sorted by date descending (newest first) with:
 ## Notes
 
 - Unit is pt (IHG One Rewards points)
-- Transaction currency is JPY (1 point = 1 JPY for accounting)
+- Transaction currency is JPY (1 point = 0.5 JPY for accounting)
 - Date format from browser is YYYY/MM/DD
 - Hotel names are already in English on the activity page

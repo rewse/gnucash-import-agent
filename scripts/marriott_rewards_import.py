@@ -33,6 +33,15 @@ ACCOUNT_NAMES = {
     CHARITY: 'Expenses:Social Expenses:Charity',
 }
 
+# 1 point = 0.33 JPY
+POINT_TO_JPY_NUM = 33
+POINT_TO_JPY_DENOM = 100
+
+
+def points_to_jpy(points):
+    """Convert points to JPY (1 pt = 0.33 JPY)."""
+    return points * POINT_TO_JPY_NUM // POINT_TO_JPY_DENOM
+
 # ============================================================
 # EDIT BELOW: Paste raw data (tab-separated)
 # Format: date\tdescription\tamount\taccount
@@ -88,8 +97,8 @@ def output_review(transactions):
 
         account_guid, description = get_transaction_info(idx, tx)
         transfer = ACCOUNT_NAMES.get(account_guid, account_guid or '')
-        increase = f"{tx['amount']:,}" if tx['amount'] > 0 else ""
-        decrease = f"{abs(tx['amount']):,}" if tx['amount'] < 0 else ""
+        increase = f"{tx['amount']:,} pt (¥{points_to_jpy(tx['amount']):,})" if tx['amount'] > 0 else ""
+        decrease = f"{abs(tx['amount']):,} pt (¥{points_to_jpy(abs(tx['amount'])):,})" if tx['amount'] < 0 else ""
 
         print(f"{idx:<4} {date_str:<14} {description or '':<40} {transfer:<30} {increase:>10} {decrease:>10}")
 
@@ -101,6 +110,7 @@ def output_sql(transactions):
     total = len(transactions)
     for idx, tx in enumerate(transactions, 1):
         account_guid, description = get_transaction_info(idx, tx)
+        jpy_value = points_to_jpy(tx['amount'])
 
         tx_guid = uuid.uuid4().hex
         split1_guid = uuid.uuid4().hex
@@ -111,13 +121,13 @@ def output_sql(transactions):
         desc_sql = f"'{description}'" if description else 'NULL'
         sign = '+' if tx['amount'] > 0 else ''
 
-        print(f"-- {idx}: {tx['date'].strftime('%Y-%m-%d')} {description} {sign}{tx['amount']:,}")
+        print(f"-- {idx}: {tx['date'].strftime('%Y-%m-%d')} {description} {sign}{tx['amount']:,} pt (¥{jpy_value:,})")
         print(f"INSERT INTO transactions (guid, currency_guid, num, post_date, enter_date, description)")
         print(f"VALUES ('{tx_guid}', '{JPY_CURRENCY}', '', '{date_str}', NOW(), {desc_sql});")
         print(f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)")
-        print(f"VALUES ('{split1_guid}', '{tx_guid}', '{SOURCE_ACCOUNT}', '', '', 'n', NULL, {tx['amount']}, 1, {tx['amount']}, 1, NULL);")
+        print(f"VALUES ('{split1_guid}', '{tx_guid}', '{SOURCE_ACCOUNT}', '', '', 'n', NULL, {jpy_value}, 1, {jpy_value}, 1, NULL);")
         print(f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)")
-        print(f"VALUES ('{split2_guid}', '{tx_guid}', '{account_guid}', '', '', 'n', NULL, {-tx['amount']}, 1, {-tx['amount']}, 1, NULL);")
+        print(f"VALUES ('{split2_guid}', '{tx_guid}', '{account_guid}', '', '', 'n', NULL, {-jpy_value}, 1, {-jpy_value}, 1, NULL);")
         print()
 
     print("COMMIT;")

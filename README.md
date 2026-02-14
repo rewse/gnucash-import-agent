@@ -31,6 +31,7 @@ Automates the import of transaction data from various online sources (banks, cre
 - Bic Point
 - d NEOBANK
 - Hapitas
+- IHG Rewards Club
 - JRE Bank
 - Mobile PASMO
 - Mobile Suica
@@ -59,6 +60,7 @@ Automates the import of transaction data from various online sources (banks, cre
 │   ├── bic_point_import.py         # Bic Point
 │   ├── d_neobank_import.py         # d NEOBANK
 │   ├── hapitas_import.py           # Hapitas
+│   ├── ihg_rewards_club_import.py  # IHG Rewards Club
 │   ├── jre_bank_import.py          # JRE Bank
 │   ├── mufg_bank_import.py         # MUFG Bank
 │   ├── revolut_import.py           # Revolut
@@ -82,6 +84,7 @@ Automates the import of transaction data from various online sources (banks, cre
     │           │   ├── bic-point.md
     │           │   ├── d-neobank.md
     │           │   ├── hapitas.md
+    │           │   ├── ihg-rewards-club.md
     │           │   ├── jre-bank.md
     │           │   ├── mufg-bank.md
     │           │   ├── pasmo.md

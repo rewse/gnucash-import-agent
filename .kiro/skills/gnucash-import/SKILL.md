@@ -89,6 +89,7 @@ Naming: source-slug uses kebab-case for reference files, snake_case for scripts 
 - Revolut - See [references/accounts/revolut.md](references/accounts/revolut.md)
 - SBI Securities - See [references/accounts/sbi-securities.md](references/accounts/sbi-securities.md)
 - SBI Shinsei Bank - See [references/accounts/sbi-shinsei-bank.md](references/accounts/sbi-shinsei-bank.md)
+- Rakuten Super Point - See [references/accounts/rakuten-super-point.md](references/accounts/rakuten-super-point.md)
 - Starbucks - See [references/accounts/starbucks.md](references/accounts/starbucks.md)
 
 ## GnuCash Schema

@@ -48,6 +48,7 @@ Automates the import of transaction data from various online sources (banks, cre
 - Starbucks
 - V Point
 - World of Hyatt
+- Yodobashi Gold Point
 
 ## Usage
 
@@ -81,7 +82,8 @@ Automates the import of transaction data from various online sources (banks, cre
 │   ├── starbucks_import.py         # Starbucks
 │   ├── suica_import.py             # Mobile Suica
 │   ├── v_point_import.py           # V Point
-│   └── world_of_hyatt_import.py   # World of Hyatt
+│   ├── world_of_hyatt_import.py   # World of Hyatt
+│   └── yodobashi_gold_point_import.py # Yodobashi Gold Point
 └── .kiro/
     ├── agents/                     # Custom agent configurations
     ├── skills/
@@ -112,7 +114,8 @@ Automates the import of transaction data from various online sources (banks, cre
     │           │   ├── starbucks.md
     │           │   ├── suica.md
     │           │   ├── v-point.md
-│           │   └── world-of-hyatt.md
+│           │   ├── world-of-hyatt.md
+    │           │   └── yodobashi-gold-point.md
     │           ├── templates/      # Templates for new sources
     │           │   ├── reference-template.md
     │           │   └── script-template.py

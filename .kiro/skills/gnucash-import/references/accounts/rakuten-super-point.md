@@ -12,7 +12,7 @@ No CAPTCHA or OTP required.
 
 ## Import Workflow
 
-1. Check if `account-uuid-cache.json` exists and `updated_at` is within 1 month; regenerate if needed (see SKILL.md)
+1. Check if `account-guid-cache.json` exists and `updated_at` is within 1 month; regenerate if needed (see SKILL.md)
 2. Check DB for last imported transaction date to determine how far back to fetch
 3. `agent-browser --headed open 'https://login.account.rakuten.com/sso/authorize?client_id=rakuten_ichiba_top_web&service_id=s245&response_type=code&scope=openid&redirect_uri=https://www.rakuten.co.jp/#/sign_in'`
 4. Fill username from 1Password (`op://gnucash/Rakuten/username`), click 次へ

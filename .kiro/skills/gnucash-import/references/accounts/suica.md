@@ -10,7 +10,7 @@ CAPTCHA is required. You MUST use `agent-browser --headed` and ask the user to i
 
 ## Import Workflow
 
-1. Check if `account-uuid-cache.json` exists and `updated_at` is within 1 month; regenerate if needed (see SKILL.md)
+1. Check if `account-guid-cache.json` exists and `updated_at` is within 1 month; regenerate if needed (see SKILL.md)
 2. Check DB for last imported transaction date to determine how far back to fetch
 3. `agent-browser --headed open https://www.mobilesuica.com/`
 4. Manual login (CAPTCHA required)

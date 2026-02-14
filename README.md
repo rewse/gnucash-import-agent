@@ -110,7 +110,7 @@ Automates the import of transaction data from various online sources (banks, cre
     │           ├── templates/      # Templates for new sources
     │           │   ├── reference-template.md
     │           │   └── script-template.py
-    │           ├── account-uuid-cache.json
+    │           ├── account-guid-cache.json
     │           ├── email-lookup.md
     │           ├── gnucash-schema.md
     │           └── personal.json

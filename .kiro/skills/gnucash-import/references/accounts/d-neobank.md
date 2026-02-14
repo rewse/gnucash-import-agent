@@ -18,7 +18,7 @@ Manual login required. You MUST use `agent-browser --headed` and ask the user to
 
 ## Import Workflow
 
-1. Check if `account-uuid-cache.json` exists and `updated_at` is within 1 month; regenerate if needed (see SKILL.md)
+1. Check if `account-guid-cache.json` exists and `updated_at` is within 1 month; regenerate if needed (see SKILL.md)
 2. Check DB for existing transactions (see Duplicate Detection below)
 3. `agent-browser --headed open https://www.netbk.co.jp/contents/pages/wpl010101E/i010101CT/DI01010240`
 4. Ask user to log in manually

@@ -13,7 +13,7 @@ CAPTCHA is required at login. You MUST use `agent-browser --headed` with `--args
 
 ## Import Workflow
 
-1. Check if `account-uuid-cache.json` exists and `updated_at` is within 1 month; regenerate if needed (see SKILL.md)
+1. Check if `account-guid-cache.json` exists and `updated_at` is within 1 month; regenerate if needed (see SKILL.md)
 2. Check DB for last imported transaction date to determine how far back to fetch
 3. `agent-browser --headed --args "--disable-blink-features=AutomationControlled" open https://www.biccamera.com/bc/member/SfrLogin.jsp`
 4. Fill username and password from 1Password, ask user to complete CAPTCHA, then click "ログインする"
@@ -68,7 +68,7 @@ For online order usage (ビックカメラ.comにてご注文 with 利用ポイ�
 
 1. Click "詳しく見る" link to view order details
 2. Get product name from order details page
-3. Infer GnuCash account from product name using [account-uuid-cache.json](../account-uuid-cache.json)
+3. Infer GnuCash account from product name using [account-guid-cache.json](../account-guid-cache.json)
 
 ### Email Lookup for Missing Information
 

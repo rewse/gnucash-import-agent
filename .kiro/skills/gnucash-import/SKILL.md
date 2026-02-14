@@ -39,7 +39,7 @@ Gather from user before creating files. Ask incrementally, not all at once.
 
 Essential:
 - Source name (e.g., "Mobile Suica", "Revolut")
-- GnuCash account path (infer from [account-uuid-cache.json](references/account-uuid-cache.json))
+- GnuCash account path (infer from [account-guid-cache.json](references/account-guid-cache.json))
 - Login URL and authentication method (CAPTCHA, passkey, 1Password)
 - Browser data format (ask user to show a sample snapshot)
 - Transaction types and their GnuCash account mappings
@@ -102,7 +102,7 @@ See [references/gnucash-schema.md](references/gnucash-schema.md) for:
 
 ## Account List
 
-See [references/account-uuid-cache.json](references/account-uuid-cache.json) for account paths and GUIDs.
+See [references/account-guid-cache.json](references/account-guid-cache.json) for account paths and GUIDs.
 
 This file is in `.gitignore` and should be regenerated if:
 - File does not exist
@@ -126,7 +126,7 @@ SELECT json_build_object(
   'updated_at', NOW(),
   'accounts', (SELECT json_object_agg(path, guid) FROM path_list WHERE path NOT LIKE 'Template Root%' AND hidden = 0)
 );
-" | python3 -m json.tool > .kiro/skills/gnucash-import/references/account-uuid-cache.json
+" | python3 -m json.tool > .kiro/skills/gnucash-import/references/account-guid-cache.json
 ```
 
 ## Check Last Imported Transaction

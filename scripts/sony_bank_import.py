@@ -18,7 +18,7 @@ import uuid
 from datetime import date
 from pathlib import Path
 
-ACCOUNTS_FILE = Path(__file__).parent.parent / '.kiro/skills/gnucash-import/references/account-uuid-cache.json'
+ACCOUNTS_FILE = Path(__file__).parent.parent / '.kiro/skills/gnucash-import/references/account-guid-cache.json'
 with open(ACCOUNTS_FILE) as f:
     _data = json.load(f)
     ACCOUNTS = {k.replace('Root Account:', ''): v for k, v in _data['accounts'].items()}

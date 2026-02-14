@@ -10,13 +10,13 @@ Passkey is required. You MUST use `agent-browser --headed` and ask the user to i
 
 ## Import Workflow
 
-1. Check if `account-uuid-cache.json` exists and `updated_at` is within 1 month; regenerate if needed (see SKILL.md)
+1. Check if `account-guid-cache.json` exists and `updated_at` is within 1 month; regenerate if needed (see SKILL.md)
 2. Check DB for last imported transaction date to determine how far back to fetch
 3. `agent-browser --headed open https://www.amazon.co.jp/Amazon%E3%83%9D%E3%82%A4%E3%83%B3%E3%83%88/b/?ie=UTF8&node=2632478051`
 4. Manual login
 5. Click "マイポイントページへ" to navigate to point history
 6. `agent-browser snapshot` to get table data
-7. For "利用・キャンセル" transactions, look up order details to get product name and infer GnuCash account from [account-uuid-cache.json](../account-uuid-cache.json)
+7. For "利用・キャンセル" transactions, look up order details to get product name and infer GnuCash account from [account-guid-cache.json](../account-guid-cache.json)
 8. Prepare RAW_DATA with resolved account and item info
 9. Copy RAW_DATA into `tmp/amazon_point_import_YYYYMMDD.py`
 10. Run `python3 tmp/amazon_point_import_YYYYMMDD.py review` to show review table
@@ -66,7 +66,7 @@ For "利用・キャンセル" with "ポイントの利用":
 
 1. Extract order URL from "注文詳細を見る" link
 2. Look up order details via browser to get product name
-3. Infer GnuCash account from product name using [account-uuid-cache.json](../account-uuid-cache.json) as reference for available accounts
+3. Infer GnuCash account from product name using [account-guid-cache.json](../account-guid-cache.json) as reference for available accounts
 
 #### Order Lookup URL
 

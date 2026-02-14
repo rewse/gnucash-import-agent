@@ -12,7 +12,7 @@ SMS OTP is required. You MUST use `agent-browser --headed` and ask the user to i
 
 ## Import Workflow
 
-1. Check if `account-uuid-cache.json` exists and `updated_at` is within 1 month; regenerate if needed (see SKILL.md)
+1. Check if `account-guid-cache.json` exists and `updated_at` is within 1 month; regenerate if needed (see SKILL.md)
 2. Check DB for last imported transaction date to determine how far back to fetch
 3. Ask the user to log in to https://www.jrepoint.jp/ using JRE ID and complete SMS authentication
 4. Once logged in, `agent-browser open https://www.jrepoint.jp/member/pointlog/`

@@ -3,7 +3,7 @@
 *.swo
 *~
 
-.kiro/skills/gnucash-import/references/account-uuid-cache.json
+.kiro/skills/gnucash-import/references/account-guid-cache.json
 .kiro/skills/gnucash-import/references/personal.json
 
 __pycache__/

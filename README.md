@@ -46,6 +46,7 @@ Automates the import of transaction data from various online sources (banks, cre
 - Sompo Japan DC Securities
 - Sony Bank
 - Starbucks
+- V Point
 
 ## Usage
 
@@ -77,7 +78,8 @@ Automates the import of transaction data from various online sources (banks, cre
 │   ├── sompo_japan_dc_import.py    # Sompo Japan DC Securities
 │   ├── sony_bank_import.py         # Sony Bank
 │   ├── starbucks_import.py         # Starbucks
-│   └── suica_import.py             # Mobile Suica
+│   ├── suica_import.py             # Mobile Suica
+│   └── v_point_import.py           # V Point
 └── .kiro/
     ├── agents/                     # Custom agent configurations
     ├── skills/
@@ -106,7 +108,8 @@ Automates the import of transaction data from various online sources (banks, cre
     │           │   ├── sompo-japan-dc.md
     │           │   ├── sony-bank.md
     │           │   ├── starbucks.md
-    │           │   └── suica.md
+    │           │   ├── suica.md
+    │           │   └── v-point.md
     │           ├── templates/      # Templates for new sources
     │           │   ├── reference-template.md
     │           │   └── script-template.py

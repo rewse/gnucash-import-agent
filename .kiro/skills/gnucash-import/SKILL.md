@@ -77,6 +77,7 @@ Naming: source-slug uses kebab-case for reference files, snake_case for scripts 
 - ANA SKY Coin - See [references/accounts/ana-sky-coin.md](references/accounts/ana-sky-coin.md)
 - Bic Point - See [references/accounts/bic-point.md](references/accounts/bic-point.md)
 - d NEOBANK - See [references/accounts/d-neobank.md](references/accounts/d-neobank.md)
+- Hapitas - See [references/accounts/hapitas.md](references/accounts/hapitas.md)
 - JRE Bank - See [references/accounts/jre-bank.md](references/accounts/jre-bank.md)
 - Mobile PASMO - See [references/accounts/pasmo.md](references/accounts/pasmo.md)
 - Mobile Suica - See [references/accounts/suica.md](references/accounts/suica.md)

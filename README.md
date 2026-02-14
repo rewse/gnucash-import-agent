@@ -30,6 +30,7 @@ Automates the import of transaction data from various online sources (banks, cre
 - ANA SKY Coin
 - Bic Point
 - d NEOBANK
+- Hapitas
 - JRE Bank
 - Mobile PASMO
 - Mobile Suica
@@ -57,6 +58,7 @@ Automates the import of transaction data from various online sources (banks, cre
 │   ├── ana_sky_coin_import.py      # ANA SKY Coin
 │   ├── bic_point_import.py         # Bic Point
 │   ├── d_neobank_import.py         # d NEOBANK
+│   ├── hapitas_import.py           # Hapitas
 │   ├── jre_bank_import.py          # JRE Bank
 │   ├── mufg_bank_import.py         # MUFG Bank
 │   ├── revolut_import.py           # Revolut
@@ -79,6 +81,7 @@ Automates the import of transaction data from various online sources (banks, cre
     │           │   ├── ana-sky-coin.md
     │           │   ├── bic-point.md
     │           │   ├── d-neobank.md
+    │           │   ├── hapitas.md
     │           │   ├── jre-bank.md
     │           │   ├── mufg-bank.md
     │           │   ├── pasmo.md

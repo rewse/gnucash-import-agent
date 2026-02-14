@@ -101,6 +101,7 @@ Display transactions sorted by date descending (newest first) with:
 - Fund: Fund name (shortened)
 - Quantity: Number of units purchased
 - Unit Price: Price per unit
+- Desc: Transaction description
 - Amount: Settlement amount
 - Fund Account: Target GnuCash account (shortened)
 

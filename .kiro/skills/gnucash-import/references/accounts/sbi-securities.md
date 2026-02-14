@@ -263,6 +263,7 @@ Display transactions sorted by date descending (newest first) with:
 - Security: Fund name (shortened)
 - Type: Buy/Sell
 - Account Type: NISA(つ)/NISA(成)/特定
+- Desc: Transaction description
 - Fund Account: Target GnuCash account (shortened)
 - Amount: Settlement amount
 

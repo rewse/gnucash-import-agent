@@ -73,6 +73,7 @@ Naming: source-slug uses kebab-case for reference files, snake_case for scripts 
 
 - Amazon Gift Certificate - See [references/accounts/amazon-gc.md](references/accounts/amazon-gc.md)
 - Amazon Point - See [references/accounts/amazon-point.md](references/accounts/amazon-point.md)
+- ANA Mileage Club - See [references/accounts/ana-mileage-club.md](references/accounts/ana-mileage-club.md)
 - d NEOBANK - See [references/accounts/d-neobank.md](references/accounts/d-neobank.md)
 - JRE Bank - See [references/accounts/jre-bank.md](references/accounts/jre-bank.md)
 - Mobile PASMO - See [references/accounts/pasmo.md](references/accounts/pasmo.md)

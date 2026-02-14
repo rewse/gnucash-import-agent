@@ -38,6 +38,7 @@ Automates the import of transaction data from various online sources (banks, cre
 - Mobile PASMO
 - Mobile Suica
 - MUFG Bank
+- Ponta
 - Revolut
 - SBI Securities
 - SBI Shinsei Bank
@@ -67,6 +68,7 @@ Automates the import of transaction data from various online sources (banks, cre
 │   ├── jre_point_import.py         # JRE Point
 │   ├── marriott_rewards_import.py  # Marriott Rewards
 │   ├── mufg_bank_import.py         # MUFG Bank
+│   ├── ponta_import.py             # Ponta
 │   ├── revolut_import.py           # Revolut
 │   ├── sbi_securities_import.py     # SBI Securities
 │   ├── sbi_shinsei_bank_import.py  # SBI Shinsei Bank
@@ -94,6 +96,7 @@ Automates the import of transaction data from various online sources (banks, cre
     │           │   ├── marriott_rewards.md
     │           │   ├── mufg-bank.md
     │           │   ├── pasmo.md
+    │           │   ├── ponta.md
     │           │   ├── revolut.md
     │           │   ├── sbi-securities.md
     │           │   ├── sbi-shinsei-bank.md

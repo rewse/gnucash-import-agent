@@ -80,6 +80,7 @@ Naming: source-slug uses kebab-case for reference files, snake_case for scripts 
 - Hapitas - See [references/accounts/hapitas.md](references/accounts/hapitas.md)
 - IHG Rewards Club - See [references/accounts/ihg-rewards-club.md](references/accounts/ihg-rewards-club.md)
 - Marriott Rewards - See [references/accounts/marriott-rewards.md](references/accounts/marriott-rewards.md)
+- Ponta - See [references/accounts/ponta.md](references/accounts/ponta.md)
 - JRE Bank - See [references/accounts/jre-bank.md](references/accounts/jre-bank.md)
 - JRE Point - See [references/accounts/jre-point.md](references/accounts/jre-point.md)
 - Mobile PASMO - See [references/accounts/pasmo.md](references/accounts/pasmo.md)

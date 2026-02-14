@@ -34,6 +34,7 @@ Automates the import of transaction data from various online sources (banks, cre
 - IHG Rewards Club
 - JRE Bank
 - JRE Point
+- Marriott Rewards
 - Mobile PASMO
 - Mobile Suica
 - MUFG Bank
@@ -64,6 +65,7 @@ Automates the import of transaction data from various online sources (banks, cre
 │   ├── ihg_rewards_club_import.py  # IHG Rewards Club
 │   ├── jre_bank_import.py          # JRE Bank
 │   ├── jre_point_import.py         # JRE Point
+│   ├── marriott_rewards_import.py  # Marriott Rewards
 │   ├── mufg_bank_import.py         # MUFG Bank
 │   ├── revolut_import.py           # Revolut
 │   ├── sbi_securities_import.py     # SBI Securities
@@ -89,6 +91,7 @@ Automates the import of transaction data from various online sources (banks, cre
     │           │   ├── ihg-rewards-club.md
     │           │   ├── jre-bank.md
     │           │   ├── jre-point.md
+    │           │   ├── marriott_rewards.md
     │           │   ├── mufg-bank.md
     │           │   ├── pasmo.md
     │           │   ├── revolut.md

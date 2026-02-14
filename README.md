@@ -27,6 +27,7 @@ Automates the import of transaction data from various online sources (banks, cre
 - Amazon Gift Certificate
 - Amazon Point
 - ANA Mileage Club
+- ANA SKY Coin
 - d NEOBANK
 - JRE Bank
 - Mobile PASMO
@@ -52,6 +53,7 @@ Automates the import of transaction data from various online sources (banks, cre
 │   ├── amazon_gc_import.py         # Amazon Gift Certificate
 │   ├── amazon_point_import.py      # Amazon Point
 │   ├── ana_mileage_club_import.py  # ANA Mileage Club
+│   ├── ana_sky_coin_import.py      # ANA SKY Coin
 │   ├── d_neobank_import.py         # d NEOBANK
 │   ├── jre_bank_import.py          # JRE Bank
 │   ├── mufg_bank_import.py         # MUFG Bank
@@ -72,6 +74,7 @@ Automates the import of transaction data from various online sources (banks, cre
     │           │   ├── amazon-gc.md
     │           │   ├── amazon-point.md
     │           │   ├── ana-mileage-club.md
+    │           │   ├── ana-sky-coin.md
     │           │   ├── d-neobank.md
     │           │   ├── jre-bank.md
     │           │   ├── mufg-bank.md

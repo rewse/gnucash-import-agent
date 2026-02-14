@@ -78,6 +78,7 @@ Naming: source-slug uses kebab-case for reference files, snake_case for scripts 
 - Mobile Suica - See [references/accounts/suica.md](references/accounts/suica.md)
 - Revolut - See [references/accounts/revolut.md](references/accounts/revolut.md)
 - SBI Securities - See [references/accounts/sbi-securities.md](references/accounts/sbi-securities.md)
+- SBI Shinsei Bank - See [references/accounts/sbi-shinsei-bank.md](references/accounts/sbi-shinsei-bank.md)
 - Starbucks - See [references/accounts/starbucks.md](references/accounts/starbucks.md)
 
 ## GnuCash Schema

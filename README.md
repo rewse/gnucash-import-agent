@@ -32,6 +32,7 @@ Automates the import of transaction data from various online sources (banks, cre
 - MUFG Bank
 - Revolut
 - SBI Securities
+- SBI Shinsei Bank
 - Sompo Japan DC Securities
 - Sony Bank
 - Starbucks
@@ -52,6 +53,7 @@ Automates the import of transaction data from various online sources (banks, cre
 │   ├── mufg_bank_import.py         # MUFG Bank
 │   ├── revolut_import.py           # Revolut
 │   ├── sbi_securities_import.py     # SBI Securities
+│   ├── sbi_shinsei_bank_import.py  # SBI Shinsei Bank
 │   ├── sompo_japan_dc_import.py    # Sompo Japan DC Securities
 │   ├── sony_bank_import.py         # Sony Bank
 │   ├── starbucks_import.py         # Starbucks
@@ -70,6 +72,7 @@ Automates the import of transaction data from various online sources (banks, cre
     │           │   ├── pasmo.md
     │           │   ├── revolut.md
     │           │   ├── sbi-securities.md
+    │           │   ├── sbi-shinsei-bank.md
     │           │   ├── sompo-japan-dc.md
     │           │   ├── sony-bank.md
     │           │   ├── starbucks.md

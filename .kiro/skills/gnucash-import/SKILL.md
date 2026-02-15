@@ -113,6 +113,7 @@ Naming: source-slug uses kebab-case for reference files, snake_case for scripts 
 - Reference `email-lookup.md` when the source may need email-based transaction lookup
 - Reference the shared gnucash-schema.md for SQL patterns; do not duplicate schema details
 - Amounts in Browser Data Format examples in reference files MUST be replaced with dummy values to avoid exposing real financial data
+- Credit card numbers in reference files: the first 6 digits (BIN) MAY be shown, but the last 4 digits MUST be masked (e.g., `4980-01**-****-****`)
 
 ## Supported Sources
 
@@ -124,6 +125,7 @@ Naming: source-slug uses kebab-case for reference files, snake_case for scripts 
 - ANA Super Flyers Gold Card - See [references/accounts/ana-super-flyers-gold-card.md](references/accounts/ana-super-flyers-gold-card.md)
 - Bic Point - See [references/accounts/bic-point.md](references/accounts/bic-point.md)
 - d NEOBANK - See [references/accounts/d-neobank.md](references/accounts/d-neobank.md)
+- GOLD POINT CARD + - See [references/accounts/gold-point-card-plus.md](references/accounts/gold-point-card-plus.md)
 - Hapitas - See [references/accounts/hapitas.md](references/accounts/hapitas.md)
 - IHG Rewards Club - See [references/accounts/ihg-rewards-club.md](references/accounts/ihg-rewards-club.md)
 - Marriott Rewards - See [references/accounts/marriott-rewards.md](references/accounts/marriott-rewards.md)

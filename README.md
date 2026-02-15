@@ -32,6 +32,7 @@ Automates the import of transaction data from various online sources (banks, cre
 - ANA Super Flyers Gold Card
 - Bic Point
 - d NEOBANK
+- GOLD POINT CARD +
 - Hapitas
 - IHG Rewards Club
 - JRE Bank
@@ -70,6 +71,7 @@ Automates the import of transaction data from various online sources (banks, cre
 │   ├── ana_super_flyers_gold_card_import.py # ANA Super Flyers Gold Card
 │   ├── bic_point_import.py         # Bic Point
 │   ├── d_neobank_import.py         # d NEOBANK
+│   ├── gold_point_card_plus_import.py # GOLD POINT CARD +
 │   ├── hapitas_import.py           # Hapitas
 │   ├── ihg_rewards_club_import.py  # IHG Rewards Club
 │   ├── jre_bank_import.py          # JRE Bank
@@ -103,6 +105,7 @@ Automates the import of transaction data from various online sources (banks, cre
     │           │   ├── ana-super-flyers-gold-card.md
     │           │   ├── bic-point.md
     │           │   ├── d-neobank.md
+│           │   ├── gold-point-card-plus.md
     │           │   ├── hapitas.md
     │           │   ├── ihg-rewards-club.md
     │           │   ├── jre-bank.md

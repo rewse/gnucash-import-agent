@@ -42,6 +42,7 @@ Automates the import of transaction data from various online sources (banks, cre
 - Mobile PASMO
 - Mobile Suica
 - MUFG Bank
+- PayPay Card JCB
 - Ponta
 - Rakuten Super Point
 - Revolut
@@ -80,6 +81,7 @@ Automates the import of transaction data from various online sources (banks, cre
 │   ├── lumine_card_import.py       # LUMINE CARD
 │   ├── marriott_rewards_import.py  # Marriott Rewards
 │   ├── mufg_bank_import.py         # MUFG Bank
+│   ├── paypay_card_jcb_import.py   # PayPay Card JCB
 │   ├── ponta_import.py             # Ponta
 │   ├── rakuten_super_point_import.py # Rakuten Super Point
 │   ├── revolut_import.py           # Revolut
@@ -116,6 +118,7 @@ Automates the import of transaction data from various online sources (banks, cre
     │           │   ├── marriott_rewards.md
     │           │   ├── mufg-bank.md
     │           │   ├── pasmo.md
+    │           │   ├── paypay-card-jcb.md
     │           │   ├── ponta.md
     │           │   ├── rakuten-super-point.md
     │           │   ├── revolut.md

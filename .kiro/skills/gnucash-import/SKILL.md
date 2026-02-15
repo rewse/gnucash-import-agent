@@ -135,6 +135,7 @@ Naming: source-slug uses kebab-case for reference files, snake_case for scripts 
 - JRE Point - See [references/accounts/jre-point.md](references/accounts/jre-point.md)
 - Mobile PASMO - See [references/accounts/pasmo.md](references/accounts/pasmo.md)
 - Mobile Suica - See [references/accounts/suica.md](references/accounts/suica.md)
+- PayPay Card JCB - See [references/accounts/paypay-card-jcb.md](references/accounts/paypay-card-jcb.md)
 - Revolut - See [references/accounts/revolut.md](references/accounts/revolut.md)
 - SBI Securities - See [references/accounts/sbi-securities.md](references/accounts/sbi-securities.md)
 - SBI Shinsei Bank - See [references/accounts/sbi-shinsei-bank.md](references/accounts/sbi-shinsei-bank.md)

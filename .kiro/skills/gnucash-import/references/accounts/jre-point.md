@@ -8,7 +8,7 @@
 
 - Second Password: `op://gnucash/JRE POINT/password`
 
-SMS OTP is required. You MUST use `agent-browser --headed` and ask the user to input OTP manually.
+Passkey is required. You MUST use `agent-browser --headed` and ask the user to input Passkey manually.
 
 ## Import Workflow
 

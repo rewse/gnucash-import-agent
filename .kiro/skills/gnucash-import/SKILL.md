@@ -201,3 +201,7 @@ See [references/personal.json](references/personal.json) for personal settings.
 
 This file is in `.gitignore`. If it does not exist, ask the user for the following and create it:
 - `nearest_station`: Nearest station name (for business expense detection)
+
+## Notes
+
+- 住信SBIネット銀行, ドコモSMTBネット銀行, and "d NEOBANK" refer to the same bank

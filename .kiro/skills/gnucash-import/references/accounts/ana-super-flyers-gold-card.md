@@ -24,11 +24,11 @@ This is a credit card. Transactions may appear on the statement with a delay, so
 6. For each billing month (starting from the most recent confirmed statement, going backwards):
    a. Select the month from the `お支払い月` dropdown
    b. Note the `お支払い合計額` (total payment amount) and `お支払い日` (payment date)
-   c. Check if this total already exists in GnuCash as a transaction on the payment date (see Billing Total Check query below)
+   c. Check if this total already exists in GnuCash (see SKILL.md "Credit Card: Billing Total Check")
    d. If the total exists → all transactions in this statement are already imported; stop going further back
    e. If the total does NOT exist → extract all transactions from this statement and proceed to duplicate detection
 7. For statements where the total is not in GnuCash, extract transaction data via `agent-browser eval "document.querySelector('body').innerText"`
-8. Perform per-transaction duplicate detection (see Duplicate Detection below)
+8. Perform per-transaction duplicate detection (see SKILL.md "Credit Card: Duplicate Detection")
 9. Prepare RAW_DATA with only new transactions
 10. Copy RAW_DATA into `tmp/ana_super_flyers_gold_card_import_YYYYMMDD.py`
 11. Run `python3 tmp/ana_super_flyers_gold_card_import_YYYYMMDD.py review` to show review table
@@ -36,46 +36,9 @@ This is a credit card. Transactions may appear on the statement with a delay, so
 13. Run `python3 tmp/ana_super_flyers_gold_card_import_YYYYMMDD.py sql > tmp/import_ana_super_flyers_gold_card.sql` to generate SQL
 14. Execute SQL to insert transactions
 
-### Billing Total Check
-
-```sql
-SELECT t.post_date::date, t.description, s.value_num
-FROM transactions t
-JOIN splits s ON t.guid = s.tx_guid
-JOIN accounts a ON s.account_guid = a.guid
-WHERE a.name = 'ANA Super Flyers Gold Card'
-AND s.value_num > 0
-AND to_char(t.post_date, 'YYYY-MM') = '{YYYY-MM}'
-AND s.value_num = {total_amount};
-```
-
-Replace `{YYYY-MM}` with the payment month (e.g., `2026-02`). If this returns a row, the billing statement is already fully imported.
-
-### Duplicate Detection
-
-For statements where the billing total is NOT in GnuCash, you MUST check each transaction individually:
-
-1. Query existing transactions for the statement's date range:
-```sql
-SELECT t.post_date::date, s.value_num, COUNT(*) as cnt
-FROM transactions t
-JOIN splits s ON t.guid = s.tx_guid
-JOIN accounts a ON s.account_guid = a.guid
-WHERE a.name = 'ANA Super Flyers Gold Card'
-AND s.value_num < 0
-AND t.post_date::date BETWEEN '{start_date}' AND '{end_date}'
-GROUP BY t.post_date::date, s.value_num
-ORDER BY t.post_date::date;
-```
-
-2. For each (date, amount) pair in the statement, count how many times it appears
-3. Compare with the count from GnuCash
-4. If the statement has more occurrences than GnuCash → the difference is new transactions to import
-5. If counts match → already imported, skip
-
 ### Current Statement (Unconfirmed)
 
-The current month's statement may show `（未確定）`. These transactions are still accumulating and may change. You SHOULD still import them but be aware that re-checking will be needed in the next import cycle.
+See SKILL.md "Credit Card: Current Statement (Unconfirmed)".
 
 ## Script Template
 

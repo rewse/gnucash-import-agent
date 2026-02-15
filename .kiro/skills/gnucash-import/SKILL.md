@@ -24,6 +24,49 @@ Rules:
 - Temporary scripts should be saved in `tmp/` directory
 - Add separator lines between different dates in review table for readability
 
+### Credit Card: Billing Total Check
+
+For credit cards, check if a billing statement has already been fully imported by looking for the payment transaction:
+
+```sql
+SELECT t.post_date::date, t.description, s.value_num
+FROM transactions t
+JOIN splits s ON t.guid = s.tx_guid
+JOIN accounts a ON s.account_guid = a.guid
+WHERE a.name = '{account_name}'
+AND s.value_num > 0
+AND to_char(t.post_date, 'YYYY-MM') = '{YYYY-MM}'
+AND s.value_num = {total_amount};
+```
+
+Replace `{account_name}` with the credit card account name, `{YYYY-MM}` with the payment month. If this returns a row, the billing statement is already fully imported.
+
+### Credit Card: Duplicate Detection
+
+For statements where the billing total is NOT in GnuCash, you MUST check each transaction individually:
+
+1. Query existing transactions for the statement's date range:
+```sql
+SELECT t.post_date::date, s.value_num, COUNT(*) as cnt
+FROM transactions t
+JOIN splits s ON t.guid = s.tx_guid
+JOIN accounts a ON s.account_guid = a.guid
+WHERE a.name = '{account_name}'
+AND s.value_num < 0
+AND t.post_date::date BETWEEN '{start_date}' AND '{end_date}'
+GROUP BY t.post_date::date, s.value_num
+ORDER BY t.post_date::date;
+```
+
+2. For each (date, amount) pair in the statement, count how many times it appears
+3. Compare with the count from GnuCash
+4. If the statement has more occurrences than GnuCash → the difference is new transactions to import
+5. If counts match → already imported, skip
+
+### Credit Card: Current Statement (Unconfirmed)
+
+The current month's statement may show unconfirmed transactions. These transactions are still accumulating and may change. You SHOULD still import them but be aware that re-checking will be needed in the next import cycle.
+
 ## New Source Workflow
 
 Add a new financial source (bank, credit card, prepaid card, etc.) to the import system.

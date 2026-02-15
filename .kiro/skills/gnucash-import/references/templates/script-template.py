@@ -43,6 +43,8 @@ CURRENCY_DENOM = {'JPY': 1, 'USD': 100, 'EUR': 100, 'AUD': 100}
 ACCOUNT_NAMES = {
     # TODO: Map GUIDs to display names for review table
     # TRANSFER_ACCOUNT_1: '{TRANSFER_ACCOUNT_PATH_1}',
+    # NOTE: Also add accounts used in MANUAL_OVERRIDES here,
+    # otherwise the review table will show GUIDs instead of names.
 }
 
 # ============================================================
@@ -65,6 +67,9 @@ def parse_transactions(raw_data):
     for line in raw_data.strip().split('\n'):
         if not line.strip():
             continue
+        # NOTE: Use lstrip('\t') before split('\t') to handle leading tabs
+        # consistently, since strip() on RAW_DATA may remove the first line's
+        # leading tab.
         # TODO: Implement parsing logic specific to this source
         # transactions.append({'date': date, 'amount': amount, 'desc': desc})
     return transactions

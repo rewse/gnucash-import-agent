@@ -25,6 +25,7 @@ Automates the import of transaction data from various online sources (banks, cre
 ## Supported Sources
 
 - Amazon Gift Certificate
+- Amazon MasterCard Gold
 - Amazon Point
 - ANA Mileage Club
 - ANA SKY Coin
@@ -61,6 +62,7 @@ Automates the import of transaction data from various online sources (banks, cre
 .
 ├── scripts/                        # Import scripts
 │   ├── amazon_gc_import.py         # Amazon Gift Certificate
+│   ├── amazon_mastercard_gold_import.py # Amazon MasterCard Gold
 │   ├── amazon_point_import.py      # Amazon Point
 │   ├── ana_mileage_club_import.py  # ANA Mileage Club
 │   ├── ana_sky_coin_import.py      # ANA SKY Coin
@@ -92,6 +94,7 @@ Automates the import of transaction data from various online sources (banks, cre
     │       └── references/
     │           ├── accounts/       # Per-source reference files
     │           │   ├── amazon-gc.md
+    │           │   ├── amazon-mastercard-gold.md
     │           │   ├── amazon-point.md
     │           │   ├── ana-mileage-club.md
     │           │   ├── ana-sky-coin.md
@@ -114,7 +117,7 @@ Automates the import of transaction data from various online sources (banks, cre
     │           │   ├── starbucks.md
     │           │   ├── suica.md
     │           │   ├── v-point.md
-│           │   ├── world-of-hyatt.md
+    │           │   ├── world-of-hyatt.md
     │           │   └── yodobashi-gold-point.md
     │           ├── templates/      # Templates for new sources
     │           │   ├── reference-template.md

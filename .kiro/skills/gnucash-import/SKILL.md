@@ -14,7 +14,8 @@ Import online financial statements into GnuCash PostgreSQL database.
 3. Map to GnuCash accounts
 4. Present all transactions to user for review before inserting
 5. Generate and execute INSERT statements
-6. Add learnings from user interactions to this skill
+6. For credit cards: register the payment (debit) transaction from the payment account to the credit card account for each billing statement imported
+7. For credit cards: also import unconfirmed transactions from the current billing cycle
 
 Rules:
 - Description must be in English (e.g., merchant name)
@@ -72,6 +73,7 @@ Naming: source-slug uses kebab-case for reference files, snake_case for scripts 
 
 ## Supported Sources
 
+- Amazon MasterCard Gold - See [references/accounts/amazon-mastercard-gold.md](references/accounts/amazon-mastercard-gold.md)
 - Amazon Gift Certificate - See [references/accounts/amazon-gc.md](references/accounts/amazon-gc.md)
 - Amazon Point - See [references/accounts/amazon-point.md](references/accounts/amazon-point.md)
 - ANA Mileage Club - See [references/accounts/ana-mileage-club.md](references/accounts/ana-mileage-club.md)

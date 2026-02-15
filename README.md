@@ -29,6 +29,7 @@ Automates the import of transaction data from various online sources (banks, cre
 - Amazon Point
 - ANA Mileage Club
 - ANA SKY Coin
+- ANA Super Flyers Gold Card
 - Bic Point
 - d NEOBANK
 - Hapitas
@@ -66,6 +67,7 @@ Automates the import of transaction data from various online sources (banks, cre
 │   ├── amazon_point_import.py      # Amazon Point
 │   ├── ana_mileage_club_import.py  # ANA Mileage Club
 │   ├── ana_sky_coin_import.py      # ANA SKY Coin
+│   ├── ana_super_flyers_gold_card_import.py # ANA Super Flyers Gold Card
 │   ├── bic_point_import.py         # Bic Point
 │   ├── d_neobank_import.py         # d NEOBANK
 │   ├── hapitas_import.py           # Hapitas
@@ -98,6 +100,7 @@ Automates the import of transaction data from various online sources (banks, cre
     │           │   ├── amazon-point.md
     │           │   ├── ana-mileage-club.md
     │           │   ├── ana-sky-coin.md
+    │           │   ├── ana-super-flyers-gold-card.md
     │           │   ├── bic-point.md
     │           │   ├── d-neobank.md
     │           │   ├── hapitas.md

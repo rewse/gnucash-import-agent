@@ -78,6 +78,7 @@ Naming: source-slug uses kebab-case for reference files, snake_case for scripts 
 - Amazon Point - See [references/accounts/amazon-point.md](references/accounts/amazon-point.md)
 - ANA Mileage Club - See [references/accounts/ana-mileage-club.md](references/accounts/ana-mileage-club.md)
 - ANA SKY Coin - See [references/accounts/ana-sky-coin.md](references/accounts/ana-sky-coin.md)
+- ANA Super Flyers Gold Card - See [references/accounts/ana-super-flyers-gold-card.md](references/accounts/ana-super-flyers-gold-card.md)
 - Bic Point - See [references/accounts/bic-point.md](references/accounts/bic-point.md)
 - d NEOBANK - See [references/accounts/d-neobank.md](references/accounts/d-neobank.md)
 - Hapitas - See [references/accounts/hapitas.md](references/accounts/hapitas.md)

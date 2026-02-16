@@ -24,6 +24,12 @@ Rules:
 - Temporary scripts should be saved in `tmp/` directory
 - Add separator lines between different dates in review table for readability
 
+### Browser Automation
+
+- You MUST use `agent-browser --headed` for web automation
+- You MUST run `agent-browser --help` BEFORE the FIRST `agent-browser` command in each session
+- If encountering unusual errors or pages that never finish loading, you SHOULD retry with `--args "--disable-blink-features=AutomationControlled"` to bypass bot detection
+
 ### Credit Card: Billing Total Check
 
 For credit cards, check if a billing statement has already been fully imported by looking for the payment transaction:

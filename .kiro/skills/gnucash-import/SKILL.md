@@ -138,6 +138,7 @@ Naming: source-slug uses kebab-case for reference files, snake_case for scripts 
 - Ponta - See [references/accounts/ponta.md](references/accounts/ponta.md)
 - JRE Bank - See [references/accounts/jre-bank.md](references/accounts/jre-bank.md)
 - LUMINE CARD - See [references/accounts/lumine-card.md](references/accounts/lumine-card.md)
+- Luxury Card Mastercard Titanium - See [references/accounts/luxury-card-mastercard-titanium.md](references/accounts/luxury-card-mastercard-titanium.md)
 - JRE Point - See [references/accounts/jre-point.md](references/accounts/jre-point.md)
 - Mobile PASMO - See [references/accounts/pasmo.md](references/accounts/pasmo.md)
 - Mobile Suica - See [references/accounts/suica.md](references/accounts/suica.md)

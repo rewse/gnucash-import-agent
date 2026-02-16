@@ -38,6 +38,7 @@ Automates the import of transaction data from various online sources (banks, cre
 - JRE Bank
 - JRE Point
 - LUMINE CARD
+- Luxury Card Mastercard Titanium
 - Marriott Rewards
 - Mobile PASMO
 - Mobile Suica
@@ -79,6 +80,7 @@ Automates the import of transaction data from various online sources (banks, cre
 │   ├── jre_bank_import.py          # JRE Bank
 │   ├── jre_point_import.py         # JRE Point
 │   ├── lumine_card_import.py       # LUMINE CARD
+│   ├── luxury_card_mastercard_titanium_import.py # Luxury Card Mastercard Titanium
 │   ├── marriott_rewards_import.py  # Marriott Rewards
 │   ├── mufg_bank_import.py         # MUFG Bank
 │   ├── paypay_card_jcb_import.py   # PayPay Card JCB
@@ -115,6 +117,7 @@ Automates the import of transaction data from various online sources (banks, cre
     │           │   ├── jre-bank.md
     │           │   ├── jre-point.md
     │           │   ├── lumine-card.md
+    │           │   ├── luxury-card-mastercard-titanium.md
     │           │   ├── marriott_rewards.md
     │           │   ├── mufg-bank.md
     │           │   ├── pasmo.md

@@ -104,7 +104,7 @@ Notes:
 | ATM 現金出金（提携取引） | Assets:JPY - Current Assets:Cash | NULL |
 | 地方税 | Expenses:Tax:Income Tax | Tokyo |
 | 国税 | Expenses:Tax:Income Tax | Japan |
-| 税引前利息 | Expenses:Tax:Income Tax | Japan |
+| 税引前利息 | Income:Interest Income | SBI Shinsei Bank |
 
 ### Transaction Types (SBI Hyper Deposit)
 
@@ -114,7 +114,7 @@ Notes:
 | 円普通預金 | Assets:JPY - Current Assets:Banks:SBI Shinsei Bank | NULL |
 | 地方税 | Expenses:Tax:Income Tax | Tokyo |
 | 国税 | Expenses:Tax:Income Tax | Japan |
-| 税引前利息 | Expenses:Tax:Income Tax | Tokyo |
+| 税引前利息 | Income:Interest Income | SBI Shinsei Bank |
 
 ### Transaction Types (USD Savings)
 
@@ -123,7 +123,7 @@ Notes:
 | 円普通預金 | Assets:JPY - Current Assets:Banks:SBI Shinsei Bank | NULL |
 | 地方税 | Expenses:Tax:Income Tax | Tokyo |
 | 国税 | Expenses:Tax:Income Tax | Japan |
-| 税引前利息 | Expenses:Tax:Income Tax | Japan |
+| 税引前利息 | Income:Interest Income | SBI Shinsei Bank |
 | 被仕向事務手数料 | Expenses:Fees | SBI Shinsei Bank |
 
 If a transaction does not match any pattern, ask the user.

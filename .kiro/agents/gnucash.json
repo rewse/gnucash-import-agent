@@ -17,10 +17,11 @@
   ],
   "hooks": {},
   "toolsSettings": {
-    "execute_bash": {
-      "allowedCommands": ["agent-browser .*"]
+    "shell": {
+      "allowedCommands": ["agent-browser .*"],
+      "autoAllowReadonly": true
     }
   },
   "useLegacyMcpJson": false,
-  "model": "claude-opus-4.5"
+  "model": "Auto"
 }

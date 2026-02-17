@@ -21,6 +21,7 @@ Rules:
 - Description must be in English (e.g., merchant name)
 - If you cannot determine how to map a transaction (account, description, etc.), you MUST ask the user instead of guessing
 - You MUST check for duplicates before inserting: if a transaction with the same date and amount already exists, you MUST compare the statement details (description, transaction type, etc.) to determine if it's a duplicate or a separate transaction with the same amount
+- You MUST NOT delete or modify transactions whose reconciliation status (reconcile_state) is 'y' (reconciled) or 'c' (cleared)
 - Temporary scripts should be saved in `tmp/` directory
 - Add separator lines between different dates in review table for readability
 

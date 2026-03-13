@@ -7,20 +7,20 @@
 
 ## Credentials
 
-Email authentication is required. You MUST use `agent-browser --headed` and ask the user to log in manually.
+Email authentication is required. You MUST use `agent-browser --auto-connect` and ask the user to log in manually.
 
 ## Import Workflow
 
 1. Check if `account-guid-cache.json` exists and `updated_at` is within 1 month; regenerate if needed (see SKILL.md)
 2. Check DB for last imported transaction date to determine how far back to fetch
-3. `agent-browser --headed open https://tsite.jp/tm/pc/login/STKIp0001001.do`
+3. `agent-browser --auto-connect open https://tsite.jp/tm/pc/login/STKIp0001001.do`
 4. Click "設定を始める" (cookie consent)
 5. Click "Yahoo! JAPAN IDでログイン"
 6. Ask user to complete Yahoo! JAPAN ID login manually (email/SMS auth)
 7. After login, click "マイページ"
 8. Click "ポイント履歴" to view history
 9. Select "利用日順" for date ordering
-10. `agent-browser snapshot -c` to get transaction data
+10. `agent-browser --auto-connect snapshot -c` to get transaction data
 11. Click "もっと見る" to load more transactions if needed (repeat snapshot)
 12. Prepare RAW_DATA
 13. Copy RAW_DATA into `tmp/v_point_import_YYYYMMDD.py`

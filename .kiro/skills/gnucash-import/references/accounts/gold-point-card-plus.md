@@ -18,7 +18,7 @@ This is a credit card. Transactions may appear on the statement with a delay, so
 ### Billing Statement Verification
 
 1. Check if `account-guid-cache.json` exists and `updated_at` is within 1 month; regenerate if needed (see SKILL.md)
-2. `agent-browser --headed --args "--disable-blink-features=AutomationControlled" open https://secure.goldpoint.co.jp/gpm/authentication/index.html`
+2. `agent-browser --auto-connect --args "--disable-blink-features=AutomationControlled" open https://secure.goldpoint.co.jp/gpm/authentication/index.html`
 3. Fill password field and click Submit (email is pre-filled from browser profile)
 4. Click `ご利用明細の照会` to open the Webご利用明細 page
 5. For each billing month (starting from the most recent confirmed statement, going backwards):
@@ -27,7 +27,7 @@ This is a credit card. Transactions may appear on the statement with a delay, so
    c. Check if this total already exists in GnuCash (see SKILL.md "Credit Card: Billing Total Check")
    d. If the total exists → all transactions in this statement are already imported; stop going further back
    e. If the total does NOT exist → extract all transactions from this statement and proceed to duplicate detection
-6. For statements where the total is not in GnuCash, extract transaction data via `agent-browser eval "document.querySelector('body').innerText"`
+6. For statements where the total is not in GnuCash, extract transaction data via `agent-browser --auto-connect eval "document.querySelector('body').innerText"`
 7. Perform per-transaction duplicate detection (see SKILL.md "Credit Card: Duplicate Detection")
 8. Prepare RAW_DATA with only new transactions
 9. Copy RAW_DATA into `tmp/gold_point_card_plus_import_YYYYMMDD.py`

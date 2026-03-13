@@ -6,16 +6,16 @@
 
 ## Credentials
 
-Secret question is required. You MUST use `agent-browser --headed` and ask the user to log in manually.
+Secret question is required. You MUST use `agent-browser --auto-connect` and ask the user to log in manually.
 
 ## Import Workflow
 
 1. Check if `account-guid-cache.json` exists and `updated_at` is within 1 month; regenerate if needed (see SKILL.md)
 2. Check DB for last imported transaction date to determine how far back to fetch
-3. `agent-browser --headed open https://sfes.rakuten-bank.co.jp/MS/main/RbS?CID=M_START&CMD=LOGIN&BAAS_CODE=JRE`
+3. `agent-browser --auto-connect open https://sfes.rakuten-bank.co.jp/MS/main/RbS?CID=M_START&CMD=LOGIN&BAAS_CODE=JRE`
 4. Ask user to log in manually (合言葉認証 required)
 5. Click "入出金明細" tab, then click "以前のお取引"
-6. `agent-browser eval "document.querySelector('body').innerText"` to get transaction data
+6. `agent-browser --auto-connect eval "document.querySelector('body').innerText"` to get transaction data
 7. Extract the transaction section from the text (between the header row and the CSV download section)
 8. Copy RAW_DATA into `tmp/jre_bank_import_YYYYMMDD.py`
 9. Run `python3 tmp/jre_bank_import_YYYYMMDD.py review` to show review table

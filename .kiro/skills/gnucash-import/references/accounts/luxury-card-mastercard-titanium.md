@@ -21,7 +21,7 @@ IMPORTANT: This site has bot protection. You MUST NOT navigate by opening URLs d
 ### Card Transaction Import
 
 1. Check if `account-guid-cache.json` exists and `updated_at` is within 1 month; regenerate if needed (see SKILL.md)
-2. `agent-browser --headed open https://www.aplus.co.jp/myaplus/login.html`
+2. `agent-browser --auto-connect open https://www.aplus.co.jp/myaplus/login.html`
 3. Fill ID and password from 1Password, click ログイン
 4. From top page, click `サイトマップ` link
 5. Click `ご利用明細照会` link
@@ -29,7 +29,7 @@ IMPORTANT: This site has bot protection. You MUST NOT navigate by opening URLs d
    a. Note the `お支払い金額` and status (確定/未確定)
    b. Check if this total already exists in GnuCash (see SKILL.md "Credit Card: Billing Total Check")
    c. If the total exists → stop going further back
-   d. If the total does NOT exist → extract transactions via `agent-browser snapshot -c`
+   d. If the total does NOT exist → extract transactions via `agent-browser --auto-connect snapshot -c`
 7. Perform per-transaction duplicate detection (see SKILL.md "Credit Card: Duplicate Detection")
 8. Prepare RAW_DATA with only new transactions (one button text per line)
 9. Copy RAW_DATA into `tmp/luxury_card_mastercard_titanium_import_YYYYMMDD.py`
@@ -42,7 +42,7 @@ IMPORTANT: This site has bot protection. You MUST NOT navigate by opening URLs d
 
 To view unconfirmed transactions, click the "YYYY/MM以降" tab in the date navigation. This tab is an `<a>` inside `.m-navDate__next`. Use:
 ```
-agent-browser eval "document.querySelector('.m-navDate__next a').click()"
+agent-browser --auto-connect eval "document.querySelector('.m-navDate__next a').click()"
 ```
 
 Unconfirmed transactions have pagination. Check for page numbers at the bottom and click to load more.
@@ -52,7 +52,7 @@ See SKILL.md "Credit Card: Current Statement (Unconfirmed)".
 ### Points Import
 
 1. From top page, click `ポイント` link (or from sitemap, click `ポイント照会・交換`)
-2. `agent-browser snapshot -c` to get point history
+2. `agent-browser --auto-connect snapshot -c` to get point history
 3. Each month shows: 通常ポイント, 優待ポイント, 特別ポイント, 交換ポイント, 調整ポイント
 4. Sum all categories for each month to get net point change
 5. Prepare RAW_DATA_POINTS (one line per month: `YYYY-MM\tpoints`)
@@ -67,7 +67,7 @@ See SKILL.md "Credit Card: Current Statement (Unconfirmed)".
 
 ### Confirmed Billing (ご利用明細照会)
 
-Data extracted via `agent-browser snapshot -c` from the billing details page. Each transaction appears as a button element.
+Data extracted via `agent-browser --auto-connect snapshot -c` from the billing details page. Each transaction appears as a button element.
 
 Button text format:
 ```

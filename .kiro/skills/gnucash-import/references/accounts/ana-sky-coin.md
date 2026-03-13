@@ -13,13 +13,13 @@
 
 1. Check if `account-guid-cache.json` exists and `updated_at` is within 1 month; regenerate if needed (see SKILL.md)
 2. Check DB for last imported transaction date to determine how far back to fetch
-3. `agent-browser --headed open https://www.ana.co.jp/ja/jp/amc/`
+3. `agent-browser --auto-connect open https://www.ana.co.jp/ja/jp/amc/`
 4. Click "ログイン", fill username and password from 1Password, click "ログイン"
 5. If a confirmation dialog appears, click "ログイン" again
 6. Navigate to `https://cam.ana.co.jp/psz/amcj/jsp/renew/ecoupon/ecouponReference.jsp`
 7. If prompted to log in again on cam.ana.co.jp, fill the same credentials
 8. Default view shows latest transactions; click month links under "過去分（月別）" for older data
-9. `agent-browser snapshot -c -s "#meisaitable"` to get transaction table
+9. `agent-browser --auto-connect snapshot -c -s "#meisaitable"` to get transaction table
 10. Prepare RAW_DATA
 11. Copy RAW_DATA into `tmp/ana_sky_coin_import_YYYYMMDD.py`
 12. Run `python3 tmp/ana_sky_coin_import_YYYYMMDD.py review` to show review table

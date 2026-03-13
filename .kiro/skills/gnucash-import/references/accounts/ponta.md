@@ -9,19 +9,19 @@
 - Username: `op://gnucash/Recruit/username`
 - Password: `op://gnucash/Recruit/password`
 
-2FA is required at login (authenticator app). You MUST use `agent-browser --headed` and ask the user to enter the 2FA code manually.
+2FA is required at login (authenticator app). You MUST use `agent-browser --auto-connect` and ask the user to enter the 2FA code manually.
 
 ## Import Workflow
 
 1. Check if `account-guid-cache.json` exists and `updated_at` is within 1 month; regenerate if needed (see SKILL.md)
 2. Check DB for last imported transaction date to determine how far back to fetch
-3. `agent-browser --headed open https://point.recruit.co.jp/point/`
+3. `agent-browser --auto-connect open https://point.recruit.co.jp/point/`
 4. Click "ログイン", fill username and password from 1Password, click "ログイン"
 5. Ask user to enter 2FA code manually, then click "認証する"
 6. Close any popup if present (click "閉じる")
 7. Navigate to ポイント履歴: click "ポイント通帳" then "ポイント履歴を見る"
 8. Select time range from tabs (最近の履歴/今月/先月/先々月) or dropdown (up to 13 months back) based on last imported date
-9. `agent-browser snapshot` to get table data
+9. `agent-browser --auto-connect snapshot` to get table data
 10. Prepare RAW_DATA
 11. Copy RAW_DATA into `tmp/ponta_import_YYYYMMDD.py`
 12. Run `python3 tmp/ponta_import_YYYYMMDD.py review` to show review table

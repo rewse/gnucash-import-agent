@@ -13,11 +13,11 @@
 
 1. Check if `account-guid-cache.json` exists and `updated_at` is within 1 month; regenerate if needed (see SKILL.md)
 2. Check DB for last imported transaction date to determine how far back to fetch
-3. `agent-browser --headed open https://www.marriott.com/`
+3. `agent-browser --auto-connect open https://www.marriott.com/`
 4. Click "サインインまたは入会する" → "サインイン", fill username and password from 1Password, click "サインイン"
 5. After login, navigate to Activity page: `https://www.marriott.com/loyalty/myAccount/activity.mi`
 6. Change duration filter to "Last 24 Months" (or appropriate range) to see all transactions since last import
-7. `agent-browser snapshot -c` to get transaction data
+7. `agent-browser --auto-connect snapshot -c` to get transaction data
 8. Prepare RAW_DATA
 9. Copy RAW_DATA into `tmp/marriott_rewards_import_YYYYMMDD.py`
 10. Run `python3 tmp/marriott_rewards_import_YYYYMMDD.py review` to show review table

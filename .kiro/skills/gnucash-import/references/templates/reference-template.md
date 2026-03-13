@@ -16,10 +16,10 @@ For multi-currency sources, list each currency account:
 
 1. Check if `account-guid-cache.json` exists and `updated_at` is within 1 month; regenerate if needed (see SKILL.md)
 2. Check DB for last imported transaction date to determine how far back to fetch
-3. `agent-browser --headed open {LOGIN_URL}`
+3. `agent-browser --auto-connect open {LOGIN_URL}`
 4. {LOGIN_STEPS}
 5. {NAVIGATE_TO_STATEMENT}
-6. `agent-browser snapshot` to get transaction data
+6. `agent-browser --auto-connect snapshot` to get transaction data
 7. Prepare RAW_DATA
 8. Copy RAW_DATA into `tmp/{source_slug}_import_YYYYMMDD.py`
 9. Run `python3 tmp/{source_slug}_import_YYYYMMDD.py review` to show review table

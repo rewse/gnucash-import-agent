@@ -13,10 +13,10 @@
 
 1. Check if `account-guid-cache.json` exists and `updated_at` is within 1 month; regenerate if needed (see SKILL.md)
 2. Check DB for last imported transaction date to determine how far back to fetch
-3. `agent-browser --headed open https://login.starbucks.co.jp/login`
+3. `agent-browser --auto-connect open https://login.starbucks.co.jp/login`
 4. Login with 1Password credentials
 5. `agent-browser open https://sbcard.starbucks.co.jp/card/history`
-6. `agent-browser snapshot` to get transaction data
+6. `agent-browser --auto-connect snapshot` to get transaction data
 7. Prepare RAW_DATA
 8. Copy RAW_DATA into `tmp/starbucks_import_YYYYMMDD.py`
 9. Run `python3 tmp/starbucks_import_YYYYMMDD.py review` to show review table

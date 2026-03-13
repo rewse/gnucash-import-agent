@@ -14,12 +14,12 @@ No CAPTCHA or OTP required.
 
 1. Check if `account-guid-cache.json` exists and `updated_at` is within 1 month; regenerate if needed (see SKILL.md)
 2. Check DB for last imported transaction date to determine how far back to fetch
-3. `agent-browser --headed open 'https://login.account.rakuten.com/sso/authorize?client_id=rakuten_ichiba_top_web&service_id=s245&response_type=code&scope=openid&redirect_uri=https://www.rakuten.co.jp/#/sign_in'`
+3. `agent-browser --auto-connect open 'https://login.account.rakuten.com/sso/authorize?client_id=rakuten_ichiba_top_web&service_id=s245&response_type=code&scope=openid&redirect_uri=https://www.rakuten.co.jp/#/sign_in'`
 4. Fill username from 1Password (`op://gnucash/Rakuten/username`), click 次へ
 5. Fill password from 1Password (`op://gnucash/Rakuten/password`), click 次へ
 6. After login, `agent-browser open 'https://point.rakuten.co.jp/history/'`
 7. Default view shows last 7 months. If older data is needed, click さらに絞り込む and change the date range
-8. `agent-browser snapshot` to get transaction data
+8. `agent-browser --auto-connect snapshot` to get transaction data
 9. Prepare RAW_DATA
 10. Copy RAW_DATA into `tmp/rakuten_super_point_import_YYYYMMDD.py`
 11. Run `python3 tmp/rakuten_super_point_import_YYYYMMDD.py review` to show review table

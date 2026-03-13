@@ -9,16 +9,16 @@
 - Username: `op://gnucash/Yodobashi Camera/username`
 - Password: `op://gnucash/Yodobashi Camera/password`
 
-No CAPTCHA required. You MUST use `agent-browser --headed` with `--args "--disable-blink-features=AutomationControlled"` to avoid WAF blocking.
+No CAPTCHA required. You MUST use `agent-browser --auto-connect` with `--args "--disable-blink-features=AutomationControlled"` to avoid WAF blocking.
 
 ## Import Workflow
 
 1. Check if `account-guid-cache.json` exists and `updated_at` is within 1 month; regenerate if needed (see SKILL.md)
 2. Check DB for last imported transaction date to determine how far back to fetch
-3. `agent-browser --headed --args "--disable-blink-features=AutomationControlled" open "https://order.yodobashi.com/yc/login/index.html?returnUrl=https://www.yodobashi.com/"`
+3. `agent-browser --auto-connect --args "--disable-blink-features=AutomationControlled" open "https://order.yodobashi.com/yc/login/index.html?returnUrl=https://www.yodobashi.com/"`
 4. Fill username and password from 1Password, click "ログイン"
 5. `agent-browser open "https://order.yodobashi.com/yc/mypage/pointhistory/index.html"`
-6. `agent-browser snapshot` to get table data; check for pagination ("次のページ" link) and collect all pages
+6. `agent-browser --auto-connect snapshot` to get table data; check for pagination ("次のページ" link) and collect all pages
 7. For "ポイントご利用" transactions, look up order details from order history or email to determine what was purchased and infer GnuCash account
 8. Prepare RAW_DATA with resolved account and item info
 9. Copy RAW_DATA into `tmp/yodobashi_gold_point_import_YYYYMMDD.py`

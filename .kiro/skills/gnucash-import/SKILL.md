@@ -27,7 +27,7 @@ Rules:
 
 ### Browser Automation
 
-- You MUST use `agent-browser --headed` for web automation
+- You MUST use `agent-browser --auto-connect` for web automation
 - You MUST run `agent-browser --help` BEFORE the FIRST `agent-browser` command in each session
 - If encountering unusual errors or pages that never finish loading, you SHOULD retry with `--args "--disable-blink-features=AutomationControlled"` to bypass bot detection
 

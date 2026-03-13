@@ -13,11 +13,11 @@
 
 1. Check if `account-guid-cache.json` exists and `updated_at` is within 1 month; regenerate if needed (see SKILL.md)
 2. Check DB for last imported transaction date to determine how far back to fetch
-3. `agent-browser --headed open https://www.ihg.com/hotels/jp/ja/reservation`
+3. `agent-browser --auto-connect open https://www.ihg.com/hotels/jp/ja/reservation`
 4. Click "ログイン", fill username and password from 1Password, click "ログイン"
 5. After login, click "Account Home" → "アカウントアクティビティ"
 6. Activity page URL: `https://www.ihg.com/rewardsclub/jp/ja/account-mgmt/activity`
-7. `agent-browser snapshot -c` to get transaction data
+7. `agent-browser --auto-connect snapshot -c` to get transaction data
 8. Prepare RAW_DATA
 9. Copy RAW_DATA into `tmp/ihg_rewards_club_import_YYYYMMDD.py`
 10. Run `python3 tmp/ihg_rewards_club_import_YYYYMMDD.py review` to show review table

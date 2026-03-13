@@ -6,16 +6,16 @@
 
 ## Credentials
 
-CAPTCHA is required. You MUST use `agent-browser --headed` and ask the user to input CAPTCHA manually.
+CAPTCHA is required. You MUST use `agent-browser --auto-connect` and ask the user to input CAPTCHA manually.
 
 ## Import Workflow
 
 1. Check if `account-guid-cache.json` exists and `updated_at` is within 1 month; regenerate if needed (see SKILL.md)
 2. Check DB for last imported transaction date to determine how far back to fetch
-3. `agent-browser --headed open https://www.mobilesuica.com/`
+3. `agent-browser --auto-connect open https://www.mobilesuica.com/`
 4. Manual login (CAPTCHA required)
 5. Click "SF（電子マネー） 利用履歴"
-6. `agent-browser snapshot` to get table data
+6. `agent-browser --auto-connect snapshot` to get table data
 7. Prepare RAW_DATA
 8. Copy RAW_DATA into `tmp/suica_import_YYYYMMDD.py`
 9. Run `python3 tmp/suica_import_YYYYMMDD.py review` to show review table

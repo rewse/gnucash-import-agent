@@ -9,17 +9,17 @@
 - Username: `op://gnucash/Bic Camera/username`
 - Password: `op://gnucash/Bic Camera/password`
 
-CAPTCHA is required at login. You MUST use `agent-browser --headed` with `--args "--disable-blink-features=AutomationControlled"` and ask the user to complete the CAPTCHA manually.
+CAPTCHA is required at login. You MUST use `agent-browser --auto-connect` with `--args "--disable-blink-features=AutomationControlled"` and ask the user to complete the CAPTCHA manually.
 
 ## Import Workflow
 
 1. Check if `account-guid-cache.json` exists and `updated_at` is within 1 month; regenerate if needed (see SKILL.md)
 2. Check DB for last imported transaction date to determine how far back to fetch
-3. `agent-browser --headed --args "--disable-blink-features=AutomationControlled" open https://www.biccamera.com/bc/member/SfrLogin.jsp`
+3. `agent-browser --auto-connect --args "--disable-blink-features=AutomationControlled" open https://www.biccamera.com/bc/member/SfrLogin.jsp`
 4. Fill username and password from 1Password, ask user to complete CAPTCHA, then click "ログインする"
 5. `agent-browser open https://www.biccamera.com/bc/member/MemBcPointHistory.jsp`
 6. Select time range from dropdown (3ヶ月以内 / 6ヶ月以内 / 1年以内) based on last imported date
-7. `agent-browser snapshot` to get table data
+7. `agent-browser --auto-connect snapshot` to get table data
 8. For "利用ポイント" transactions, look up order details via "詳しく見る" link to get product name and infer GnuCash account
 9. Prepare RAW_DATA with resolved account and item info
 10. Copy RAW_DATA into `tmp/bic_point_import_YYYYMMDD.py`

@@ -6,17 +6,17 @@
 
 ## Credentials
 
-CAPTCHA is required. You MUST use `agent-browser --headed` and ask the user to login manually.
+CAPTCHA is required. You MUST use `agent-browser --auto-connect` and ask the user to login manually.
 
 ## Import Workflow
 
 1. Check if `account-guid-cache.json` exists and `updated_at` is within 1 month; regenerate if needed (see SKILL.md)
 2. Check DB for last imported transaction date to determine how far back to fetch
-3. `agent-browser --headed open https://app.revolut.com/start`
+3. `agent-browser --auto-connect open https://app.revolut.com/start`
 4. Ask user to login manually (CAPTCHA required)
 5. Click "すべて表示" to see full transaction history
 6. Click month buttons to expand each month's transactions
-7. `agent-browser snapshot -i` to get transaction data
+7. `agent-browser --auto-connect snapshot -i` to get transaction data
 8. Scroll and repeat snapshot to get all transactions
 9. Prepare RAW_DATA
 10. Copy RAW_DATA into `tmp/revolut_import_YYYYMMDD.py`

@@ -44,7 +44,7 @@ USD cash: Source account is `Assets:USD - Current Assets:Securities:SBI Securiti
 
 ## Credentials
 
-Passkey authentication required. You MUST use `agent-browser --headed` and ask the user to log in manually.
+Passkey authentication required. You MUST use `agent-browser --auto-connect` and ask the user to log in manually.
 
 ## Import Workflow
 
@@ -52,11 +52,11 @@ Passkey authentication required. You MUST use `agent-browser --headed` and ask t
 
 1. Check if `account-guid-cache.json` exists and `updated_at` is within 1 month; regenerate if needed (see SKILL.md)
 2. Check DB for last imported transaction date to determine how far back to fetch
-3. `agent-browser --headed open https://login.sbisec.co.jp/login/entry`
+3. `agent-browser --auto-connect open https://login.sbisec.co.jp/login/entry`
 4. Ask user to log in manually (passkey authentication required)
 5. Navigate to 口座管理 > 取引履歴
 6. Set date range and click 照会
-7. `agent-browser eval "document.querySelector('body').innerText"` to get transaction data
+7. `agent-browser --auto-connect eval "document.querySelector('body').innerText"` to get transaction data
 8. If multiple pages, click 次へ→ and repeat step 7
 9. Extract the transaction rows from the text (between header row and footer)
 10. Copy RAW_DATA_JPY into `tmp/sbi_securities_import_YYYYMMDD.py`
@@ -80,7 +80,7 @@ Passkey authentication required. You MUST use `agent-browser --headed` and ask t
 
 1. Navigate to 入出金 > 外貨入出金・振替 > 入出金明細
 2. Set period and click 照会
-3. `agent-browser eval "document.querySelector('body').innerText"` to get data
+3. `agent-browser --auto-connect eval "document.querySelector('body').innerText"` to get data
 4. Extract the transaction section
 5. Copy RAW_DATA_USD_CASH into `tmp/sbi_securities_import_YYYYMMDD.py`
 6. Run `python3 tmp/sbi_securities_import_YYYYMMDD.py review-usd-cash`

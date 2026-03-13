@@ -7,13 +7,13 @@
 
 ## Credentials
 
-Manual login required. You MUST use `agent-browser --headed` and ask the user to log in manually.
+Manual login required. You MUST use `agent-browser --auto-connect` and ask the user to log in manually.
 
 ## Import Workflow
 
 1. Check if `account-guid-cache.json` exists and `updated_at` is within 1 month; regenerate if needed (see SKILL.md)
 2. Check DB for last imported transaction date to determine how far back to fetch
-3. `agent-browser --headed open https://sonybank.jp/pages/da/daya010a/?lang=ja`
+3. `agent-browser --auto-connect open https://sonybank.jp/pages/da/daya010a/?lang=ja`
 4. Ask user to log in manually
 5. Click "通帳" button on the dashboard
 6. Click "普通預金取引履歴" link

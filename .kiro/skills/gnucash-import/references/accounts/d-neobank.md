@@ -14,13 +14,13 @@ Sub-accounts (purpose accounts):
 
 ## Credentials
 
-Manual login required. You MUST use `agent-browser --headed` and ask the user to log in manually.
+Manual login required. You MUST use `agent-browser --auto-connect` and ask the user to log in manually.
 
 ## Import Workflow
 
 1. Check if `account-guid-cache.json` exists and `updated_at` is within 1 month; regenerate if needed (see SKILL.md)
 2. Check DB for existing transactions (see Duplicate Detection below)
-3. `agent-browser --headed open https://www.netbk.co.jp/contents/pages/wpl010101E/i010101CT/DI01010240`
+3. `agent-browser --auto-connect open https://www.netbk.co.jp/contents/pages/wpl010101E/i010101CT/DI01010240`
 4. Ask user to log in manually
 5. After login, click "入出金明細" link in the navigation bar
 
@@ -28,14 +28,14 @@ Manual login required. You MUST use `agent-browser --headed` and ask the user to
 
 6. Ensure "代表口座" and "円" are selected (default after navigating to 入出金明細)
 7. Click the target month in the left sidebar to switch months
-8. `agent-browser snapshot -c -s "main"` to get transaction data
+8. `agent-browser --auto-connect snapshot -c -s "main"` to get transaction data
 9. Repeat steps 7-8 for each month needed
 
 ### USD 代表口座
 
 10. Click the "円" currency button, then select "米ドル"
 11. Click the target month in the left sidebar
-12. `agent-browser snapshot -c -s "main"` to get transaction data
+12. `agent-browser --auto-connect snapshot -c -s "main"` to get transaction data
 13. Repeat steps 11-12 for each month needed
 
 ### Currency Transfer Matching

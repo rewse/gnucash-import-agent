@@ -6,18 +6,18 @@
 
 ## Credentials
 
-Login via passkey (dAccount). You MUST use `agent-browser --headed` and ask the user to authenticate manually.
+Login via passkey (dAccount). You MUST use `agent-browser --auto-connect` and ask the user to authenticate manually.
 
 ## Import Workflow
 
 1. Check if `account-guid-cache.json` exists and `updated_at` is within 1 month; regenerate if needed (see SKILL.md)
 2. Check DB for last imported transaction date to determine how far back to fetch
-3. `agent-browser --headed open https://dpoint.docomo.ne.jp/`
+3. `agent-browser --auto-connect open https://dpoint.docomo.ne.jp/`
 4. Click "dアカウントでログイン", ask user to authenticate via passkey
 5. Click on "dポイント合計 Nポイント" link to go to point details
 6. Click "ポイント獲得・利用履歴を見る"
 7. Select month from dropdown (up to 13 months back) based on last imported date
-8. `agent-browser snapshot -c -d 3` to get transaction data
+8. `agent-browser --auto-connect snapshot -c -d 3` to get transaction data
 9. Repeat for each month needed
 10. Prepare RAW_DATA
 11. Copy RAW_DATA into `tmp/d_point_import_YYYYMMDD.py`

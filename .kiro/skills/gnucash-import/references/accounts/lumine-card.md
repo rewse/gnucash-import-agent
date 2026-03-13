@@ -18,10 +18,10 @@ This is a credit card. Transactions may appear on the statement with a delay, so
 ### Billing Statement Verification
 
 1. Check if `account-guid-cache.json` exists and `updated_at` is within 1 month; regenerate if needed (see SKILL.md)
-2. `agent-browser --headed --args "--disable-blink-features=AutomationControlled" open https://www.viewsnet.jp/default.htm`
+2. `agent-browser --auto-connect --args "--disable-blink-features=AutomationControlled" open https://www.viewsnet.jp/default.htm`
 3. Fill service ID and password fields, click ログイン
 4. After login, close the rtoaster popup:
-   `agent-browser eval "document.getElementById('rtoaster_popup').style.display='none'; document.getElementById('rt.popup-overlay_rtoaster_popup').style.display='none'"`
+   `agent-browser --auto-connect eval "document.getElementById('rtoaster_popup').style.display='none'; document.getElementById('rt.popup-overlay_rtoaster_popup').style.display='none'"`
 5. Click `ご利用明細照会` to open the statement page
 6. If multiple cards exist, select `ルミネカード` from the card dropdown
 7. For each billing month (starting from the most recent confirmed statement, going backwards):
@@ -44,7 +44,7 @@ This is a credit card. Transactions may appear on the statement with a delay, so
 See SKILL.md "Credit Card: Current Statement (Unconfirmed)".
 
 Click `請求予定の明細` to view unconfirmed transactions. This page does NOT have CSV download; extract data via:
-`agent-browser eval "document.querySelector('table[summary*=\"ご利用年月日\"]').innerText"`
+`agent-browser --auto-connect eval "document.querySelector('table[summary*=\"ご利用年月日\"]').innerText"`
 
 Use the unconfirmed format for RAW_DATA.
 

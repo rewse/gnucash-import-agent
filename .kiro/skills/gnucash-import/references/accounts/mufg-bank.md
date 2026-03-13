@@ -6,17 +6,17 @@
 
 ## Credentials
 
-Manual login required. You MUST use `agent-browser --headed` and ask the user to log in manually.
+Manual login required. You MUST use `agent-browser --auto-connect` and ask the user to log in manually.
 
 ## Import Workflow
 
 1. Check if `account-guid-cache.json` exists and `updated_at` is within 1 month; regenerate if needed (see SKILL.md)
 2. Check DB for last imported transaction date to determine how far back to fetch
-3. `agent-browser --headed open https://directg.s.bk.mufg.jp/APL/LGP_P_01/PU/LG_0001/LG_0001_PC01`
+3. `agent-browser --auto-connect open https://directg.s.bk.mufg.jp/APL/LGP_P_01/PU/LG_0001/LG_0001_PC01`
 4. Ask user to log in manually
 5. Click "入出金明細" link on the top page
 6. Change period filter to cover the desired date range (default is 最近30日間; use 期間指定 for custom range)
-7. `agent-browser eval "document.querySelector('body').innerText"` to get transaction data
+7. `agent-browser --auto-connect eval "document.querySelector('body').innerText"` to get transaction data
 8. Extract the transaction section from the text (between the header row and the footer)
 9. Copy RAW_DATA into `tmp/mufg_bank_import_YYYYMMDD.py`
 10. Run `python3 tmp/mufg_bank_import_YYYYMMDD.py review` to show review table

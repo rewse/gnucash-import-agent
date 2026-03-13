@@ -8,13 +8,13 @@
 
 ## Credentials
 
-Manual login required. You MUST use `agent-browser --headed` and ask the user to log in manually.
+Manual login required. You MUST use `agent-browser --auto-connect` and ask the user to log in manually.
 
 ## Import Workflow
 
 1. Check if `account-guid-cache.json` exists and `updated_at` is within 1 month; regenerate if needed (see SKILL.md)
 2. Check DB for last imported transaction date to determine how far back to fetch
-3. `agent-browser --headed open https://bk.web.sbishinseibank.co.jp/SFC/apps/services/www/SFC/desktopbrowser/default/login?mode=1`
+3. `agent-browser --auto-connect open https://bk.web.sbishinseibank.co.jp/SFC/apps/services/www/SFC/desktopbrowser/default/login?mode=1`
 4. Ask user to log in manually
 5. Navigate to transaction history for each account type:
    - **JPY Savings**: From top page, click "入出金明細" link under "円普通預金" section

@@ -8,7 +8,7 @@
 
 ## Credentials
 
-Login via Yahoo! JAPAN ID with passkey. You MUST use `agent-browser --headed` and ask the user to complete passkey authentication manually.
+Login via Yahoo! JAPAN ID with passkey. You MUST use `agent-browser --auto-connect` and ask the user to complete passkey authentication manually.
 
 ## Import Workflow
 
@@ -17,7 +17,7 @@ This is a credit card. Follow the billing-statement-based verification workflow.
 ### Billing Statement Verification
 
 1. Check if `account-guid-cache.json` exists and `updated_at` is within 1 month; regenerate if needed (see SKILL.md)
-2. `agent-browser --headed open https://www.paypay-card.co.jp/member-login?promptParam=3`
+2. `agent-browser --auto-connect open https://www.paypay-card.co.jp/member-login?promptParam=3`
 3. Ask user to complete Yahoo! JAPAN ID passkey login
 4. Dismiss any popups or tutorials that appear after login:
    - Tutorial appears with `次へ` (Next) buttons/links
@@ -35,7 +35,7 @@ This is a credit card. Follow the billing-statement-based verification workflow.
    b. Check if this total already exists in GnuCash (see SKILL.md "Credit Card: Billing Total Check")
    c. If the total exists → all transactions in this statement are already imported; stop going further back
    d. If the total does NOT exist → extract all transactions and proceed to duplicate detection
-9. Extract transaction data via `agent-browser snapshot` (transactions appear as menuitem elements)
+9. Extract transaction data via `agent-browser --auto-connect snapshot` (transactions appear as menuitem elements)
 10. Perform per-transaction duplicate detection (see SKILL.md "Credit Card: Duplicate Detection")
 11. Prepare RAW_DATA with only new transactions
 12. Copy RAW_DATA into `tmp/paypay_card_jcb_import_YYYYMMDD.py`
@@ -54,7 +54,7 @@ See SKILL.md "Credit Card: Current Statement (Unconfirmed)".
 
 ## Browser Data Format
 
-Transaction data extracted via `agent-browser snapshot` from the statement page (`/member/statement/monthly`).
+Transaction data extracted via `agent-browser --auto-connect snapshot` from the statement page (`/member/statement/monthly`).
 
 Each transaction appears as a menuitem element with text in the format: `{merchant} {date} {amount}円`
 

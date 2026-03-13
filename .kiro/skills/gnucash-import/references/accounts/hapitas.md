@@ -6,18 +6,18 @@
 
 ## Credentials
 
-CAPTCHA is required at login. Ask the user to log in manually at https://hapitas.jp/ using `agent-browser --headed`.
+CAPTCHA is required at login. Ask the user to log in manually at https://hapitas.jp/ using `agent-browser --auto-connect`.
 
 ## Import Workflow
 
 1. Check if `account-guid-cache.json` exists and `updated_at` is within 1 month; regenerate if needed (see SKILL.md)
 2. Check DB for last imported transaction date to determine how far back to fetch
-3. `agent-browser --headed open https://hapitas.jp/`
+3. `agent-browser --auto-connect open https://hapitas.jp/`
 4. Ask user to log in manually (CAPTCHA required)
-5. Remove popups: `agent-browser eval "document.querySelectorAll('[class*=modal], [class*=popup], [class*=overlay]').forEach(el => el.remove())"`
+5. Remove popups: `agent-browser --auto-connect eval "document.querySelectorAll('[class*=modal], [class*=popup], [class*=overlay]').forEach(el => el.remove())"`
 6. Navigate to 通帳: `agent-browser click` on "通帳" link (or `agent-browser open https://hapitas.jp/bankbook/`)
 7. Select target month from dropdown and click "検索"
-8. `agent-browser snapshot -c -s "table.data-table"` to get transaction data
+8. `agent-browser --auto-connect snapshot -c -s "table.data-table"` to get transaction data
 9. Repeat for additional months as needed
 10. Prepare RAW_DATA
 11. Copy RAW_DATA into `tmp/hapitas_import_YYYYMMDD.py`

@@ -8,7 +8,7 @@
 
 ## Credentials
 
-Password field on Vpass login does not accept automated input. You MUST use `agent-browser --headed` and ask the user to enter the password manually.
+Password field on Vpass login does not accept automated input. You MUST use `agent-browser --auto-connect` and ask the user to enter the password manually.
 
 ## Import Workflow
 
@@ -17,7 +17,7 @@ This is a credit card. Transactions may appear on the statement with a delay, so
 ### Billing Statement Verification
 
 1. Check if `account-guid-cache.json` exists and `updated_at` is within 1 month; regenerate if needed (see SKILL.md)
-2. `agent-browser --headed open https://www.smbc-card.com/mem/index.jsp`
+2. `agent-browser --auto-connect open https://www.smbc-card.com/mem/index.jsp`
 3. Ask user to enter password manually and log in
 4. Switch card to `Ａｍａｚｏｎ旧ゴールド` using the card selector dropdown (`#vp-view-VC0205-001_RS0051_cardIdentifyKey`)
 5. Click `ご利用明細` to open the WEB明細書 page
@@ -27,7 +27,7 @@ This is a credit card. Transactions may appear on the statement with a delay, so
    c. Check if this total already exists in GnuCash (see SKILL.md "Credit Card: Billing Total Check")
    d. If the total exists → all transactions in this statement are already imported; stop going further back
    e. If the total does NOT exist → extract all transactions from this statement and proceed to duplicate detection
-7. For statements where the total is not in GnuCash, extract transaction data via `agent-browser eval "document.querySelector('body').innerText"`
+7. For statements where the total is not in GnuCash, extract transaction data via `agent-browser --auto-connect eval "document.querySelector('body').innerText"`
 8. Perform per-transaction duplicate detection (see SKILL.md "Credit Card: Duplicate Detection")
 9. Prepare RAW_DATA with only new transactions
 10. Copy RAW_DATA into `tmp/amazon_mastercard_gold_import_YYYYMMDD.py`

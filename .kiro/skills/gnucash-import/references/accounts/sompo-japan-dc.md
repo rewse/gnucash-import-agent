@@ -22,13 +22,13 @@ Buy (掛金): Transfer Account → Fund Account (on settlement date)
 
 1. Check if `account-guid-cache.json` exists and `updated_at` is within 1 month; regenerate if needed (see SKILL.md)
 2. Check DB for last imported transaction date to determine how far back to fetch
-3. `agent-browser --headed open https://www.rk.sjdc.co.jp/RKWEB/RkDCMember/Common/JP_D_BFKLogin.aspx`
+3. `agent-browser --auto-connect open https://www.rk.sjdc.co.jp/RKWEB/RkDCMember/Common/JP_D_BFKLogin.aspx`
 4. Login with 1Password credentials
 5. If password change prompt appears, click 「今はパスワードを変更しない」
 6. Click 「取引履歴等の確認」 in the sidebar
 7. Click 「取引履歴」
 8. Select period (当月を含む12ヶ月) and click 「実行」
-9. `agent-browser eval "document.querySelector('body').innerText"` to get transaction data
+9. `agent-browser --auto-connect eval "document.querySelector('body').innerText"` to get transaction data
 10. If multiple pages, click 「次へ >>」 and repeat step 9
 11. Extract transaction rows from the text
 12. Copy RAW_DATA into `tmp/sompo_japan_dc_import_YYYYMMDD.py`

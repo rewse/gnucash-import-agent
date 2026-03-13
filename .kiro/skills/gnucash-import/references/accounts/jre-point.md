@@ -8,17 +8,17 @@
 
 - Second Password: `op://gnucash/JRE POINT/password`
 
-Passkey is required. You MUST use `agent-browser --headed` and ask the user to input Passkey manually.
+Passkey is required. You MUST use `agent-browser --auto-connect` and ask the user to input Passkey manually.
 
 ## Import Workflow
 
 1. Check if `account-guid-cache.json` exists and `updated_at` is within 1 month; regenerate if needed (see SKILL.md)
 2. Check DB for last imported transaction date to determine how far back to fetch
 3. Ask the user to log in to https://www.jrepoint.jp/ using JRE ID and complete SMS authentication
-4. Once logged in, `agent-browser --headed open https://www.jrepoint.jp/member/pointlog/`
+4. Once logged in, `agent-browser --auto-connect open https://www.jrepoint.jp/member/pointlog/`
 5. Second password page appears — fill from 1Password (`op://gnucash/JRE POINT/password`) and click 再認証
 6. Navigate months using 前の月/次の月 links based on last imported date
-7. `agent-browser snapshot` to get table data for each month
+7. `agent-browser --auto-connect snapshot` to get table data for each month
 8. Prepare RAW_DATA
 9. Copy RAW_DATA into `tmp/jre_point_import_YYYYMMDD.py`
 10. Run `python3 tmp/jre_point_import_YYYYMMDD.py review` to show review table

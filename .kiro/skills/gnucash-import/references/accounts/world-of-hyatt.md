@@ -6,16 +6,16 @@
 
 ## Credentials
 
-Passkey is required. You MUST use `agent-browser --headed` and ask the user to input Passkey manually.
+Passkey is required. You MUST use `agent-browser --auto-connect` and ask the user to input Passkey manually.
 
 ## Import Workflow
 
 1. Check if `account-guid-cache.json` exists and `updated_at` is within 1 month; regenerate if needed (see SKILL.md)
 2. Check DB for last imported transaction date to determine how far back to fetch
-3. `agent-browser --headed --args "--disable-blink-features=AutomationControlled" open https://www.hyatt.com/ja-JP/member/sign-in?returnUrl=https://www.hyatt.com/loyalty/ja-JP`
+3. `agent-browser --auto-connect --args "--disable-blink-features=AutomationControlled" open https://www.hyatt.com/ja-JP/member/sign-in?returnUrl=https://www.hyatt.com/loyalty/ja-JP`
 4. User manually logs in with passkey
 5. After login, navigate to account activity: `agent-browser open https://www.hyatt.com/profile/ja-JP/account-activity`
-6. `agent-browser snapshot -c` to get transaction data
+6. `agent-browser --auto-connect snapshot -c` to get transaction data
 7. Expand entries with the expand button if detail breakdown is needed
 8. Prepare RAW_DATA
 9. Copy RAW_DATA into `tmp/world_of_hyatt_import_YYYYMMDD.py`

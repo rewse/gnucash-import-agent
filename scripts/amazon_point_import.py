@@ -132,7 +132,7 @@ def output_sql(transactions):
         # Source account split (Amazon Point)
         split_guid = uuid.uuid4().hex
         print(f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)")
-        print(f"VALUES ('{split_guid}', '{tx_guid}', '{SOURCE_ACCOUNT}', '', '', 'n', NULL, {tx['total']}, 1, {tx['total']}, 1, NULL);")
+        print(f"VALUES ('{split_guid}', '{tx_guid}', '{SOURCE_ACCOUNT}', '', '', 'c', NULL, {tx['total']}, 1, {tx['total']}, 1, NULL);")
 
         # Transfer splits
         for split in tx['splits']:
@@ -140,7 +140,7 @@ def output_sql(transactions):
             account_guid = get_guid(split['account'])
             amount = -split['points']
             print(f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)")
-            print(f"VALUES ('{split_guid}', '{tx_guid}', '{account_guid}', '', '', 'n', NULL, {amount}, 1, {amount}, 1, NULL);")
+            print(f"VALUES ('{split_guid}', '{tx_guid}', '{account_guid}', '', '', 'c', NULL, {amount}, 1, {amount}, 1, NULL);")
 
         print()
 

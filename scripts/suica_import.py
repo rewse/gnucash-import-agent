@@ -46,7 +46,7 @@ ACCOUNT_NAMES = {
 }
 
 # Tokyo Metro stations (no prefix, excluding NEAREST_STATION which is added dynamically)
-TOKYO_METRO_STATIONS = ['溜池山王', '赤坂見附']
+TOKYO_METRO_STATIONS = ['溜池山王', '赤坂見附', '後楽園']
 
 # Keio stations
 KEIO_STATIONS = ['南大沢']
@@ -214,9 +214,9 @@ def output_sql(transactions):
         print(f"INSERT INTO transactions (guid, currency_guid, num, post_date, enter_date, description)")
         print(f"VALUES ('{tx_guid}', '{JPY_CURRENCY}', '', '{date_str}', NOW(), {desc_sql});")
         print(f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)")
-        print(f"VALUES ('{split1_guid}', '{tx_guid}', '{SUICA_ACCOUNT}', '', '', 'n', NULL, {tx['amount']}, 1, {tx['amount']}, 1, NULL);")
+        print(f"VALUES ('{split1_guid}', '{tx_guid}', '{SUICA_ACCOUNT}', '', '', 'c', NULL, {tx['amount']}, 1, {tx['amount']}, 1, NULL);")
         print(f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)")
-        print(f"VALUES ('{split2_guid}', '{tx_guid}', '{expense_account}', '', '', 'n', NULL, {-tx['amount']}, 1, {-tx['amount']}, 1, NULL);")
+        print(f"VALUES ('{split2_guid}', '{tx_guid}', '{expense_account}', '', '', 'c', NULL, {-tx['amount']}, 1, {-tx['amount']}, 1, NULL);")
         print()
 
     print("COMMIT;")

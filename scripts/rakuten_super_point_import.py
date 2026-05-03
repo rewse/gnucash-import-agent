@@ -145,9 +145,9 @@ def output_sql(transactions):
         print(f"INSERT INTO transactions (guid, currency_guid, num, post_date, enter_date, description)")
         print(f"VALUES ('{tx_guid}', '{JPY_CURRENCY}', '', '{date_str}', NOW(), {desc_sql});")
         print(f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)")
-        print(f"VALUES ('{split1_guid}', '{tx_guid}', '{source}', '', '', 'n', NULL, {amount}, 1, {amount}, 1, NULL);")
+        print(f"VALUES ('{split1_guid}', '{tx_guid}', '{source}', '', '', 'c', NULL, {amount}, 1, {amount}, 1, NULL);")
         print(f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)")
-        print(f"VALUES ('{split2_guid}', '{tx_guid}', '{transfer_guid}', '', '', 'n', NULL, {-amount}, 1, {-amount}, 1, NULL);")
+        print(f"VALUES ('{split2_guid}', '{tx_guid}', '{transfer_guid}', '', '', 'c', NULL, {-amount}, 1, {-amount}, 1, NULL);")
         print()
 
     print("COMMIT;")

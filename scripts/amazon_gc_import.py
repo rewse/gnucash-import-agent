@@ -164,7 +164,7 @@ def output_sql(transactions):
         # Amazon GC split (asset side)
         split_guid = str(uuid.uuid4()).replace('-', '')
         print(f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)")
-        print(f"VALUES ('{split_guid}', '{tx_guid}', '{AMAZON_GC_ACCOUNT}', '', '', 'n', NULL, {tx['total_amount']}, 1, {tx['total_amount']}, 1, NULL);")
+        print(f"VALUES ('{split_guid}', '{tx_guid}', '{AMAZON_GC_ACCOUNT}', '', '', 'c', NULL, {tx['total_amount']}, 1, {tx['total_amount']}, 1, NULL);")
 
         # Expense/Income splits
         for split in tx['splits']:
@@ -172,7 +172,7 @@ def output_sql(transactions):
             account_guid = get_guid(split['account'])
             amount = -split['amount']  # Reverse for double-entry
             print(f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)")
-            print(f"VALUES ('{split_guid}', '{tx_guid}', '{account_guid}', '', '', 'n', NULL, {amount}, 1, {amount}, 1, NULL);")
+            print(f"VALUES ('{split_guid}', '{tx_guid}', '{account_guid}', '', '', 'c', NULL, {amount}, 1, {amount}, 1, NULL);")
 
         print()
 

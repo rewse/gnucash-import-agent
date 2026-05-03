@@ -158,9 +158,9 @@ def sql_jpy(transactions):
         print(f"INSERT INTO transactions (guid, currency_guid, num, post_date, enter_date, description)")
         print(f"VALUES ('{tx_guid}', '{JPY_CURRENCY}', '', '{date_str}', NOW(), {desc_sql});")
         print(f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)")
-        print(f"VALUES ('{s1_guid}', '{tx_guid}', '{fund_account}', '', '', 'n', NULL, {amount}, 1, {amount}, 1, NULL);")
+        print(f"VALUES ('{s1_guid}', '{tx_guid}', '{fund_account}', '', '', 'c', NULL, {amount}, 1, {amount}, 1, NULL);")
         print(f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)")
-        print(f"VALUES ('{s2_guid}', '{tx_guid}', '{TRANSFER_JPY}', '', '', 'n', NULL, {-amount}, 1, {-amount}, 1, NULL);")
+        print(f"VALUES ('{s2_guid}', '{tx_guid}', '{TRANSFER_JPY}', '', '', 'c', NULL, {-amount}, 1, {-amount}, 1, NULL);")
         print()
     print('COMMIT;')
 
@@ -239,18 +239,18 @@ def sql_usd_stock(transactions):
         print(f"VALUES ('{tx_guid}', '{USD_CURRENCY}', '', '{date_str}', NOW(), {desc_sql});")
         # Fund account
         print(f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)")
-        print(f"VALUES ('{s_fund}', '{tx_guid}', '{fund_account}', '', '', 'n', NULL, {sign * exec_cents}, 100, {sign * exec_cents}, 100, NULL);")
+        print(f"VALUES ('{s_fund}', '{tx_guid}', '{fund_account}', '', '', 'c', NULL, {sign * exec_cents}, 100, {sign * exec_cents}, 100, NULL);")
         # Cash account
         print(f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)")
-        print(f"VALUES ('{s_cash}', '{tx_guid}', '{USD_CASH}', '', '', 'n', NULL, {-sign * settle_cents}, 100, {-sign * settle_cents}, 100, NULL);")
+        print(f"VALUES ('{s_cash}', '{tx_guid}', '{USD_CASH}', '', '', 'c', NULL, {-sign * settle_cents}, 100, {-sign * settle_cents}, 100, NULL);")
         # Fees
         if fees_cents:
             print(f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)")
-            print(f"VALUES ('{s_fees}', '{tx_guid}', '{FEES}', '', '', 'n', NULL, {fees_cents}, 100, {fees_cents}, 100, NULL);")
+            print(f"VALUES ('{s_fees}', '{tx_guid}', '{FEES}', '', '', 'c', NULL, {fees_cents}, 100, {fees_cents}, 100, NULL);")
         # Tax
         if tax_cents:
             print(f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)")
-            print(f"VALUES ('{s_tax}', '{tx_guid}', '{TAX}', '', '', 'n', NULL, {tax_cents}, 100, {tax_cents}, 100, NULL);")
+            print(f"VALUES ('{s_tax}', '{tx_guid}', '{TAX}', '', '', 'c', NULL, {tax_cents}, 100, {tax_cents}, 100, NULL);")
         print()
     print('COMMIT;')
 
@@ -332,9 +332,9 @@ def sql_usd_cash(transactions):
         print(f"INSERT INTO transactions (guid, currency_guid, num, post_date, enter_date, description)")
         print(f"VALUES ('{tx_guid}', '{USD_CURRENCY}', '', '{date_str}', NOW(), {desc_sql});")
         print(f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)")
-        print(f"VALUES ('{s1_guid}', '{tx_guid}', '{USD_CASH}', '', '', 'n', NULL, {cents}, 100, {cents}, 100, NULL);")
+        print(f"VALUES ('{s1_guid}', '{tx_guid}', '{USD_CASH}', '', '', 'c', NULL, {cents}, 100, {cents}, 100, NULL);")
         print(f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)")
-        print(f"VALUES ('{s2_guid}', '{tx_guid}', '{account}', '', '', 'n', NULL, {-cents}, 100, {-cents}, 100, NULL);")
+        print(f"VALUES ('{s2_guid}', '{tx_guid}', '{account}', '', '', 'c', NULL, {-cents}, 100, {-cents}, 100, NULL);")
         print()
     print('COMMIT;')
 

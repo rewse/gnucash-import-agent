@@ -292,12 +292,12 @@ def output_sql(transactions):
             print(f"VALUES ('{tx_guid}', '{currency_guid}', '', '{date_str}', NOW(), {desc_sql});")
             s_guid = uuid.uuid4().hex
             print(f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)")
-            print(f"VALUES ('{s_guid}', '{tx_guid}', '{source}', '', '', 'n', NULL, {value_num}, {denom}, {value_num}, {denom}, NULL);")
+            print(f"VALUES ('{s_guid}', '{tx_guid}', '{source}', '', '', 'c', NULL, {value_num}, {denom}, {value_num}, {denom}, NULL);")
             for acct, amt, _ in info:
                 s_guid = uuid.uuid4().hex
                 v = round(amt * denom)
                 print(f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)")
-                print(f"VALUES ('{s_guid}', '{tx_guid}', '{acct}', '', '', 'n', NULL, {-v}, {denom}, {-v}, {denom}, NULL);")
+                print(f"VALUES ('{s_guid}', '{tx_guid}', '{acct}', '', '', 'c', NULL, {-v}, {denom}, {-v}, {denom}, NULL);")
             print()
             continue
 
@@ -325,9 +325,9 @@ def output_sql(transactions):
             s1 = uuid.uuid4().hex
             s2 = uuid.uuid4().hex
             print(f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)")
-            print(f"VALUES ('{s1}', '{tx_guid}', '{source}', '', '', 'n', NULL, {jpy_sign * jpy_value}, 1, {jpy_sign * jpy_value}, 1, NULL);")
+            print(f"VALUES ('{s1}', '{tx_guid}', '{source}', '', '', 'c', NULL, {jpy_sign * jpy_value}, 1, {jpy_sign * jpy_value}, 1, NULL);")
             print(f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)")
-            print(f"VALUES ('{s2}', '{tx_guid}', '{USD_ACCT}', '', '', 'n', NULL, {-jpy_sign * jpy_value}, 1, {usd_sign * usd_value}, 100, NULL);")
+            print(f"VALUES ('{s2}', '{tx_guid}', '{USD_ACCT}', '', '', 'c', NULL, {-jpy_sign * jpy_value}, 1, {usd_sign * usd_value}, 100, NULL);")
             print()
             continue
 
@@ -336,9 +336,9 @@ def output_sql(transactions):
         print(f"INSERT INTO transactions (guid, currency_guid, num, post_date, enter_date, description)")
         print(f"VALUES ('{tx_guid}', '{currency_guid}', '', '{date_str}', NOW(), {desc_sql});")
         print(f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)")
-        print(f"VALUES ('{s1_guid}', '{tx_guid}', '{source}', '', '', 'n', NULL, {value_num}, {denom}, {value_num}, {denom}, NULL);")
+        print(f"VALUES ('{s1_guid}', '{tx_guid}', '{source}', '', '', 'c', NULL, {value_num}, {denom}, {value_num}, {denom}, NULL);")
         print(f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)")
-        print(f"VALUES ('{s2_guid}', '{tx_guid}', '{account}', '', '', 'n', NULL, {-value_num}, {denom}, {-value_num}, {denom}, NULL);")
+        print(f"VALUES ('{s2_guid}', '{tx_guid}', '{account}', '', '', 'c', NULL, {-value_num}, {denom}, {-value_num}, {denom}, NULL);")
         print()
 
     print('COMMIT;')

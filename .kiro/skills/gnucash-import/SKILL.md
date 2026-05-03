@@ -181,14 +181,14 @@ DB_NAME=$(op read "op://gnucash/gnucash-db/database")
 DB_USER=$(op read "op://gnucash/gnucash-db/username")
 PGPASSWORD=$(op read "op://gnucash/gnucash-db/password") psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -t -A -c "
 WITH RECURSIVE path_list AS (
-   SELECT guid, parent_guid, name, name::text AS path, hidden FROM accounts WHERE parent_guid IS NULL
+   SELECT guid, parent_guid, name, name::text AS path, hidden, placeholder FROM accounts WHERE parent_guid IS NULL
    UNION ALL
-   SELECT c.guid, c.parent_guid, c.name, path || ':' || c.name, c.hidden
+   SELECT c.guid, c.parent_guid, c.name, path || ':' || c.name, c.hidden, c.placeholder
    FROM accounts c JOIN path_list p ON p.guid = c.parent_guid
 )
 SELECT json_build_object(
   'updated_at', NOW(),
-  'accounts', (SELECT json_object_agg(path, guid) FROM path_list WHERE path NOT LIKE 'Template Root%' AND hidden = 0)
+  'accounts', (SELECT json_object_agg(path, guid) FROM path_list WHERE path NOT LIKE 'Template Root%' AND hidden = 0 AND placeholder = 0)
 );
 " | python3 -c "import json,sys; d=json.load(sys.stdin); d['accounts']=dict(sorted(d['accounts'].items())); json.dump(d,sys.stdout,indent=4)" > .kiro/skills/gnucash-import/references/account-guid-cache.json
 ```

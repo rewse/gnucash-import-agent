@@ -33,6 +33,9 @@ FUND_MAP = {
 CURRENCIES = {'JPY': 'a77d4ee821e04f02bb7429e437c645e4'}
 CURRENCY_DENOM = {'JPY': 1}
 
+# Fund units are stored as 口 * 10000 in GnuCash (quantity_denom=10000)
+FUND_QTY_DENOM = 10000
+
 ACCOUNT_NAMES = {get_guid(v): v.split(':')[-1] for v in FUND_MAP.values()}
 ACCOUNT_NAMES[SOURCE_ACCOUNT] = 'Sompo Japan DC Securities'
 
@@ -110,11 +113,14 @@ def output_sql(transactions):
         date_str = tx['date'].strftime(f'%Y-%m-%d 00:{minutes:02d}:{seconds:02d}')
         desc_sql = f"'{description}'" if description else 'NULL'
         amount = tx['amount']
+        qty_num = tx['quantity'] * FUND_QTY_DENOM
 
         print(f"INSERT INTO transactions (guid, currency_guid, num, post_date, enter_date, description)")
         print(f"VALUES ('{tx_guid}', '{CURRENCIES['JPY']}', '', '{date_str}', NOW(), {desc_sql});")
+        # Fund split: value=amount (denom=1), quantity=口*10000 (denom=10000)
         print(f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)")
-        print(f"VALUES ('{split1_guid}', '{tx_guid}', '{fund_account}', '', '', 'c', NULL, {amount}, 1, {amount}, 1, NULL);")
+        print(f"VALUES ('{split1_guid}', '{tx_guid}', '{fund_account}', '', '', 'c', NULL, {amount}, 1, {qty_num}, {FUND_QTY_DENOM}, NULL);")
+        # Source (cash) split: 1:1
         print(f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)")
         print(f"VALUES ('{split2_guid}', '{tx_guid}', '{SOURCE_ACCOUNT}', '', '', 'c', NULL, {-amount}, 1, {-amount}, 1, NULL);")
         print()

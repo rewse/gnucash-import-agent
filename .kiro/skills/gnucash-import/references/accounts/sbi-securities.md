@@ -220,6 +220,14 @@ Buy splits (4 splits):
 
 If a transaction does not match any pattern, ask the user.
 
+### Quantity Handling
+
+For fund/stock splits, GnuCash stores units separately from value:
+- JPY mutual funds: `value_num` = 受渡金額 (円) with `value_denom` = 1; `quantity_num` = 約定数量 (口) × 10000 with `quantity_denom` = 10000
+- USD stocks: `value_num` = 約定金額 × 100 (cents) with `value_denom` = 100; `quantity_num` = 約定数量 (shares) × 10000 with `quantity_denom` = 10000
+
+Cash-side splits (A/Payable, USD cash, fees, tax) use 1:1 between value and quantity.
+
 ### Description
 
 All descriptions are set to NULL.

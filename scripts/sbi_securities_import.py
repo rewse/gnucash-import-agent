@@ -30,6 +30,11 @@ def get_guid(path):
 JPY_CURRENCY = 'a77d4ee821e04f02bb7429e437c645e4'
 USD_CURRENCY = '327c5a1bcfb147ceba2370ee17093159'
 
+# Fund units are stored as <unit> * 10000 in GnuCash (quantity_denom=10000)
+# - JPY mutual funds: 口 * 10000
+# - USD stocks: shares * 10000
+FUND_QTY_DENOM = 10000
+
 # JPY accounts
 TRANSFER_JPY = get_guid('Liabilities:A/Payable:SBI Securities')
 SBI = 'Assets:JPY - Current Assets:Securities:SBI Securities'
@@ -69,7 +74,6 @@ ACCOUNT_NAMES[NEOBANK_USD] = 'd NEOBANK (USD)'
 RAW_DATA_JPY = """
 """
 
-# Tab-separated: DATE	TICKER	TYPE	QUANTITY	EXEC_AMOUNT	FEES	TAX	SETTLEMENT
 RAW_DATA_USD_STOCK = """
 """
 
@@ -97,14 +101,20 @@ def parse_jpy(raw_data):
             i += 1
             continue
         trade_date_str, security, tx_type = m.groups()
-        acct_type = lines[i + 1].split('\t')[0].strip()
+        # Line 1: "ACCOUNT_TYPE\tQUANTITY" (quantity in 口)
+        acct_parts = lines[i + 1].split('\t')
+        acct_type = acct_parts[0].strip()
+        quantity = int(acct_parts[1].strip().replace(',', '')) if len(acct_parts) > 1 else 0
         amount = int(lines[i + 5].strip().replace(',', '').replace('\t', ''))
         y, mo, d = trade_date_str.split('/')
         trade_date = date(2000 + int(y), int(mo), int(d))
         is_buy = '買付' in tx_type
+        sign = 1 if is_buy else -1
         transactions.append({
             'date': trade_date, 'security': security, 'tx_type': tx_type,
-            'acct_type': acct_type, 'amount': amount if is_buy else -amount,
+            'acct_type': acct_type,
+            'quantity': sign * quantity,
+            'amount': sign * amount,
         })
         i += 6
     return transactions
@@ -126,21 +136,22 @@ def get_jpy_info(idx, tx):
 
 
 def review_jpy(transactions):
-    print(f"{'ID':<4} {'Date':<14} {'Security':<30} {'Type':<6} {'AcctType':<14} {'Fund Account':<40} {'Amount':>12}")
-    print('-' * 124)
+    print(f"{'ID':<4} {'Date':<14} {'Security':<30} {'Type':<6} {'AcctType':<14} {'Qty':>10} {'Fund Account':<40} {'Amount':>12}")
+    print('-' * 135)
     prev_date = None
     for idx, tx in enumerate(transactions, 1):
         d = tx['date']
         weekday = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][d.weekday()]
         date_str = f"{d.isoformat()} {weekday}"
         if prev_date and prev_date != d:
-            print('-' * 124)
+            print('-' * 135)
         prev_date = d
         fund_account, _ = get_jpy_info(idx, tx)
         fund_name = ACCOUNT_NAMES.get(fund_account, fund_account or '')
         tx_type = 'Buy' if tx['amount'] > 0 else 'Sell'
         amt = f"¥{abs(tx['amount']):,}"
-        print(f"{idx:<4} {date_str:<14} {tx['security'][:30]:<30} {tx_type:<6} {tx['acct_type'][:14]:<14} {fund_name:<40} {amt:>12}")
+        qty = f"{abs(tx['quantity']):,}"
+        print(f"{idx:<4} {date_str:<14} {tx['security'][:30]:<30} {tx_type:<6} {tx['acct_type'][:14]:<14} {qty:>10} {fund_name:<40} {amt:>12}")
 
 
 def sql_jpy(transactions):
@@ -155,10 +166,13 @@ def sql_jpy(transactions):
         date_str = f"{tx['date'].isoformat()} 00:{minutes:02d}:{seconds:02d}"
         desc_sql = f"'{description}'" if description else 'NULL'
         amount = tx['amount']
+        qty_num = tx['quantity'] * FUND_QTY_DENOM
         print(f"INSERT INTO transactions (guid, currency_guid, num, post_date, enter_date, description)")
         print(f"VALUES ('{tx_guid}', '{JPY_CURRENCY}', '', '{date_str}', NOW(), {desc_sql});")
+        # Fund split: value=amount (denom=1), quantity=口*10000 (denom=10000)
         print(f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)")
-        print(f"VALUES ('{s1_guid}', '{tx_guid}', '{fund_account}', '', '', 'c', NULL, {amount}, 1, {amount}, 1, NULL);")
+        print(f"VALUES ('{s1_guid}', '{tx_guid}', '{fund_account}', '', '', 'c', NULL, {amount}, 1, {qty_num}, {FUND_QTY_DENOM}, NULL);")
+        # A/Payable split: 1:1 (cash-equivalent)
         print(f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)")
         print(f"VALUES ('{s2_guid}', '{tx_guid}', '{TRANSFER_JPY}', '', '', 'c', NULL, {-amount}, 1, {-amount}, 1, NULL);")
         print()
@@ -234,12 +248,13 @@ def sql_usd_stock(transactions):
         # For sell: fund decreases, cash increases
         # For buy: fund increases, cash decreases
         sign = -1 if tx['is_sell'] else 1
+        qty_num = sign * tx['quantity'] * FUND_QTY_DENOM
 
         print(f"INSERT INTO transactions (guid, currency_guid, num, post_date, enter_date, description)")
         print(f"VALUES ('{tx_guid}', '{USD_CURRENCY}', '', '{date_str}', NOW(), {desc_sql});")
-        # Fund account
+        # Fund account: value=cents (denom=100), quantity=shares*10000 (denom=10000)
         print(f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)")
-        print(f"VALUES ('{s_fund}', '{tx_guid}', '{fund_account}', '', '', 'c', NULL, {sign * exec_cents}, 100, {sign * exec_cents}, 100, NULL);")
+        print(f"VALUES ('{s_fund}', '{tx_guid}', '{fund_account}', '', '', 'c', NULL, {sign * exec_cents}, 100, {qty_num}, {FUND_QTY_DENOM}, NULL);")
         # Cash account
         print(f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)")
         print(f"VALUES ('{s_cash}', '{tx_guid}', '{USD_CASH}', '', '', 'c', NULL, {-sign * settle_cents}, 100, {-sign * settle_cents}, 100, NULL);")

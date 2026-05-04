@@ -131,6 +131,10 @@ def output_sql(transactions):
 
         print(f"INSERT INTO transactions (guid, currency_guid, num, post_date, enter_date, description)")
         print(f"VALUES ('{tx_guid}', '{currency_guid}', '', '{date_str}', NOW(), {desc_sql});")
+        # NOTE: This template uses 1:1 value:quantity, which is correct for cash accounts.
+        # For mutual fund / stock accounts, quantity is units with denom=10000:
+        #   quantity_num = units * 10000, quantity_denom = 10000
+        # See scripts/sbi_securities_import.py or scripts/sompo_japan_dc_import.py for reference.
         print(f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)")
         print(f"VALUES ('{split1_guid}', '{tx_guid}', '{SOURCE_ACCOUNT}', '', '', 'c', NULL, {value_num}, {denom}, {value_num}, {denom}, NULL);")
         print(f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)")

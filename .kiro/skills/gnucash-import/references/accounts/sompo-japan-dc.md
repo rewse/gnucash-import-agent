@@ -70,6 +70,14 @@ Notes:
 | ＤＩＡＭ国内株式インデックス | ...Sompo Japan DC Securities:DIAM Japan Stock Index Fund <DC Pension> |
 | インデックス海外株式ヘッジなし | ...Sompo Japan DC Securities:Index Fund Global Stock NoHedge (DC) |
 
+### Quantity Handling
+
+Fund units are stored in GnuCash as:
+- `value_num` = 受渡金額 (円), `value_denom` = 1
+- `quantity_num` = 数量 (口) × 10000, `quantity_denom` = 10000
+
+The cash-side split (Transfer Account) uses 1:1 (`value = quantity = amount`, denom = 1).
+
 ### Transaction Types
 
 | Pattern | Description |

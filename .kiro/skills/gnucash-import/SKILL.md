@@ -195,10 +195,33 @@ SELECT json_build_object(
 
 ## Check Last Imported Transaction
 
-Replace `{account_name}` with the account name (e.g., 'Amazon Gift Certificate', 'Suica iPhone'):
+Replace `{account_name}` with the account name (e.g., 'Amazon Gift Certificate', 'Suica iPhone').
+
+Use the latest reconciled (`reconcile_state = 'y'`) transaction's `post_date` as the cutoff. Only transactions marked reconciled are guaranteed to have been fully verified against a statement, so partially-imported statements (where some transactions are cleared but others are missing) will not be mistaken for fully-imported ones.
+
+If no reconciled transactions exist for the account, fall back to the latest transaction regardless of reconciliation state.
 
 ```sql
-SELECT t.post_date::date, t.description, s.value_num as amount
+SELECT
+  COALESCE(
+    (SELECT MAX(t.post_date::date)
+     FROM transactions t
+     JOIN splits s ON t.guid = s.tx_guid
+     JOIN accounts a ON s.account_guid = a.guid
+     WHERE a.name = '{account_name}'
+     AND s.reconcile_state = 'y'),
+    (SELECT MAX(t.post_date::date)
+     FROM transactions t
+     JOIN splits s ON t.guid = s.tx_guid
+     JOIN accounts a ON s.account_guid = a.guid
+     WHERE a.name = '{account_name}')
+  ) AS last_date;
+```
+
+To inspect recent transactions including cleared ones (useful for duplicate detection):
+
+```sql
+SELECT t.post_date::date, t.description, s.value_num as amount, s.reconcile_state
 FROM transactions t
 JOIN splits s ON t.guid = s.tx_guid
 JOIN accounts a ON s.account_guid = a.guid

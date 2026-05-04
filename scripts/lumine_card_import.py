@@ -97,10 +97,20 @@ def parse_unconfirmed(raw_data):
                         break
 
                 if amount_field:
-                    # Extract discounted amount from parentheses if present
+                    # Check next line for discounted amount in parentheses
+                    discounted = None
+                    if i + 2 < len(lines):
+                        following = lines[i + 2].strip()
+                        m = re.match(r'^\(([0-9,]+)\)', following)
+                        if m:
+                            discounted = int(m.group(1).replace(',', ''))
+                    # Extract discounted amount from parentheses in same field if present
                     m = re.search(r'\(([0-9,]+)\)', amount_field)
                     if m:
                         amount = -int(m.group(1).replace(',', ''))
+                    elif discounted is not None:
+                        amount = -discounted
+                        i += 1  # consume the parentheses line
                     else:
                         amount = -int(amount_field.replace(',', ''))
                     transactions.append({'date': date, 'merchant': merchant or '', 'amount': amount})

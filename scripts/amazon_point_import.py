@@ -42,73 +42,59 @@ MANUAL_OVERRIDES = {
 
 
 def parse_transactions(raw_data):
-    """Parse RAW_DATA into transactions, grouping by date+description for multi-split."""
-    lines = [l for l in raw_data.strip().split('\n') if l.strip()]
-
-    groups = {}
-    for line in lines:
+    """Parse RAW_DATA into transactions. Each row is an independent transaction."""
+    transactions = []
+    for line in raw_data.strip().split('\n'):
+        line = line.strip()
+        if not line:
+            continue
         parts = line.split('\t')
         if len(parts) < 5:
             continue
         date_str, desc, tx_type, points_str, account = parts[:5]
         date = datetime.strptime(date_str, '%Y/%m/%d')
         points = int(points_str.replace(',', '').replace('+', ''))
-        key = (date_str, desc)
-        if key not in groups:
-            groups[key] = []
-        groups[key].append({
+        row = {
             'date': date,
             'desc': desc,
             'type': tx_type,
             'points': points,
             'account': account,
-        })
-
-    transactions = []
-    for key, splits in sorted(groups.items(), key=lambda x: x[1][0]['date'], reverse=True):
-        total = sum(s['points'] for s in splits)
+        }
         transactions.append({
-            'date': splits[0]['date'],
-            'desc': splits[0]['desc'],
-            'type': splits[0]['type'],
-            'total': total,
-            'splits': splits,
+            'date': date,
+            'desc': desc,
+            'type': tx_type,
+            'total': points,
+            'splits': [row],
         })
+    transactions.sort(key=lambda t: t['date'], reverse=True)
     return transactions
 
 
 def output_review(transactions):
-    print(f"{'ID':<6} {'Date':<14} {'Type':<5} {'Desc':<50} {'Transfer':<45} {'Increase':>10} {'Decrease':>10}")
-    print("-" * 145)
+    print(f"{'ID':<4} {'Date':<14} {'Type':<5} {'Desc':<50} {'Transfer':<45} {'Increase':>10} {'Decrease':>10}")
+    print("-" * 143)
 
     prev_date = None
     for idx, tx in enumerate(transactions, 1):
         if idx in MANUAL_OVERRIDES:
             override = MANUAL_OVERRIDES[idx]
-            # Apply override to first split
-            tx['splits'][0]['account'] = override[0] if isinstance(override[0], str) and not override[0].startswith('{') else tx['splits'][0]['account']
+            if isinstance(override[0], str) and not override[0].startswith('{'):
+                tx['splits'][0]['account'] = override[0]
 
         weekday = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][tx['date'].weekday()]
         date_str = tx['date'].strftime('%Y-%m-%d')
         date_display = f"{date_str} {weekday}"
 
         if prev_date and prev_date != date_str:
-            print("-" * 145)
+            print("-" * 143)
         prev_date = date_str
 
-        if len(tx['splits']) == 1:
-            split = tx['splits'][0]
-            increase = f"{split['points']:,}" if split['points'] > 0 else ""
-            decrease = f"{abs(split['points']):,}" if split['points'] < 0 else ""
-            print(f"{idx:<6} {date_display:<14} {tx['type']:<5} {tx['desc']:<50} {split['account']:<45} {increase:>10} {decrease:>10}")
-        else:
-            increase = f"{tx['total']:,}" if tx['total'] > 0 else ""
-            decrease = f"{abs(tx['total']):,}" if tx['total'] < 0 else ""
-            print(f"{idx:<6} {date_display:<14} {tx['type']:<5} {tx['desc']:<50} {'':<45} {increase:>10} {decrease:>10}")
-            for sub_idx, split in enumerate(tx['splits'], 1):
-                s_inc = f"{split['points']:,}" if split['points'] > 0 else ""
-                s_dec = f"{abs(split['points']):,}" if split['points'] < 0 else ""
-                print(f"{idx}-{sub_idx:<4} {'':<14} {'':<5} {'':<50} {split['account']:<45} {s_inc:>10} {s_dec:>10}")
+        split = tx['splits'][0]
+        increase = f"{split['points']:,}" if split['points'] > 0 else ""
+        decrease = f"{abs(split['points']):,}" if split['points'] < 0 else ""
+        print(f"{idx:<4} {date_display:<14} {tx['type']:<5} {tx['desc']:<50} {split['account']:<45} {increase:>10} {decrease:>10}")
 
 
 def output_sql(transactions):
@@ -122,25 +108,24 @@ def output_sql(transactions):
         minutes, seconds = divmod(reverse_idx, 60)
         date_str = tx['date'].strftime(f'%Y-%m-%d 00:{minutes:02d}:{seconds:02d}')
 
-        desc = 'Amazon'
-        desc_sql = f"'{desc}'"
+        split = tx['splits'][0]
+        desc = tx['desc']
+        desc_sql = f"'{desc}'" if desc else 'NULL'
+        points = split['points']
 
-        print(f"-- Transaction {idx}: {tx['date'].strftime('%Y-%m-%d')} {desc} {tx['total']:+,}")
+        print(f"-- Transaction {idx}: {tx['date'].strftime('%Y-%m-%d')} {desc} {points:+,}")
         print(f"INSERT INTO transactions (guid, currency_guid, num, post_date, enter_date, description)")
         print(f"VALUES ('{tx_guid}', '{JPY_CURRENCY}', '', '{date_str}', NOW(), {desc_sql});")
 
-        # Source account split (Amazon Point)
-        split_guid = uuid.uuid4().hex
+        source_split_guid = uuid.uuid4().hex
         print(f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)")
-        print(f"VALUES ('{split_guid}', '{tx_guid}', '{SOURCE_ACCOUNT}', '', '', 'c', NULL, {tx['total']}, 1, {tx['total']}, 1, NULL);")
+        print(f"VALUES ('{source_split_guid}', '{tx_guid}', '{SOURCE_ACCOUNT}', '', '', 'c', NULL, {points}, 1, {points}, 1, NULL);")
 
-        # Transfer splits
-        for split in tx['splits']:
-            split_guid = uuid.uuid4().hex
-            account_guid = get_guid(split['account'])
-            amount = -split['points']
-            print(f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)")
-            print(f"VALUES ('{split_guid}', '{tx_guid}', '{account_guid}', '', '', 'c', NULL, {amount}, 1, {amount}, 1, NULL);")
+        transfer_split_guid = uuid.uuid4().hex
+        account_guid = get_guid(split['account'])
+        amount = -points
+        print(f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)")
+        print(f"VALUES ('{transfer_split_guid}', '{tx_guid}', '{account_guid}', '', '', 'c', NULL, {amount}, 1, {amount}, 1, NULL);")
 
         print()
 

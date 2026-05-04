@@ -92,12 +92,12 @@ Parsing rules:
 - Type is either "Earn" or "Use"
 - Points: positive for Earn, negative for Use (comma-separated thousands)
 - For Use type, description should include order number for reference
-- For multi-item orders, write multiple rows with the same date and order number; rows with identical date + description are grouped into a single transaction with multiple splits
+- Each row is imported as an independent transaction, even if multiple rows share the same date or description
 
 ## Review Table Structure
 
 Display transactions sorted by date descending (newest first) with:
-- ID: Sequential number for user to reference. For multi-split transactions, use sub-numbers (e.g., 1-1, 1-2)
+- ID: Sequential number for user to reference
 - Date: YYYY-MM-DD with weekday (Mon, Tue, etc.)
 - Type: Earn/Use
 - Desc: Description

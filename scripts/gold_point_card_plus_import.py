@@ -104,7 +104,8 @@ def output_review(transactions):
             description = '???'
             transfer = '???'
 
-        print(f"{idx:<4} {date_str:<14} {tx['merchant']:<20} {description or '':<30} {transfer:<45} {'¥' + f'{abs(tx[\"amount\"]):,}':>10}")
+        amt_str = f"¥{abs(tx['amount']):,}"
+        print(f"{idx:<4} {date_str:<14} {tx['merchant']:<20} {description or '':<30} {transfer:<45} {amt_str:>10}")
 
 
 def output_sql(transactions):

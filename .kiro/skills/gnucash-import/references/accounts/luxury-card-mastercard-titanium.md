@@ -30,6 +30,7 @@ IMPORTANT: This site has bot protection. You MUST NOT navigate by opening URLs d
    b. Check if this total already exists in GnuCash (see SKILL.md "Credit Card: Billing Total Check")
    c. If the total exists → stop going further back
    d. If the total does NOT exist → extract transactions via `agent-browser --auto-connect snapshot -c`
+   e. MUST check for pagination at the bottom of the transaction list. If pagination exists, click each page number and extract transactions from every page. Missing a page results in missed transactions.
 7. Perform per-transaction duplicate detection (see SKILL.md "Credit Card: Duplicate Detection")
 8. Prepare RAW_DATA with only new transactions (one button text per line)
 9. Copy RAW_DATA into `tmp/luxury_card_mastercard_titanium_import_YYYYMMDD.py`
@@ -45,7 +46,7 @@ To view unconfirmed transactions, click the "YYYY/MM以降" tab in the date navi
 agent-browser --auto-connect eval "document.querySelector('.m-navDate__next a').click()"
 ```
 
-Unconfirmed transactions have pagination. Check for page numbers at the bottom and click to load more.
+Unconfirmed transactions have pagination. You MUST check for page numbers at the bottom of the transaction list and click each page to load all transactions. Missing a page results in missed transactions.
 
 See SKILL.md "Credit Card: Current Statement (Unconfirmed)".
 

@@ -142,7 +142,7 @@ def get_transaction_info(idx, tx):
     m = tx['merchant']
     mn = tx['merchant_norm']
     if 'カブシキガイシヤループ' in m:
-        return BIKE, 'Loop'
+        return BIKE, 'LUUP'
     if 'SQ*' in mn and 'マラドウ' in m:
         return DINING, 'Mala Do'
     if 'ロイヤルホスト' in m:

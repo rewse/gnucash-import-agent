@@ -124,7 +124,8 @@ def parse_transactions(raw_data):
         parts = line.split('\t')
         currency = parts[0].strip()
         y, m, d = parts[1].strip().split('/')
-        desc = parts[2].strip()
+        # Normalize full-width space to half-width for pattern matching
+        desc = parts[2].strip().replace('\u3000', ' ')
         withdrawal = float(parts[3].strip()) if parts[3].strip() else 0
         deposit = float(parts[4].strip()) if len(parts) > 4 and parts[4].strip() else 0
         transactions.append({

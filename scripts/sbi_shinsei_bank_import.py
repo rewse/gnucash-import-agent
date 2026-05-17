@@ -29,6 +29,7 @@ SOURCE_ACCOUNTS = {
     'USD': get_guid('Assets:USD - Current Assets:Banks:SBI Shinsei Bank'),
 }
 INCOME_TAX = get_guid('Expenses:Tax:Income Tax')
+INTEREST_INCOME = get_guid('Income:Interest Income')
 FEES = get_guid('Expenses:Fees')
 CASH = get_guid('Assets:JPY - Current Assets:Cash')
 SBI_SEC = get_guid('Assets:JPY - Current Assets:Securities:SBI Securities')
@@ -42,6 +43,7 @@ CURRENCY_DENOM = {'JPY': 1, 'USD': 100}
 
 ACCOUNT_NAMES = {
     INCOME_TAX: 'Expenses:Tax:Income Tax',
+    INTEREST_INCOME: 'Income:Interest Income',
     FEES: 'Expenses:Fees',
     CASH: 'Assets:Cash',
     SBI_SEC: 'Assets:Securities:SBI Securities',
@@ -53,16 +55,16 @@ RULES = {
     ('JPY', 'ATM 現金出金（提携取引）'): (CASH, None),
     ('JPY', '地方税'): (INCOME_TAX, 'Tokyo'),
     ('JPY', '国税'): (INCOME_TAX, 'Japan'),
-    ('JPY', '税引前利息'): (INCOME_TAX, 'Japan'),
+    ('JPY', '税引前利息'): (INTEREST_INCOME, 'SBI Shinsei Bank'),
     ('HYPER', 'SBI証券精算'): (SBI_SEC, None),
     ('HYPER', '円普通預金'): (SHINSEI_JPY, None),
     ('HYPER', '地方税'): (INCOME_TAX, 'Tokyo'),
     ('HYPER', '国税'): (INCOME_TAX, 'Japan'),
-    ('HYPER', '税引前利息'): (INCOME_TAX, 'Tokyo'),
+    ('HYPER', '税引前利息'): (INTEREST_INCOME, 'SBI Shinsei Bank'),
     ('USD', '円普通預金'): (SHINSEI_JPY, None),
     ('USD', '地方税'): (INCOME_TAX, 'Tokyo'),
     ('USD', '国税'): (INCOME_TAX, 'Japan'),
-    ('USD', '税引前利息'): (INCOME_TAX, 'Japan'),
+    ('USD', '税引前利息'): (INTEREST_INCOME, 'SBI Shinsei Bank'),
     ('USD', '被仕向事務手数料'): (FEES, 'SBI Shinsei Bank'),
 }
 

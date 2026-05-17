@@ -302,7 +302,7 @@ def output_sql(transactions):
             continue
 
         account, description = info
-        desc_sql = f"'{description}'" if description else 'NULL'
+        desc_sql = f"'{description.replace(chr(39), chr(39)*2)}'" if description else 'NULL'
         value_num = round(tx['amount'] * denom)
 
         # Multi-currency transfer (JPY -> USD)

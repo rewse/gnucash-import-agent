@@ -108,7 +108,7 @@ def output_sql(transactions):
         reverse_idx = total - idx + 1
         minutes, seconds = divmod(reverse_idx, 60)
         date_str = tx['date'].strftime(f'%Y-%m-%d 00:{minutes:02d}:{seconds:02d}')
-        desc_sql = f"'{description}'" if description else 'NULL'
+        desc_sql = f"'{description.replace(chr(39), chr(39)*2)}'" if description else 'NULL'
 
         print(f"INSERT INTO transactions (guid, currency_guid, num, post_date, enter_date, description)")
         print(f"VALUES ('{tx_guid}', '{JPY_CURRENCY}', '', '{date_str}', NOW(), {desc_sql});")

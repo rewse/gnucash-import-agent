@@ -241,7 +241,7 @@ def output_sql(transactions):
             tx_guid = uuid.uuid4().hex
             s1_guid = uuid.uuid4().hex
             s2_guid = uuid.uuid4().hex
-            desc_sql = f"'{description}'" if description else 'NULL'
+            desc_sql = f"'{description.replace(chr(39), chr(39)*2)}'" if description else 'NULL'
             print(f"INSERT INTO transactions (guid, currency_guid, num, post_date, enter_date, description)")
             print(f"VALUES ('{tx_guid}', '{JPY_CURRENCY}', '', '{date_str}', NOW(), {desc_sql});")
             print(f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)")

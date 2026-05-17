@@ -135,7 +135,7 @@ def output_sql(transactions):
         if isinstance(info, list):
             # Split transaction: one debit from credit card, multiple credits
             description = info[0][2] if info[0][2] else ''
-            desc_sql = f"'{description}'" if description else 'NULL'
+            desc_sql = f"'{description.replace(chr(39), chr(39)*2)}'" if description else 'NULL'
             print(f"INSERT INTO transactions (guid, currency_guid, num, post_date, enter_date, description)")
             print(f"VALUES ('{tx_guid}', '{JPY_CURRENCY}', '', '{date_str}', NOW(), {desc_sql});")
             s_guid = uuid.uuid4().hex
@@ -147,7 +147,7 @@ def output_sql(transactions):
                 print(f"VALUES ('{s_guid}', '{tx_guid}', '{acct}', '', '', 'c', NULL, {amt}, 1, {amt}, 1, NULL);")
         else:
             account, description = info
-            desc_sql = f"'{description}'" if description else 'NULL'
+            desc_sql = f"'{description.replace(chr(39), chr(39)*2)}'" if description else 'NULL'
             s1_guid = uuid.uuid4().hex
             s2_guid = uuid.uuid4().hex
             print(f"INSERT INTO transactions (guid, currency_guid, num, post_date, enter_date, description)")

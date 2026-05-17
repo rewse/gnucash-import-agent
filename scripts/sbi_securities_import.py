@@ -164,7 +164,7 @@ def sql_jpy(transactions):
         reverse_idx = total - idx + 1
         minutes, seconds = divmod(reverse_idx, 60)
         date_str = f"{tx['date'].isoformat()} 00:{minutes:02d}:{seconds:02d}"
-        desc_sql = f"'{description}'" if description else 'NULL'
+        desc_sql = f"'{description.replace(chr(39), chr(39)*2)}'" if description else 'NULL'
         amount = tx['amount']
         qty_num = tx['quantity'] * FUND_QTY_DENOM
         print(f"INSERT INTO transactions (guid, currency_guid, num, post_date, enter_date, description)")
@@ -238,7 +238,7 @@ def sql_usd_stock(transactions):
         reverse_idx = total - idx + 1
         minutes, seconds = divmod(reverse_idx, 60)
         date_str = f"{tx['date'].isoformat()} 00:{minutes:02d}:{seconds:02d}"
-        desc_sql = f"'{description}'" if description else 'NULL'
+        desc_sql = f"'{description.replace(chr(39), chr(39)*2)}'" if description else 'NULL'
 
         exec_cents = round(tx['exec_amount'] * 100)
         settle_cents = round(tx['settlement'] * 100)
@@ -342,7 +342,7 @@ def sql_usd_cash(transactions):
         reverse_idx = total - idx + 1
         minutes, seconds = divmod(reverse_idx, 60)
         date_str = f"{tx['date'].isoformat()} 00:{minutes:02d}:{seconds:02d}"
-        desc_sql = f"'{description}'" if description else 'NULL'
+        desc_sql = f"'{description.replace(chr(39), chr(39)*2)}'" if description else 'NULL'
         cents = round(tx['amount'] * 100)
         print(f"INSERT INTO transactions (guid, currency_guid, num, post_date, enter_date, description)")
         print(f"VALUES ('{tx_guid}', '{USD_CURRENCY}', '', '{date_str}', NOW(), {desc_sql});")

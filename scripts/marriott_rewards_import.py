@@ -118,7 +118,7 @@ def output_sql(transactions):
         reverse_idx = total - idx + 1
         minutes, seconds = divmod(reverse_idx, 60)
         date_str = tx['date'].strftime(f'%Y-%m-%d 00:{minutes:02d}:{seconds:02d}')
-        desc_sql = f"'{description}'" if description else 'NULL'
+        desc_sql = f"'{description.replace(chr(39), chr(39)*2)}'" if description else 'NULL'
         sign = '+' if tx['amount'] > 0 else ''
 
         print(f"-- {idx}: {tx['date'].strftime('%Y-%m-%d')} {description} {sign}{tx['amount']:,} pt (¥{jpy_value:,})")

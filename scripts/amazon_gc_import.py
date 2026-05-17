@@ -155,7 +155,7 @@ def output_sql(transactions):
         tx_guid = str(uuid.uuid4()).replace('-', '')
         date_str = tx['date'].strftime('%Y-%m-%d 12:00:00')
         description = get_description(tx)
-        desc_sql = f"'{description}'" if description else 'NULL'
+        desc_sql = f"'{description.replace(chr(39), chr(39)*2)}'" if description else 'NULL'
 
         print(f"-- Transaction {idx}: {tx['date'].strftime('%Y-%m-%d')} {description or 'N/A'} ￥{tx['total_amount']:,}")
         print(f"INSERT INTO transactions (guid, currency_guid, num, post_date, enter_date, description)")

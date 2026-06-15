@@ -123,10 +123,12 @@ def detect_business_expense(txs, date):
     if not is_weekday(date):
         return False
     pattern = [(t['station1'], t['station2']) for t in txs if t['date'] == date and t['type'] in ['入', '＊入']]
-    has_to_office = any(s1 == NEAREST_STATION and s2 in ['新宿', '地 新宿'] for s1, s2 in pattern)
-    has_to_meguro = any(s1 in ['新宿', '地 新宿'] and s2 == '目黒' for s1, s2 in pattern)
-    has_from_meguro = any(s1 == '目黒' and s2 in ['新宿', '地 新宿'] for s1, s2 in pattern)
-    return has_to_office and has_to_meguro and has_from_meguro
+    has_roppongi = any(
+        (s1 == NEAREST_STATION and s2 in ['六本木一', '神谷町']) or
+        (s1 in ['六本木一', '神谷町'] and s2 == NEAREST_STATION)
+        for s1, s2 in pattern
+    )
+    return has_roppongi
 
 
 def get_transaction_info(transactions, idx, tx):

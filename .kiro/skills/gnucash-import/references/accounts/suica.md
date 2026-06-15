@@ -61,12 +61,10 @@ Notes:
 
 On weekdays, if the following pattern appears on the same day, classify ALL transit transactions on that day as `Expenses:Business Expenses`:
 
-1. {nearest_station} → 地 新宿
-2. 新宿 → 目黒
-3. 目黒 → 新宿
-4. 地 新宿 → {nearest_station} (Optional)
+- {nearest_station} → 六本木一 / 六本木一 → {nearest_station}
+- OR {nearest_station} → 神谷町 / 神谷町 → {nearest_station}
 
-See [references/personal.md](references/personal.md) for the nearest station.
+See [references/personal.json](../personal.json) for the nearest station.
 
 Rules:
 - Check all transit transactions on the same date, not just sequential ones

@@ -85,6 +85,7 @@ Automates the import of transaction data from various online sources (banks, cre
 │   ├── luxury_card_mastercard_titanium_import.py # Luxury Card Mastercard Titanium
 │   ├── marriott_rewards_import.py  # Marriott Rewards
 │   ├── mufg_bank_import.py         # MUFG Bank
+│   ├── pasmo_import.py             # Mobile PASMO
 │   ├── paypay_card_jcb_import.py   # PayPay Card JCB
 │   ├── ponta_import.py             # Ponta
 │   ├── rakuten_super_point_import.py # Rakuten Super Point

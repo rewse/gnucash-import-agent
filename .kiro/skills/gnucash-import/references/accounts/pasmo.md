@@ -26,7 +26,7 @@ CAPTCHA is required. You MUST use `agent-browser --auto-connect` and ask the use
 
 ## Script Template
 
-- `scripts/suica_import.py` (same format as Mobile Suica)
+- `scripts/pasmo_import.py` (handles 入/出, ＊入, 定, ﾊﾞｽ等, ｵｰﾄ, 物販; supports station names with spaces)
 
 ## Browser Data Format
 
@@ -54,9 +54,13 @@ Notes:
 |------|---------|-----------------|-------------|
 | 入/出 | Train entry/exit | Expenses:Transit | Railway company |
 | ＊入 | Transfer entry | Expenses:Transit | Railway company |
-| 物販 | Shopping | Assets:JPY - Current Assets:Reimbursement:Child (default) | Vending Machine (default) |
+| 定 | Commuter pass out-of-zone ride | Expenses:Transit | Railway company |
+| ﾊﾞｽ等 | Bus | Expenses:Transit | Bus company |
+| 物販 | Shopping | Assets:JPY - Current Assets:Reimbursement:Child (default) | NULL (default) |
 | ｵｰﾄ | Auto-charge | Liabilities:Credit Card:TOKYU CARD ClubQ JMB | NULL |
 | 繰 | Carried balance | (skip) | - |
+
+PASMO never uses Expenses:Business Expenses. Transit defaults to Expenses:Transit. For leisure trips, the user may override to Expenses:Entertainment:Travel by ID.
 
 ### Railway Company Detection
 
@@ -78,8 +82,18 @@ Stations without prefix that are NOT JR:
 | 溜池山王 | Tokyo Metro |
 | 赤坂見附 | Tokyo Metro |
 | 南大沢 | Keio |
+| 江電鎌倉 | Enoshima Electric Railway |
+| 長谷 | Enoshima Electric Railway |
+| 稲村ケ崎 | Enoshima Electric Railway |
+| 江ノ島 | Enoshima Electric Railway |
 
 Add new stations here when discovered.
+
+#### Bus Mappings
+
+| 利用場所 | Bus Company |
+|---------|-------------|
+| 江ノ電Ｂ | Enoden Bus |
 
 ### Description Format
 
@@ -88,6 +102,8 @@ For train/bus rides, use the railway/bus company name in English:
 - Tokyo Metro
 - Toei Subway
 - Keio
+- Enoshima Electric Railway
+- Enoden Bus
 - Tokyo Monorail
 - Toei Bus
 
@@ -101,6 +117,8 @@ Same as Browser Data Format, but without header row and 残額 column:
 01/26 物販 -590
 01/21 ｵｰﾄ 新宿 +5000
 01/18 入 地 渋谷 出 北参道 -178
+01/15 定 曙橋 出 都 新宿 -178
+01/12 ﾊﾞｽ等 江ノ電Ｂ -390
 11/25 繰
 ```
 
@@ -109,6 +127,8 @@ Parsing rules:
 - Skip 繰 (carried balance) rows
 - Skip rows with amount 0
 - Amount is the last numeric value
+- For ｵｰﾄ and ﾊﾞｽ等, the location is everything between the type and the amount (may contain spaces, e.g. "地 新宿")
+- 定 (commuter pass) parses like 入/出: `定 station1 出 station2 amount`
 
 ## Review Table Structure
 

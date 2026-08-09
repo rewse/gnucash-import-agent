@@ -4,7 +4,7 @@
 
 - Card: `Liabilities:Credit Card:Luxury Card Mastercard Titanium`
 - Points: `Assets:JPY - Current Assets:Reward Programs:Luxury Reward`
-- Payment debit: `Assets:JPY - Current Assets:Banks:d NEOBANK`
+- Payment debit: `Assets:JPY - Current Assets:Banks:DOCOMO SMTB Net Bank`
 - Payment date: 27th (or next business day if 27th is a holiday)
 
 ## Credentials

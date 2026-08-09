@@ -1,16 +1,16 @@
-# d NEOBANK Statement Import
+# DOCOMO SMTB Net Bank Statement Import
 
 ## GnuCash Account
 
-- JPY: `Assets:JPY - Current Assets:Banks:d NEOBANK`
-- USD: `Assets:USD - Current Assets:Banks:d NEOBANK`
+- JPY: `Assets:JPY - Current Assets:Banks:DOCOMO SMTB Net Bank`
+- USD: `Assets:USD - Current Assets:Banks:DOCOMO SMTB Net Bank`
 
 Sub-accounts (purpose accounts):
-- `Assets:JPY - Current Assets:Banks:d NEOBANK:Reserved Account`
-- `Assets:JPY - Current Assets:Banks:d NEOBANK:Longterm Account`
-- `Assets:JPY - Current Assets:Banks:d NEOBANK:Retirement Account`
-- `Assets:USD - Current Assets:Banks:d NEOBANK:Entertainment Account`
-- `Assets:USD - Current Assets:Banks:d NEOBANK:Longterm Account`
+- `Assets:JPY - Current Assets:Banks:DOCOMO SMTB Net Bank:Reserved Account`
+- `Assets:JPY - Current Assets:Banks:DOCOMO SMTB Net Bank:Longterm Account`
+- `Assets:JPY - Current Assets:Banks:DOCOMO SMTB Net Bank:Retirement Account`
+- `Assets:USD - Current Assets:Banks:DOCOMO SMTB Net Bank:Entertainment Account`
+- `Assets:USD - Current Assets:Banks:DOCOMO SMTB Net Bank:Longterm Account`
 
 ## Credentials
 
@@ -48,15 +48,15 @@ Purpose account transfers (`普通 円 予備費`, `普通 円 長期貯蓄`, `�
 
 ### Generate and Execute
 
-14. Prepare RAW_DATA and copy into `tmp/d_neobank_import_YYYYMMDD.py`
-15. Run `python3 tmp/d_neobank_import_YYYYMMDD.py review` to show review table
+14. Prepare RAW_DATA and copy into `tmp/docomo_smtb_net_bank_import_YYYYMMDD.py`
+15. Run `python3 tmp/docomo_smtb_net_bank_import_YYYYMMDD.py review` to show review table
 16. User reviews and specifies manual overrides by ID
-17. Run `python3 tmp/d_neobank_import_YYYYMMDD.py sql > tmp/import_d_neobank.sql` to generate SQL
+17. Run `python3 tmp/docomo_smtb_net_bank_import_YYYYMMDD.py sql > tmp/import_docomo_smtb_net_bank.sql` to generate SQL
 18. Execute SQL to insert transactions
 
 ## Script Template
 
-- `scripts/d_neobank_import.py`
+- `scripts/docomo_smtb_net_bank_import.py`
 
 ## Browser Data Format
 
@@ -139,15 +139,15 @@ These patterns MUST NOT be imported:
 
 | Pattern | GnuCash Account | Description |
 |---------|-----------------|-------------|
-| 普通 円 予備費 | `Assets:JPY - Current Assets:Banks:d NEOBANK:Reserved Account` | NULL |
-| 普通 円 長期貯蓄 | `Assets:JPY - Current Assets:Banks:d NEOBANK:Longterm Account` | NULL |
-| 普通 円 老後資金 | `Assets:JPY - Current Assets:Banks:d NEOBANK:Retirement Account` | NULL |
+| 普通 円 予備費 | `Assets:JPY - Current Assets:Banks:DOCOMO SMTB Net Bank:Reserved Account` | NULL |
+| 普通 円 長期貯蓄 | `Assets:JPY - Current Assets:Banks:DOCOMO SMTB Net Bank:Longterm Account` | NULL |
+| 普通 円 老後資金 | `Assets:JPY - Current Assets:Banks:DOCOMO SMTB Net Bank:Retirement Account` | NULL |
 
 ### Currency Transfers
 
 | JPY Pattern | USD Pattern | GnuCash Account | Description |
 |-------------|-------------|-----------------|-------------|
-| 普通 米ドル 代表口座 | 普通 円 代表口座 | `Assets:USD - Current Assets:Banks:d NEOBANK` | NULL |
+| 普通 米ドル 代表口座 | 普通 円 代表口座 | `Assets:USD - Current Assets:Banks:DOCOMO SMTB Net Bank` | NULL |
 
 Multi-currency: use JPY amount for value_num/value_denom on the JPY split, USD amount for quantity_num/quantity_denom on the USD split.
 
@@ -176,9 +176,9 @@ If you don't know the account or the merchant, search emails with the amount. Se
 
 ## Duplicate Detection
 
-Transfers between d NEOBANK and other imported accounts (e.g., SBI Shinsei Bank) may already exist in GnuCash if the other account was imported first. You MUST NOT simply check the last imported date. Instead:
+Transfers between DOCOMO SMTB Net Bank and other imported accounts (e.g., SBI Shinsei Bank) may already exist in GnuCash if the other account was imported first. You MUST NOT simply check the last imported date. Instead:
 
-1. Query existing transactions for the d NEOBANK account within the last 2 months
+1. Query existing transactions for the DOCOMO SMTB Net Bank account within the last 2 months
 2. For each transaction in the statement, check if a matching transaction already exists (same date and amount)
 3. If a match is found, compare descriptions to confirm it is the same transaction
 4. Report duplicates and missing transactions separately to the user

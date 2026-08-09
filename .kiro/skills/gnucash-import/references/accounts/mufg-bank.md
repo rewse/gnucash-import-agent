@@ -74,8 +74,8 @@ Notes:
 | 利息 | Income:Interest Income | NULL |
 | メイジヤスダセイメイ | Expenses:Insurances:Property Insurances | NULL |
 | ラクテンソンガイホケン | Expenses:Insurances:Property Insurances | NULL |
-| 振込 + シバタ | Assets:JPY - Current Assets:Banks:d NEOBANK | NULL |
-| ことら送金 + シバタ | Assets:JPY - Current Assets:Banks:d NEOBANK | NULL |
+| 振込 + シバタ | Assets:JPY - Current Assets:Banks:DOCOMO SMTB Net Bank | NULL |
+| ことら送金 + シバタ | Assets:JPY - Current Assets:Banks:DOCOMO SMTB Net Bank | NULL |
 
 If a transaction does not match any pattern, ask the user.
 

@@ -27,13 +27,13 @@ def get_guid(path):
 SOURCE_ACCOUNT = get_guid('Assets:JPY - Current Assets:Banks:MUFG Bank')
 INTEREST = get_guid('Income:Interest Income')
 PROPERTY_INS = get_guid('Expenses:Insurances:Property Insurances')
-NEOBANK = get_guid('Assets:JPY - Current Assets:Banks:d NEOBANK')
+DOCOMO_SMTB = get_guid('Assets:JPY - Current Assets:Banks:DOCOMO SMTB Net Bank')
 JPY_CURRENCY = 'a77d4ee821e04f02bb7429e437c645e4'
 
 ACCOUNT_NAMES = {
     INTEREST: 'Income:Interest Income',
     PROPERTY_INS: 'Expenses:Insurances:Property Insurances',
-    NEOBANK: 'Assets:Banks:d NEOBANK',
+    DOCOMO_SMTB: 'Assets:Banks:DOCOMO SMTB Net Bank',
 }
 
 # ============================================================
@@ -96,7 +96,7 @@ def get_transaction_info(idx, tx):
     if 'ラクテンソンガイホケン' in desc:
         return PROPERTY_INS, None
     if ('振込' in desc or 'ことら送金' in desc) and 'シバタ' in desc:
-        return NEOBANK, None
+        return DOCOMO_SMTB, None
     raise ValueError(f"Unknown transaction type at ID {idx}: {desc}")
 
 

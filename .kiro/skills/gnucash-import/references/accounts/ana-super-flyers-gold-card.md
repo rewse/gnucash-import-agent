@@ -3,7 +3,7 @@
 ## GnuCash Account
 
 - Card: `Liabilities:Credit Card:ANA Super Flyers Gold Card`
-- Payment debit: `Assets:JPY - Current Assets:Banks:d NEOBANK`
+- Payment debit: `Assets:JPY - Current Assets:Banks:DOCOMO SMTB Net Bank`
 - Payment date: 10th (or next business day if 10th is a holiday)
 
 ## Credentials

@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""d NEOBANK Statement Importer
+"""DOCOMO SMTB Net Bank Statement Importer
 
 Usage:
 1. Paste tab-separated data into RAW_DATA (CURRENCY, DATE, DESC, WITHDRAWAL, DEPOSIT)
 2. Set MANUAL_OVERRIDES for any transactions that need custom accounts/descriptions
-3. Run: python3 tmp/d_neobank_import_YYYYMMDD.py review
-4. Run: python3 tmp/d_neobank_import_YYYYMMDD.py sql
+3. Run: python3 tmp/docomo_smtb_net_bank_import_YYYYMMDD.py review
+4. Run: python3 tmp/docomo_smtb_net_bank_import_YYYYMMDD.py sql
 """
 import json
 import sys
@@ -25,8 +25,8 @@ def get_guid(path):
 
 # Source accounts
 SOURCE_ACCOUNTS = {
-    'JPY': get_guid('Assets:JPY - Current Assets:Banks:d NEOBANK'),
-    'USD': get_guid('Assets:USD - Current Assets:Banks:d NEOBANK'),
+    'JPY': get_guid('Assets:JPY - Current Assets:Banks:DOCOMO SMTB Net Bank'),
+    'USD': get_guid('Assets:USD - Current Assets:Banks:DOCOMO SMTB Net Bank'),
 }
 
 # Transfer accounts
@@ -44,10 +44,10 @@ ANA_SFC = get_guid('Liabilities:Credit Card:ANA Super Flyers Gold Card')
 PAYPAY_CARD = get_guid('Liabilities:Credit Card:PayPay Card JCB')
 LUXURY_CARD = get_guid('Liabilities:Credit Card:Luxury Card Mastercard Titanium')
 GOLD_POINT = get_guid('Liabilities:Credit Card:GOLD POINT CARD +')
-RESERVED_ACCT = get_guid('Assets:JPY - Current Assets:Banks:d NEOBANK:Reserved Account')
-LONGTERM_ACCT = get_guid('Assets:JPY - Current Assets:Banks:d NEOBANK:Longterm Account')
-RETIREMENT_ACCT = get_guid('Assets:JPY - Current Assets:Banks:d NEOBANK:Retirement Account')
-USD_ACCT = get_guid('Assets:USD - Current Assets:Banks:d NEOBANK')
+RESERVED_ACCT = get_guid('Assets:JPY - Current Assets:Banks:DOCOMO SMTB Net Bank:Reserved Account')
+LONGTERM_ACCT = get_guid('Assets:JPY - Current Assets:Banks:DOCOMO SMTB Net Bank:Longterm Account')
+RETIREMENT_ACCT = get_guid('Assets:JPY - Current Assets:Banks:DOCOMO SMTB Net Bank:Retirement Account')
+USD_ACCT = get_guid('Assets:USD - Current Assets:Banks:DOCOMO SMTB Net Bank')
 INCOME_TAX = get_guid('Expenses:Tax:Income Tax')
 FIXED_ASSETS_TAX = get_guid('Expenses:Tax:Fixed Assets Tax')
 INTEREST_INCOME = get_guid('Income:Interest Income')
@@ -73,10 +73,10 @@ ACCOUNT_NAMES = {
     PAYPAY_CARD: 'Liabilities:PayPay Card JCB',
     LUXURY_CARD: 'Liabilities:Luxury Card Titanium',
     GOLD_POINT: 'Liabilities:GOLD POINT CARD +',
-    RESERVED_ACCT: 'd NEOBANK:Reserved Account',
-    LONGTERM_ACCT: 'd NEOBANK:Longterm Account',
-    RETIREMENT_ACCT: 'd NEOBANK:Retirement Account',
-    USD_ACCT: 'd NEOBANK (USD)',
+    RESERVED_ACCT: 'DOCOMO SMTB Net Bank:Reserved Account',
+    LONGTERM_ACCT: 'DOCOMO SMTB Net Bank:Longterm Account',
+    RETIREMENT_ACCT: 'DOCOMO SMTB Net Bank:Retirement Account',
+    USD_ACCT: 'DOCOMO SMTB Net Bank (USD)',
     INCOME_TAX: 'Expenses:Tax:Income Tax',
     FIXED_ASSETS_TAX: 'Expenses:Tax:Fixed Assets Tax',
     INTEREST_INCOME: 'Income:Interest Income',
@@ -347,7 +347,7 @@ def output_sql(transactions):
 
 def main():
     if len(sys.argv) < 2 or sys.argv[1] not in ('review', 'sql'):
-        print('Usage: python3 d_neobank_import.py [review|sql]', file=sys.stderr)
+        print('Usage: python3 docomo_smtb_net_bank_import.py [review|sql]', file=sys.stderr)
         sys.exit(1)
     if not RAW_DATA.strip():
         print('Error: RAW_DATA is empty.', file=sys.stderr)

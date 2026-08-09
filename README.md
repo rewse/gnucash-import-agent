@@ -31,7 +31,7 @@ Automates the import of transaction data from various online sources (banks, cre
 - ANA SKY Coin
 - ANA Super Flyers Gold Card
 - Bic Point
-- d NEOBANK
+- DOCOMO SMTB Net Bank
 - dPOINT
 - GOLD POINT CARD +
 - Hapitas
@@ -74,7 +74,7 @@ Automates the import of transaction data from various online sources (banks, cre
 │   ├── ana_sky_coin_import.py      # ANA SKY Coin
 │   ├── ana_super_flyers_gold_card_import.py # ANA Super Flyers Gold Card
 │   ├── bic_point_import.py         # Bic Point
-│   ├── d_neobank_import.py         # d NEOBANK
+│   ├── docomo_smtb_net_bank_import.py         # DOCOMO SMTB Net Bank
 │   ├── dpoint_import.py           # dPoint
 │   ├── gold_point_card_plus_import.py # GOLD POINT CARD +
 │   ├── hapitas_import.py           # Hapitas
@@ -113,7 +113,7 @@ Automates the import of transaction data from various online sources (banks, cre
     │           │   ├── ana-sky-coin.md
     │           │   ├── ana-super-flyers-gold-card.md
     │           │   ├── bic-point.md
-    │           │   ├── d-neobank.md
+    │           │   ├── docomo-smtb-net-bank.md
     │           │   ├── dpoint.md
     │           │   ├── gold-point-card-plus.md
     │           │   ├── hapitas.md

@@ -53,7 +53,7 @@ USD_CASH = get_guid(SBI_USD)
 FEES = get_guid('Expenses:Fees')
 TAX = get_guid('Expenses:Tax:Income Tax')
 DIVIDEND = get_guid('Income:Dividend')
-NEOBANK_USD = get_guid('Assets:USD - Current Assets:Banks:d NEOBANK:Entertainment Account')
+DOCOMO_SMTB_USD = get_guid('Assets:USD - Current Assets:Banks:DOCOMO SMTB Net Bank:Entertainment Account')
 FUND_MAP_USD = {
     'QQQ': f'{SBI_USD}:Entertainment Account:Invesco QQQ Trust Series 1',
     'VGT': f'{SBI_USD}:Entertainment Account:Vanguard Information Technology Index Fund ETF',
@@ -66,7 +66,7 @@ ACCOUNT_NAMES[USD_CASH] = 'SBI Securities (USD)'
 ACCOUNT_NAMES[FEES] = 'Expenses:Fees'
 ACCOUNT_NAMES[TAX] = 'Expenses:Tax:Income Tax'
 ACCOUNT_NAMES[DIVIDEND] = 'Income:Dividend'
-ACCOUNT_NAMES[NEOBANK_USD] = 'd NEOBANK (USD)'
+ACCOUNT_NAMES[DOCOMO_SMTB_USD] = 'DOCOMO SMTB Net Bank (USD)'
 
 # ============================================================
 # EDIT BELOW: Paste raw data
@@ -305,7 +305,7 @@ def resolve_usd_cash_account(tx):
     if tx['category'] == '分配金':
         return DIVIDEND
     if '住信SBI' in tx['desc'] or '外貨預り金' in tx['desc']:
-        return NEOBANK_USD
+        return DOCOMO_SMTB_USD
     raise ValueError(f"Unknown: {tx['desc']}")
 
 

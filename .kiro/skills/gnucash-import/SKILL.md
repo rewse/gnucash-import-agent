@@ -134,7 +134,7 @@ Naming: source-slug uses kebab-case for reference files, snake_case for scripts 
 - ANA SKY Coin - See [references/accounts/ana-sky-coin.md](references/accounts/ana-sky-coin.md)
 - ANA Super Flyers Gold Card - See [references/accounts/ana-super-flyers-gold-card.md](references/accounts/ana-super-flyers-gold-card.md)
 - Bic Point - See [references/accounts/bic-point.md](references/accounts/bic-point.md)
-- d NEOBANK - See [references/accounts/d-neobank.md](references/accounts/d-neobank.md)
+- DOCOMO SMTB Net Bank - See [references/accounts/docomo-smtb-net-bank.md](references/accounts/docomo-smtb-net-bank.md)
 - dPOINT - See [references/accounts/dpoint.md](references/accounts/dpoint.md)
 - GOLD POINT CARD + - See [references/accounts/gold-point-card-plus.md](references/accounts/gold-point-card-plus.md)
 - Hapitas - See [references/accounts/hapitas.md](references/accounts/hapitas.md)
@@ -240,4 +240,4 @@ This file is in `.gitignore`. If it does not exist, ask the user for the followi
 
 ## Notes
 
-- 住信SBIネット銀行, ドコモSMTBネット銀行, and "d NEOBANK" refer to the same bank
+- `DOCOMO SMTB Net Bank` is the GnuCash account name for the bank also known as 住信SBIネット銀行 / SBI Sumishin Net Bank (former trade name), ドコモSMTBネット銀行 (current trade name), ドコモの銀行 (consumer service brand), and d NEOBANK (retired service brand). Statements, ATM screens, and mailings may still show any of these.

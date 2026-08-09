@@ -3,7 +3,7 @@
 ## GnuCash Account
 
 - Card: `Liabilities:Credit Card:GOLD POINT CARD +`
-- Payment debit: `Assets:JPY - Current Assets:Banks:d NEOBANK`
+- Payment debit: `Assets:JPY - Current Assets:Banks:DOCOMO SMTB Net Bank`
 - Payment date: 27th (or next business day if 27th is a holiday)
 
 ## Credentials

@@ -70,7 +70,7 @@ Notes:
 |---------|-----------------|-------------|
 | カ）ヒ゛ユ－カ－ト゛ | Liabilities:Credit Card:LUMINE CARD | NULL |
 | 給与 | Income:Salary | NULL |
-| 住信ＳＢＩネット銀行 | Assets:JPY - Current Assets:Banks:d NEOBANK | NULL |
+| 住信ＳＢＩネット銀行 | Assets:JPY - Current Assets:Banks:DOCOMO SMTB Net Bank | NULL |
 | 預金利息 | Income:Interest Income | NULL |
 
 If a transaction does not match any pattern, ask the user.

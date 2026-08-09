@@ -35,7 +35,7 @@ USD stocks: `Assets:USD - Current Assets:Securities:SBI Securities` (cash accoun
 
 USD cash: Source account is `Assets:USD - Current Assets:Securities:SBI Securities`
 - Dividends: `Income:Dividend` → Cash Account
-- Transfers/FX: Cash Account → `Assets:USD - Current Assets:Banks:d NEOBANK:Entertainment Account`
+- Transfers/FX: Cash Account → `Assets:USD - Current Assets:Banks:DOCOMO SMTB Net Bank:Entertainment Account`
 
 ### Fee/Tax Accounts (USD stocks)
 
@@ -215,8 +215,8 @@ Buy splits (4 splits):
 | Pattern | GnuCash Account |
 |---------|-----------------|
 | 分配金 (QQQ or VGT) | Income:Dividend |
-| 住信SBIネット銀行へ外貨出金 | Assets:USD - Current Assets:Banks:d NEOBANK:Entertainment Account |
-| 外貨預り金（外国為替取引） | Assets:USD - Current Assets:Banks:d NEOBANK:Entertainment Account |
+| 住信SBIネット銀行へ外貨出金 | Assets:USD - Current Assets:Banks:DOCOMO SMTB Net Bank:Entertainment Account |
+| 外貨預り金（外国為替取引） | Assets:USD - Current Assets:Banks:DOCOMO SMTB Net Bank:Entertainment Account |
 
 If a transaction does not match any pattern, ask the user.
 

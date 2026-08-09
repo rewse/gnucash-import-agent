@@ -3,7 +3,7 @@
 ## GnuCash Account
 
 - Card: `Liabilities:Credit Card:Amazon MasterCard Gold`
-- Payment debit: `Assets:JPY - Current Assets:Banks:d NEOBANK`
+- Payment debit: `Assets:JPY - Current Assets:Banks:DOCOMO SMTB Net Bank`
 - Payment date: 26th (or next business day if 26th is a holiday)
 
 ## Credentials

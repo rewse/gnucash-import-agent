@@ -26,14 +26,14 @@ def get_guid(path):
 SOURCE_ACCOUNT = get_guid('Assets:JPY - Current Assets:Banks:JRE Bank')
 LUMINE_CARD = get_guid('Liabilities:Credit Card:LUMINE CARD')
 SALARY = get_guid('Income:Salary')
-NEOBANK = get_guid('Assets:JPY - Current Assets:Banks:d NEOBANK')
+DOCOMO_SMTB = get_guid('Assets:JPY - Current Assets:Banks:DOCOMO SMTB Net Bank')
 INTEREST = get_guid('Income:Interest Income')
 JPY_CURRENCY = 'a77d4ee821e04f02bb7429e437c645e4'
 
 ACCOUNT_NAMES = {
     LUMINE_CARD: 'Liabilities:Credit Card:LUMINE CARD',
     SALARY: 'Income:Salary',
-    NEOBANK: 'Assets:Banks:d NEOBANK',
+    DOCOMO_SMTB: 'Assets:Banks:DOCOMO SMTB Net Bank',
     INTEREST: 'Income:Interest Income',
 }
 
@@ -91,7 +91,7 @@ def get_transaction_info(idx, tx):
     if desc.startswith('給与'):
         return SALARY, None
     if '住信ＳＢＩ' in desc:
-        return NEOBANK, None
+        return DOCOMO_SMTB, None
     if desc == '預金利息':
         return INTEREST, None
     raise ValueError(f"Unknown transaction type at ID {idx}: {desc}")

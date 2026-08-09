@@ -79,6 +79,10 @@ Stations without prefix that are NOT JR:
 
 | Station | Railway |
 |---------|---------|
+| 新宿御苑 | Tokyo Metro |
+| 曙橋 | Toei Subway |
+| 明治神宮 | Tokyo Metro |
+| 後楽園 | Tokyo Metro |
 | 溜池山王 | Tokyo Metro |
 | 赤坂見附 | Tokyo Metro |
 | 南大沢 | Keio |

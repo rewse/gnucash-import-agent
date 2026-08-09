@@ -45,8 +45,11 @@ ACCOUNT_NAMES = {
     AWS_REIMBURSEMENT_ACCOUNT: 'Assets:Reimbursement:AWS Japan',
 }
 
-# Tokyo Metro stations (no prefix, excluding NEAREST_STATION which is added dynamically)
-TOKYO_METRO_STATIONS = ['溜池山王', '赤坂見附', '後楽園']
+# Tokyo Metro stations (no prefix)
+TOKYO_METRO_STATIONS = ['神谷町', '新宿御苑', '溜池山王', '赤坂見附', '六本木一', '後楽園']
+
+# Toei Subway stations (no prefix)
+TOEI_SUBWAY_STATIONS = ['曙橋']
 
 # Keio stations
 KEIO_STATIONS = ['南大沢']
@@ -104,8 +107,10 @@ def parse_transactions(raw_data):
 
 
 def get_railway_company(station1, station2):
-    if station1 == NEAREST_STATION or station1 in TOKYO_METRO_STATIONS:
+    if station1 in TOKYO_METRO_STATIONS:
         return 'Tokyo Metro'
+    if station1 in TOEI_SUBWAY_STATIONS:
+        return 'Toei Subway'
     if station1 in KEIO_STATIONS:
         return 'Keio'
     if station1.startswith('地') or station2.startswith('地'):
@@ -119,16 +124,26 @@ def is_weekday(date):
     return date.weekday() < 5
 
 
-def detect_business_expense(txs, date):
-    if not is_weekday(date):
+BUSINESS_PAIRS = set()
+
+
+def _init_business_pairs():
+    """Initialize business expense direct pairs after NEAREST_STATION is loaded."""
+    return {
+        (NEAREST_STATION, '神谷町'),
+        ('神谷町', NEAREST_STATION),
+        (NEAREST_STATION, '六本木一'),
+        ('六本木一', NEAREST_STATION),
+    }
+
+
+def is_business_trip(tx):
+    """Check if a transit transaction is a direct commute pair."""
+    if tx['type'] not in ['入', '＊入', '定']:
         return False
-    pattern = [(t['station1'], t['station2']) for t in txs if t['date'] == date and t['type'] in ['入', '＊入']]
-    has_roppongi = any(
-        (s1 == NEAREST_STATION and s2 in ['六本木一', '神谷町']) or
-        (s1 in ['六本木一', '神谷町'] and s2 == NEAREST_STATION)
-        for s1, s2 in pattern
-    )
-    return has_roppongi
+    if not is_weekday(tx['date']):
+        return False
+    return (tx['station1'], tx['station2']) in BUSINESS_PAIRS
 
 
 def get_transaction_info(transactions, idx, tx):
@@ -148,8 +163,7 @@ def get_transaction_info(transactions, idx, tx):
         expense_account = DINING_ACCOUNT
         description = None
     elif tx['type'] in ['入', '＊入']:
-        is_business = detect_business_expense(transactions, tx['date'])
-        expense_account = BUSINESS_ACCOUNT if is_business else TRANSIT_ACCOUNT
+        expense_account = BUSINESS_ACCOUNT if is_business_trip(tx) else TRANSIT_ACCOUNT
         description = get_railway_company(tx['station1'], tx['station2'])
     else:
         return None, None
@@ -236,6 +250,9 @@ def main():
     if not NEAREST_STATION:
         print("Error: NEAREST_STATION is empty. Set your nearest station.", file=sys.stderr)
         sys.exit(1)
+
+    global BUSINESS_PAIRS
+    BUSINESS_PAIRS = _init_business_pairs()
 
     transactions = parse_transactions(RAW_DATA)
 

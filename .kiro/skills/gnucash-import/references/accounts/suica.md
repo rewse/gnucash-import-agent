@@ -59,17 +59,19 @@ Notes:
 
 ### Business Expense Detection
 
-On weekdays, if the following pattern appears on the same day, classify ALL transit transactions on that day as `Expenses:Business Expenses`:
+On weekdays, classify a transit transaction as `Expenses:Business Expenses` only if it is one of these direct from→to pairs:
 
-- {nearest_station} → 六本木一 / 六本木一 → {nearest_station}
-- OR {nearest_station} → 神谷町 / 神谷町 → {nearest_station}
+- {nearest_station} → 六本木一
+- 六本木一 → {nearest_station}
+- {nearest_station} → 神谷町
+- 神谷町 → {nearest_station}
 
 See [references/personal.json](../personal.json) for the nearest station.
 
 Rules:
-- Check all transit transactions on the same date, not just sequential ones
-- 物販 or ｵｰﾄ transactions do not affect the pattern
-- If pattern matches, ALL transit transactions on that day become business expenses
+- Only the specific transaction matching the pair is business expense, not all transactions on that day
+- 物販 or ｵｰﾄ transactions are never business expenses
+- Weekend transactions are never business expenses
 
 ### Railway Company Detection
 
@@ -88,9 +90,13 @@ Stations without prefix that are NOT JR:
 
 | Station | Railway |
 |---------|---------|
+| 神谷町 | Tokyo Metro |
+| 新宿御苑 | Tokyo Metro |
+| 曙橋 | Toei Subway |
 | 溜池山王 | Tokyo Metro |
 | 赤坂見附 | Tokyo Metro |
 | 南大沢 | Keio |
+| 六本木一 | Tokyo Metro |
 
 Add new stations here when discovered.
 

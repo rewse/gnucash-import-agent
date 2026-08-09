@@ -18,6 +18,7 @@ Import online financial statements into GnuCash PostgreSQL database.
 7. For credit cards: also import unconfirmed transactions from the current billing cycle
 
 Rules:
+- Each transaction from the online statement MUST be imported at the original granularity (one row per statement line). Do NOT aggregate, summarize, or combine multiple statement entries by date or category.
 - Description must be in English (e.g., merchant name)
 - If you cannot determine how to map a transaction (account, description, etc.), you MUST ask the user instead of guessing
 - You MUST check for duplicates before inserting: if a transaction with the same date and amount already exists, you MUST compare the statement details (description, transaction type, etc.) to determine if it's a duplicate or a separate transaction with the same amount

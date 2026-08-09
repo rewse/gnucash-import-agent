@@ -57,8 +57,19 @@ Notes:
 |---------|------|-----------------|-------------|
 | お買い物ポイント | Earn | Income:Point Charge | Amazon |
 | ボーナスポイント | Earn | Income:Point Charge | Amazon |
-| Amazon Mastercard | Earn | Income:Point Charge | Amazon |
+| Amazon Mastercard (all variants) | Earn | Income:Point Charge | Amazon |
+| キャンペーンイベント | Earn | Income:Point Charge | Amazon |
 | 利用・キャンセル (ポイントの利用) | Use | (lookup by order) | Amazon |
+
+Amazon Mastercard variants include: AmazonでのAmazon Mastercardご利用分, コンビニでのAmazon Mastercardご利用分, Amazon以外でのAmazon Mastercardご利用分, コンビニでのAmazon Mastercardキャンペーン分, Amazon Prime Mastercard限定オファー. All map to Income:Point Charge.
+
+Transactions marked ＊獲得予定 (pending) SHOULD be imported. They will be confirmed later.
+
+### Account Inference for Usage Transactions
+
+When order details are available, infer from product name:
+- Electronics/gadgets → Expenses:Electronics
+- Books → Expenses:Books
 
 ### Order Lookup for Usage Transactions
 

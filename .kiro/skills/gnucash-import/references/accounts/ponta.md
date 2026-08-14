@@ -26,7 +26,7 @@
 11. Copy RAW_DATA into `tmp/ponta_import_YYYYMMDD.py`
 12. Run `python3 tmp/ponta_import_YYYYMMDD.py review` to show review table
 13. User reviews and specifies manual overrides by ID
-14. Run `python3 tmp/ponta_import_YYYYMMDD.py sql > tmp/import_ponta.sql` to generate SQL
+14. Run `python3 tmp/ponta_import_YYYYMMDD.py sql > tmp/ponta_import_YYYYMMDD.sql` to generate SQL
 15. Execute SQL to insert transactions
 
 ## Script Template

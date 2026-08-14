@@ -21,7 +21,7 @@
 8. Copy RAW_DATA into `tmp/starbucks_import_YYYYMMDD.py`
 9. Run `python3 tmp/starbucks_import_YYYYMMDD.py review` to show review table
 10. User reviews and specifies manual overrides by ID
-11. Run `python3 tmp/starbucks_import_YYYYMMDD.py sql > tmp/import_starbucks.sql` to generate SQL
+11. Run `python3 tmp/starbucks_import_YYYYMMDD.py sql > tmp/starbucks_import_YYYYMMDD.sql` to generate SQL
 12. Execute SQL to insert transactions
 
 ## Script Template

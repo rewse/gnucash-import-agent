@@ -41,7 +41,7 @@ This is a credit card. Follow the billing-statement-based verification workflow.
 12. Copy RAW_DATA into `tmp/paypay_card_jcb_import_YYYYMMDD.py`
 13. Run `python3 tmp/paypay_card_jcb_import_YYYYMMDD.py review` to show review table
 14. User reviews and specifies manual overrides by ID
-15. Run `python3 tmp/paypay_card_jcb_import_YYYYMMDD.py sql > tmp/import_paypay_card_jcb.sql` to generate SQL
+15. Run `python3 tmp/paypay_card_jcb_import_YYYYMMDD.py sql > tmp/paypay_card_jcb_import_YYYYMMDD.sql` to generate SQL
 16. Execute SQL to insert transactions
 
 ### Current Statement (Unconfirmed)

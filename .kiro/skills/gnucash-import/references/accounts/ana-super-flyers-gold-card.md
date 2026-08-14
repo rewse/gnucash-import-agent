@@ -33,7 +33,7 @@ This is a credit card. Transactions may appear on the statement with a delay, so
 10. Copy RAW_DATA into `tmp/ana_super_flyers_gold_card_import_YYYYMMDD.py`
 11. Run `python3 tmp/ana_super_flyers_gold_card_import_YYYYMMDD.py review` to show review table
 12. User reviews and specifies manual overrides by ID
-13. Run `python3 tmp/ana_super_flyers_gold_card_import_YYYYMMDD.py sql > tmp/import_ana_super_flyers_gold_card.sql` to generate SQL
+13. Run `python3 tmp/ana_super_flyers_gold_card_import_YYYYMMDD.py sql > tmp/ana_super_flyers_gold_card_import_YYYYMMDD.sql` to generate SQL
 14. Execute SQL to insert transactions
 
 ### Current Statement (Unconfirmed)

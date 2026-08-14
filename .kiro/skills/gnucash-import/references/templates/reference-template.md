@@ -24,7 +24,7 @@ For multi-currency sources, list each currency account:
 8. Copy RAW_DATA into `tmp/{source_slug}_import_YYYYMMDD.py`
 9. Run `python3 tmp/{source_slug}_import_YYYYMMDD.py review` to show review table
 10. User reviews and specifies manual overrides by ID
-11. Run `python3 tmp/{source_slug}_import_YYYYMMDD.py sql > tmp/import_{source_slug}.sql` to generate SQL
+11. Run `python3 tmp/{source_slug}_import_YYYYMMDD.py sql > tmp/{source_slug}_import_YYYYMMDD.sql` to generate SQL
 12. Execute SQL to insert transactions
 
 ## Script Template

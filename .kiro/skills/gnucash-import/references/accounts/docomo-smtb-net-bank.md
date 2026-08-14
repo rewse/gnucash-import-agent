@@ -51,7 +51,7 @@ Purpose account transfers (`普通 円 予備費`, `普通 円 長期貯蓄`, `�
 14. Prepare RAW_DATA and copy into `tmp/docomo_smtb_net_bank_import_YYYYMMDD.py`
 15. Run `python3 tmp/docomo_smtb_net_bank_import_YYYYMMDD.py review` to show review table
 16. User reviews and specifies manual overrides by ID
-17. Run `python3 tmp/docomo_smtb_net_bank_import_YYYYMMDD.py sql > tmp/import_docomo_smtb_net_bank.sql` to generate SQL
+17. Run `python3 tmp/docomo_smtb_net_bank_import_YYYYMMDD.py sql > tmp/docomo_smtb_net_bank_import_YYYYMMDD.sql` to generate SQL
 18. Execute SQL to insert transactions
 
 ## Script Template

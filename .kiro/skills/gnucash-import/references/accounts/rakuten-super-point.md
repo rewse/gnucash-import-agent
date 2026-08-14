@@ -24,7 +24,7 @@ No CAPTCHA or OTP required.
 10. Copy RAW_DATA into `tmp/rakuten_super_point_import_YYYYMMDD.py`
 11. Run `python3 tmp/rakuten_super_point_import_YYYYMMDD.py review` to show review table
 12. User reviews and specifies manual overrides by ID
-13. Run `python3 tmp/rakuten_super_point_import_YYYYMMDD.py sql > tmp/import_rakuten_super_point.sql` to generate SQL
+13. Run `python3 tmp/rakuten_super_point_import_YYYYMMDD.py sql > tmp/rakuten_super_point_import_YYYYMMDD.sql` to generate SQL
 14. Execute SQL to insert transactions
 
 ## Script Template

@@ -21,7 +21,7 @@ Passkey is required. You MUST use `agent-browser --auto-connect` and ask the use
 9. Copy RAW_DATA into `tmp/world_of_hyatt_import_YYYYMMDD.py`
 10. Run `python3 tmp/world_of_hyatt_import_YYYYMMDD.py review` to show review table
 11. User reviews and specifies manual overrides by ID
-12. Run `python3 tmp/world_of_hyatt_import_YYYYMMDD.py sql > tmp/import_world_of_hyatt.sql` to generate SQL
+12. Run `python3 tmp/world_of_hyatt_import_YYYYMMDD.py sql > tmp/world_of_hyatt_import_YYYYMMDD.sql` to generate SQL
 13. Execute SQL to insert transactions
 
 ## Script Template

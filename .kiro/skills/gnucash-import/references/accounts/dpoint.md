@@ -20,10 +20,10 @@ Login via passkey (dAccount). You MUST use `agent-browser --auto-connect` and as
 8. `agent-browser --auto-connect snapshot -c -d 3` to get transaction data
 9. Repeat for each month needed
 10. Prepare RAW_DATA
-11. Copy RAW_DATA into `tmp/d_point_import_YYYYMMDD.py`
-12. Run `python3 tmp/d_point_import_YYYYMMDD.py review` to show review table
+11. Copy RAW_DATA into `tmp/dpoint_import_YYYYMMDD.py`
+12. Run `python3 tmp/dpoint_import_YYYYMMDD.py review` to show review table
 13. User reviews and specifies manual overrides by ID
-14. Run `python3 tmp/d_point_import_YYYYMMDD.py sql > tmp/import_d_point.sql` to generate SQL
+14. Run `python3 tmp/dpoint_import_YYYYMMDD.py sql > tmp/dpoint_import_YYYYMMDD.sql` to generate SQL
 15. Execute SQL to insert transactions
 
 ## Script Template

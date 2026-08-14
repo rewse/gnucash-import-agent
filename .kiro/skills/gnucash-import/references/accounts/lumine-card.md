@@ -30,13 +30,13 @@ This is a credit card. Transactions may appear on the statement with a delay, so
    c. Check if this total already exists in GnuCash (see SKILL.md "Credit Card: Billing Total Check")
    d. If the total exists → all transactions in this statement are already imported; stop going further back
    e. If the total does NOT exist → download CSV via `明細CSVダウンロード` button
-8. Convert CSV from Shift-JIS to UTF-8: `iconv -f SHIFT_JIS -t UTF-8 <file>`
+8. Move the downloaded CSV to `tmp/lumine_card_statement_YYYYMMDD_{billing_YYYYMM}.csv` and convert it from Shift-JIS to UTF-8 in place: `iconv -f SHIFT_JIS -t UTF-8 tmp/lumine_card_statement_YYYYMMDD_{billing_YYYYMM}.csv`
 9. Perform per-transaction duplicate detection (see SKILL.md "Credit Card: Duplicate Detection")
 10. Prepare RAW_DATA with only new transactions (use CSV confirmed format)
 11. Copy RAW_DATA into `tmp/lumine_card_import_YYYYMMDD.py`
 12. Run `python3 tmp/lumine_card_import_YYYYMMDD.py review` to show review table
 13. User reviews and specifies manual overrides by ID
-14. Run `python3 tmp/lumine_card_import_YYYYMMDD.py sql > tmp/import_lumine_card.sql` to generate SQL
+14. Run `python3 tmp/lumine_card_import_YYYYMMDD.py sql > tmp/lumine_card_import_YYYYMMDD.sql` to generate SQL
 15. Execute SQL to insert transactions
 
 ### Current Statement (Unconfirmed)

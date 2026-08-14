@@ -5,8 +5,8 @@ Starbucks Card Statement Importer
 Usage:
 1. Copy raw data from Starbucks browser snapshot into RAW_DATA
 2. Set MANUAL_OVERRIDES for any transactions that need custom accounts/descriptions
-3. Run: python3 tmp/starbucks_import_20260202.py review    # Review transactions
-4. Run: python3 tmp/starbucks_import_20260202.py sql       # Generate SQL
+3. Run: python3 tmp/starbucks_import_YYYYMMDD.py review    # Review transactions
+4. Run: python3 tmp/starbucks_import_YYYYMMDD.py sql       # Generate SQL
 """
 import json
 import uuid

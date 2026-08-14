@@ -36,7 +36,7 @@ IMPORTANT: This site has bot protection. You MUST NOT navigate by opening URLs d
 9. Copy RAW_DATA into `tmp/luxury_card_mastercard_titanium_import_YYYYMMDD.py`
 10. Run `python3 tmp/luxury_card_mastercard_titanium_import_YYYYMMDD.py review`
 11. User reviews and specifies manual overrides by ID
-12. Run `python3 tmp/luxury_card_mastercard_titanium_import_YYYYMMDD.py sql > tmp/import_luxury_card.sql`
+12. Run `python3 tmp/luxury_card_mastercard_titanium_import_YYYYMMDD.py sql > tmp/luxury_card_mastercard_titanium_import_YYYYMMDD.sql`
 13. Execute SQL to insert transactions
 
 ### Current Statement (Unconfirmed)
@@ -58,7 +58,7 @@ See SKILL.md "Credit Card: Current Statement (Unconfirmed)".
 4. Sum all categories for each month to get net point change
 5. Prepare RAW_DATA_POINTS (one line per month: `YYYY-MM\tpoints`)
 6. Run `python3 tmp/luxury_card_mastercard_titanium_import_YYYYMMDD.py points-review`
-7. Run `python3 tmp/luxury_card_mastercard_titanium_import_YYYYMMDD.py points-sql`
+7. Run `python3 tmp/luxury_card_mastercard_titanium_import_YYYYMMDD.py points-sql > tmp/luxury_card_mastercard_titanium_import_YYYYMMDD_points.sql`
 
 ## Script Template
 

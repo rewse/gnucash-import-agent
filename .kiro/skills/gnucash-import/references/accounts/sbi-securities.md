@@ -62,7 +62,7 @@ Passkey authentication required. You MUST use `agent-browser --auto-connect` and
 10. Copy RAW_DATA_JPY into `tmp/sbi_securities_import_YYYYMMDD.py`
 11. Run `python3 tmp/sbi_securities_import_YYYYMMDD.py review` to show review table
 12. User reviews and specifies manual overrides by ID
-13. Run `python3 tmp/sbi_securities_import_YYYYMMDD.py sql > tmp/import_sbi_securities.sql` to generate SQL
+13. Run `python3 tmp/sbi_securities_import_YYYYMMDD.py sql > tmp/sbi_securities_import_YYYYMMDD_jpy.sql` to generate SQL
 14. Execute SQL to insert transactions
 
 ### USD Stocks (外国株式)
@@ -73,7 +73,7 @@ Passkey authentication required. You MUST use `agent-browser --auto-connect` and
 4. Compile into tab-separated format (see USD Stock Input Format below)
 5. Copy RAW_DATA_USD_STOCK into `tmp/sbi_securities_import_YYYYMMDD.py`
 6. Run `python3 tmp/sbi_securities_import_YYYYMMDD.py review-usd-stock`
-7. Run `python3 tmp/sbi_securities_import_YYYYMMDD.py sql-usd-stock > tmp/import_sbi_usd_stock.sql`
+7. Run `python3 tmp/sbi_securities_import_YYYYMMDD.py sql-usd-stock > tmp/sbi_securities_import_YYYYMMDD_usd_stock.sql`
 8. Execute SQL
 
 ### USD Cash (外貨入出金明細)
@@ -84,7 +84,7 @@ Passkey authentication required. You MUST use `agent-browser --auto-connect` and
 4. Extract the transaction section
 5. Copy RAW_DATA_USD_CASH into `tmp/sbi_securities_import_YYYYMMDD.py`
 6. Run `python3 tmp/sbi_securities_import_YYYYMMDD.py review-usd-cash`
-7. Run `python3 tmp/sbi_securities_import_YYYYMMDD.py sql-usd-cash > tmp/import_sbi_usd_cash.sql`
+7. Run `python3 tmp/sbi_securities_import_YYYYMMDD.py sql-usd-cash > tmp/sbi_securities_import_YYYYMMDD_usd_cash.sql`
 8. Execute SQL
 
 ## Script Template

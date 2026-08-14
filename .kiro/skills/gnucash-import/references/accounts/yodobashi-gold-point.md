@@ -24,7 +24,7 @@ No CAPTCHA required. You MUST use `agent-browser --auto-connect` with `--args "-
 9. Copy RAW_DATA into `tmp/yodobashi_gold_point_import_YYYYMMDD.py`
 10. Run `python3 tmp/yodobashi_gold_point_import_YYYYMMDD.py review` to show review table
 11. User reviews and specifies manual overrides by ID
-12. Run `python3 tmp/yodobashi_gold_point_import_YYYYMMDD.py sql > tmp/import_yodobashi_gold_point.sql` to generate SQL
+12. Run `python3 tmp/yodobashi_gold_point_import_YYYYMMDD.py sql > tmp/yodobashi_gold_point_import_YYYYMMDD.sql` to generate SQL
 13. Execute SQL to insert transactions
 
 ## Script Template

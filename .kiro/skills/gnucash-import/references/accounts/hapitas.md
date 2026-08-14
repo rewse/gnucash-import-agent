@@ -23,7 +23,7 @@ CAPTCHA is required at login. Ask the user to log in manually at https://hapitas
 11. Copy RAW_DATA into `tmp/hapitas_import_YYYYMMDD.py`
 12. Run `python3 tmp/hapitas_import_YYYYMMDD.py review` to show review table
 13. User reviews and specifies manual overrides by ID
-14. Run `python3 tmp/hapitas_import_YYYYMMDD.py sql > tmp/import_hapitas.sql` to generate SQL
+14. Run `python3 tmp/hapitas_import_YYYYMMDD.py sql > tmp/hapitas_import_YYYYMMDD.sql` to generate SQL
 15. Execute SQL to insert transactions
 
 ## Script Template

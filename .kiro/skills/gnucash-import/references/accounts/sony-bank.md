@@ -21,11 +21,11 @@ Manual login required. You MUST use `agent-browser --auto-connect` and ask the u
 8. Set date range using the 表示期間 fields (year/month/day inputs)
 9. Click "表示" button
 10. Click "CSVのダウンロード" to download CSV file
-11. Convert CSV from Shift-JIS to UTF-8: `iconv -f SHIFT_JIS -t UTF-8 FutsuRireki.csv`
+11. Move the downloaded CSV to `tmp/sony_bank_statement_YYYYMMDD_{jpy|usd}.csv` and convert it from Shift-JIS to UTF-8 in place: `iconv -f SHIFT_JIS -t UTF-8 tmp/sony_bank_statement_YYYYMMDD_{jpy|usd}.csv`
 12. Copy converted CSV content into `tmp/sony_bank_import_YYYYMMDD.py` RAW_DATA
 13. Run `python3 tmp/sony_bank_import_YYYYMMDD.py review` to show review table
 14. User reviews and specifies manual overrides by ID
-15. Run `python3 tmp/sony_bank_import_YYYYMMDD.py sql > tmp/import_sony_bank.sql` to generate SQL
+15. Run `python3 tmp/sony_bank_import_YYYYMMDD.py sql > tmp/sony_bank_import_YYYYMMDD.sql` to generate SQL
 16. Execute SQL to insert transactions
 17. Repeat steps 7-16 for each currency as needed
 
@@ -58,7 +58,7 @@ Notes:
 - Empty string means no amount
 - 預入額 filled = deposit (positive); 引出額 filled = withdrawal (negative)
 - USD CSV has an extra 為替レート column (exchange rate at time of transaction; empty for debit purchases)
-- Downloaded filename is always `FutsuRireki.csv`
+- Downloaded filename is always `FutsuRireki.csv`, and it is identical for every currency, so rename it under `tmp/` with the source slug, date, and currency before use
 
 ## Conversion Rules
 

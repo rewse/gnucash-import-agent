@@ -33,7 +33,7 @@ This is a credit card. Transactions may appear on the statement with a delay, so
 9. Copy RAW_DATA into `tmp/gold_point_card_plus_import_YYYYMMDD.py`
 10. Run `python3 tmp/gold_point_card_plus_import_YYYYMMDD.py review` to show review table
 11. User reviews and specifies manual overrides by ID
-12. Run `python3 tmp/gold_point_card_plus_import_YYYYMMDD.py sql > tmp/import_gold_point_card_plus.sql` to generate SQL
+12. Run `python3 tmp/gold_point_card_plus_import_YYYYMMDD.py sql > tmp/gold_point_card_plus_import_YYYYMMDD.sql` to generate SQL
 13. Execute SQL to insert transactions
 
 ### Current Statement (Unconfirmed)

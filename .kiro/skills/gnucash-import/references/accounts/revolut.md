@@ -22,7 +22,7 @@ CAPTCHA is required. You MUST use `agent-browser --auto-connect` and ask the use
 10. Copy RAW_DATA into `tmp/revolut_import_YYYYMMDD.py`
 11. Run `python3 tmp/revolut_import_YYYYMMDD.py review` to show review table
 12. User reviews and specifies manual overrides by ID
-13. Run `python3 tmp/revolut_import_YYYYMMDD.py sql > tmp/import_revolut.sql` to generate SQL
+13. Run `python3 tmp/revolut_import_YYYYMMDD.py sql > tmp/revolut_import_YYYYMMDD.sql` to generate SQL
 14. Execute SQL to insert transactions
 
 ## Script Template

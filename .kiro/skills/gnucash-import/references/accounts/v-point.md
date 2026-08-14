@@ -26,7 +26,7 @@ Email authentication is required. You MUST use `agent-browser --auto-connect` an
 13. Copy RAW_DATA into `tmp/v_point_import_YYYYMMDD.py`
 14. Run `python3 tmp/v_point_import_YYYYMMDD.py review` to show review table
 15. User reviews and specifies manual overrides by ID
-16. Run `python3 tmp/v_point_import_YYYYMMDD.py sql > tmp/import_v_point.sql` to generate SQL
+16. Run `python3 tmp/v_point_import_YYYYMMDD.py sql > tmp/v_point_import_YYYYMMDD.sql` to generate SQL
 17. Execute SQL to insert transactions
 
 ## Script Template

@@ -20,7 +20,7 @@ Passkey is required. You MUST use `agent-browser --auto-connect` and ask the use
 8. Copy RAW_DATA into `tmp/amazon_gc_import_YYYYMMDD.py`
 9. Run `python3 tmp/amazon_gc_import_YYYYMMDD.py review` to show review table
 10. User reviews and specifies manual overrides by ID
-11. Run `python3 tmp/amazon_gc_import_YYYYMMDD.py sql > tmp/import_amazon_gc.sql` to generate SQL
+11. Run `python3 tmp/amazon_gc_import_YYYYMMDD.py sql > tmp/amazon_gc_import_YYYYMMDD.sql` to generate SQL
 12. Execute SQL to insert transactions
 
 ## Script Template

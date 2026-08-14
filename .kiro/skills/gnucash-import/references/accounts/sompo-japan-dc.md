@@ -34,7 +34,7 @@ Buy (掛金): Transfer Account → Fund Account (on settlement date)
 12. Copy RAW_DATA into `tmp/sompo_japan_dc_import_YYYYMMDD.py`
 13. Run `python3 tmp/sompo_japan_dc_import_YYYYMMDD.py review` to show review table
 14. User reviews and specifies manual overrides by ID
-15. Run `python3 tmp/sompo_japan_dc_import_YYYYMMDD.py sql > tmp/import_sompo_japan_dc.sql` to generate SQL
+15. Run `python3 tmp/sompo_japan_dc_import_YYYYMMDD.py sql > tmp/sompo_japan_dc_import_YYYYMMDD.sql` to generate SQL
 16. Execute SQL to insert transactions
 
 ## Script Template

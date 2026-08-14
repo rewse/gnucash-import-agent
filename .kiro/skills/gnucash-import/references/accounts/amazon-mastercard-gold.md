@@ -33,7 +33,7 @@ This is a credit card. Transactions may appear on the statement with a delay, so
 10. Copy RAW_DATA into `tmp/amazon_mastercard_gold_import_YYYYMMDD.py`
 11. Run `python3 tmp/amazon_mastercard_gold_import_YYYYMMDD.py review` to show review table
 12. User reviews and specifies manual overrides by ID
-13. Run `python3 tmp/amazon_mastercard_gold_import_YYYYMMDD.py sql > tmp/import_amazon_mastercard_gold.sql` to generate SQL
+13. Run `python3 tmp/amazon_mastercard_gold_import_YYYYMMDD.py sql > tmp/amazon_mastercard_gold_import_YYYYMMDD.sql` to generate SQL
 14. Execute SQL to insert transactions
 
 ### Current Statement (Unconfirmed)

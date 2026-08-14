@@ -20,11 +20,11 @@ Manual login required. You MUST use `agent-browser --auto-connect` and ask the u
    - **JPY Savings**: From top page, click "入出金明細" link under "円普通預金" section
    - **SBI Hyper Deposit**: From top page, click "入出金明細" link under "SBIハイパー預金" section
    - **USD Savings**: Navigate to 外貨預金 → 外貨普通預金 → click "入出金明細" link in the 米ドル row
-6. On each transaction history page, click "明細をCSVでダウンロードする" to download CSV
+6. On each transaction history page, click "明細をCSVでダウンロードする" to download CSV, then move it to `tmp/sbi_shinsei_bank_statement_YYYYMMDD_{jpy|hyper|usd}.csv`
 7. Copy CSV content into `tmp/sbi_shinsei_bank_import_YYYYMMDD.py` RAW_DATA
 8. Run `python3 tmp/sbi_shinsei_bank_import_YYYYMMDD.py review` to show review table
 9. User reviews and specifies manual overrides by ID
-10. Run `python3 tmp/sbi_shinsei_bank_import_YYYYMMDD.py sql > tmp/import_sbi_shinsei_bank.sql` to generate SQL
+10. Run `python3 tmp/sbi_shinsei_bank_import_YYYYMMDD.py sql > tmp/sbi_shinsei_bank_import_YYYYMMDD.sql` to generate SQL
 11. Execute SQL to insert transactions
 12. Repeat steps 5-11 for each account type as needed
 

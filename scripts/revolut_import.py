@@ -27,13 +27,16 @@ def get_guid(path):
 
 # Account GUIDs
 REVOLUT_ACCOUNT = get_guid('Assets:JPY - Current Assets:Prepaid:Revolut')
-LUXURY_CARD_ACCOUNT = get_guid('Liabilities:Credit Card:Luxury Card Mastercard Titanium')
+AMAZON_MC_ACCOUNT = get_guid('Liabilities:Credit Card:Amazon MasterCard Gold')
 GROCERIES_ACCOUNT = get_guid('Expenses:Groceries')
 FEES_ACCOUNT = get_guid('Expenses:Fees')
 JPY_CURRENCY = 'a77d4ee821e04f02bb7429e437c645e4'
 
+TRAVEL_ACCOUNT = get_guid('Expenses:Entertainment:Travel')
+
 ACCOUNT_NAMES = {
-    LUXURY_CARD_ACCOUNT: 'Liabilities:Credit Card:Luxury Card',
+    AMAZON_MC_ACCOUNT: 'Liabilities:Credit Card:Amazon MasterCard Gold',
+    TRAVEL_ACCOUNT: 'Expenses:Entertainment:Travel',
     GROCERIES_ACCOUNT: 'Expenses:Groceries',
     FEES_ACCOUNT: 'Expenses:Fees',
 }
@@ -73,7 +76,7 @@ def parse_transactions(raw_data):
             continue
 
         # Skip failed/cancelled transactions
-        if '失敗しました' in line or '取り消されました' in line:
+        if '失敗しました' in line or '取り消されました' in line or '却下されました' in line:
             continue
 
         # Skip month headers
@@ -133,7 +136,7 @@ def get_transaction_info(idx, tx):
 
     # Charge from Apple Pay / credit card
     if '経由でチャージされました' in merchant or '経由でお金が追加されました' in merchant:
-        return LUXURY_CARD_ACCOUNT, None
+        return AMAZON_MC_ACCOUNT, None
 
     # Card delivery fee
     if 'カード配送料' in merchant:

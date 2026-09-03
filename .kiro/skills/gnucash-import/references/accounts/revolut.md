@@ -54,12 +54,16 @@ Notes:
 
 | Pattern | GnuCash Account | Description |
 |---------|-----------------|-------------|
-| Apple Pay経由でチャージされました | Liabilities:Credit Card:Luxury Card Mastercard Titanium | NULL |
-| ・・経由でお金が追加されました | Liabilities:Credit Card:Luxury Card Mastercard Titanium (default) | NULL |
+| Apple Pay経由でチャージされました | Liabilities:Credit Card:Amazon MasterCard Gold | NULL |
+| ・・経由でお金が追加されました | Liabilities:Credit Card:Amazon MasterCard Gold (default) | NULL |
 | カード配送料 | Expenses:Fees | Revolut |
 | AliExpress | Expenses:Groceries (default) | AliExpress |
 | PayPal | (lookup email) | PayPal |
 | Other merchants | (infer or lookup email) | Merchant name |
+
+Overseas trip spending goes to `Expenses:Entertainment:Travel`, covering restaurants, local transport, admission tickets, and souvenirs alike.
+
+A transaction whose status line reads 却下されました, 失敗しました, or 取り消されました never moved money, so it MUST be skipped.
 
 ### Email Lookup for Missing Information
 

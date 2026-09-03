@@ -102,9 +102,22 @@ Notes:
 | Pattern | GnuCash Account | Description |
 |---------|-----------------|-------------|
 | ATM 現金出金（提携取引） | Assets:JPY - Current Assets:Cash | NULL |
+| ｼﾖｳｶｲｷﾔﾝﾍﾟ-ﾝ | Income:Cash Back | Referral Campaign |
+| 振込 ｶ) ｱﾌﾟﾗｽ | Liabilities:Credit Card:Luxury Card Mastercard Titanium | NULL |
+| 振込手数料 | Expenses:Fees | SBI Shinsei Bank |
+| 満期解約 パワーダイレクト円定期100 | (multi-split, see below) | NULL |
+| ＮＥＴ 資金振替-{account_no} | (the SBI Shinsei account the money came from or went to) | NULL |
 | 地方税 | Expenses:Tax:Income Tax | Tokyo |
 | 国税 | Expenses:Tax:Income Tax | Japan |
 | 税引前利息 | Income:Interest Income | SBI Shinsei Bank |
+
+A 振込 or ＮＥＴ 振込・振替 to a named payee has no fixed counter account, so ask the user which account each one settles.
+
+A 振込手数料 appears twice per transfer, once charged and once refunded, because the monthly free-transfer quota rebates it. Import both lines: they cancel out but each is a statement line.
+
+#### 満期解約 (Time Deposit Maturity)
+
+The credited amount is principal plus interest after withholding, so the counter side needs two splits: the principal against `Assets:JPY - Current Assets:Banks:SBI Shinsei Bank:Saving Account` and the remainder against `Income:Interest Income`. Principals are round numbers, so the split is the round part and the remainder. Ask the user for the maturity notice when the gross interest and withholding must be recorded separately.
 
 ### Transaction Types (SBI Hyper Deposit)
 
@@ -125,6 +138,7 @@ Notes:
 | 国税 | Expenses:Tax:Income Tax | Japan |
 | 税引前利息 | Income:Interest Income | SBI Shinsei Bank |
 | 被仕向事務手数料 | Expenses:Fees | SBI Shinsei Bank |
+| 外為送金 | Assets:USD - Current Assets:Securities:Morgan Stanley | Morgan Stanley |
 
 If a transaction does not match any pattern, ask the user.
 
@@ -177,3 +191,25 @@ Display transactions sorted by date descending (newest first) with:
 - SBI Hyper Deposit is used for automatic settlement with SBI Securities
 - The "明細をCSVでダウンロードする" button is available on each transaction history page
 - Transaction history is available from the current day back to the same month two years prior
+- Navigate only by clicking links on the page. Loading a page URL directly ends the session with error `CME0042`
+- The transaction history page defaults to the latest 10 records. To widen the range, drive its AngularJS scope instead of the DOM, because typing into `#beginDate` leaves the model empty:
+
+```javascript
+const sc = angular.element(document.getElementById('beginDate')).scope();
+sc.$apply(function () {
+  sc.refineCd = 'range';
+  sc.changeTransactionPeriodRadio();
+  sc.beginDate = '2026 / 05 / 01';
+  sc.endDate = '2026 / 08 / 17';
+  sc.pageSize = 200;
+});
+sc.search();
+```
+
+  After the search completes, `sc.data` holds every row as `{postingDate, description, debit, credit, balance}`, which is easier to consume than the rendered table:
+
+```javascript
+sc.data.map(r => ['JPY', r.postingDate, r.description, r.debit || '', r.credit || ''].join('\t')).join('\n')
+```
+
+- The 外貨普通預金 history is reached from 外貨預金 → 保有明細, then the 入出金明細 link in the 米ドル普通預金 row. The 入出金明細 link in the global navigation always goes to 円普通預金

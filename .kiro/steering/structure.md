@@ -3,7 +3,6 @@
 ```
 .
 ├── scripts/                        # Import scripts
-├── tmp/                            # Temporary scripts and data
 └── .kiro/
     ├── agents/                     # Custom agent configurations
     ├── skills/
@@ -24,6 +23,5 @@
 
 ## Conventions
 
-- Temporary scripts, generated SQL, and downloaded data go in `tmp/`
-- Every file in `tmp/` is named `{source_slug}_{purpose}_YYYYMMDD.{ext}` (e.g. `sony_bank_import_20260814.py`, `sony_bank_import_20260814.sql`, `sony_bank_statement_20260814_jpy.csv`) so that imports for different sources can run concurrently without overwriting each other
+- For each import run, create `work_dir=$(mktemp -d "/tmp/gnucash-import.XXXXXX")` and store all temporary scripts, generated SQL, downloads, and intermediate data in the exact directory returned by `mktemp`; filenames inside it may be simple
 - Each source has a corresponding import script in `scripts/` (e.g., `suica_import.py`) and a reference file in `references/accounts/` (e.g., `suica.md`)

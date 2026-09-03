@@ -25,25 +25,18 @@ Rules:
 - You MUST NOT delete or modify transactions whose reconciliation status (reconcile_state) is 'y' (reconciled) or 'c' (cleared)
 - When inserting transactions verified against a statement, set reconcile_state to 'c' (cleared) for ALL splits in the transaction
 - When inserting transactions verified against a statement, set reconcile_state to 'c' (cleared) for the credit card account split
-- Temporary files MUST be saved in `tmp/` following the naming rule below
+- Temporary files MUST be stored in a unique per-run working directory created with `mktemp` as described below
 - Add separator lines between different dates in review table for readability
 
-### Temporary File Naming
+### Temporary Working Directory
 
-Every file written to `tmp/` MUST start with the source slug and carry the run date, so that imports for different sources can run at the same time without overwriting each other:
+Create an OS-managed working directory for each import run:
 
-| Purpose | Name |
-|---------|------|
-| Import script | `tmp/{source_slug}_import_YYYYMMDD.py` |
-| Generated SQL | `tmp/{source_slug}_import_YYYYMMDD.sql` |
-| Downloaded or intermediate data | `tmp/{source_slug}_{purpose}_YYYYMMDD.{ext}` |
+```bash
+work_dir=$(mktemp -d "/tmp/gnucash-import.XXXXXX")
+```
 
-Rules:
-- `{source_slug}` is the snake_case slug of the source (e.g. `sony_bank`), matching `scripts/{source_slug}_import.py`
-- `YYYYMMDD` is the date the import is run, not the statement date
-- When one source produces several artifacts of the same kind (currency, billing month, confirmed/unconfirmed, points), append a variant suffix after the date (e.g. `tmp/sbi_securities_import_YYYYMMDD_usd_stock.sql`, `tmp/lumine_card_statement_YYYYMMDD_202602.csv`)
-- A file downloaded from a site MUST be moved into `tmp/` under this naming rule before use; site-given names such as `FutsuRireki.csv` collide between runs
-- You MUST NOT lump several sources into one file such as `tmp/cc_import_YYYYMMDD.py`; write one set of files per source
+Use the exact path returned by `mktemp` for all temporary scripts, generated SQL, downloads, and intermediate data. Filenames inside `$work_dir` may be simple, such as `import.py`, `import.sql`, and `statement.csv`.
 
 ### Browser Automation
 

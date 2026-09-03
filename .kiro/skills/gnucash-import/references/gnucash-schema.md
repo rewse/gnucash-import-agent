@@ -97,6 +97,16 @@ Amounts stored as `value_num / value_denom`:
 - JPY: `denom = 1` (¥1,234 → num=1234, denom=1)
 - USD: `denom = 100` ($12.34 → num=1234, denom=100)
 
+`value` is denominated in the transaction currency, `quantity` in the account's own commodity. The two differ whenever a foreign-currency transaction touches a JPY account, so an account balance MUST be summed as `quantity_num / quantity_denom`:
+
+```sql
+SELECT sum(s.quantity_num::numeric / s.quantity_denom)
+FROM splits s JOIN accounts a ON s.account_guid = a.guid
+WHERE a.name = '{account_name}';
+```
+
+Summing `value_num` instead mixes currencies and denominators, and silently reports a wrong balance.
+
 ## Transaction Structure
 
 One transaction + two or more splits (must balance):

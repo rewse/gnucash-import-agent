@@ -28,6 +28,12 @@ Rules:
 - Temporary files MUST be stored in a unique per-run working directory created with `mktemp` as described below
 - Add separator lines between different dates in review table for readability
 
+### Account Selection
+
+- `Expenses:Supplies` covers consumables, things used up by being used: cleaning sheets, contact lens solution, batteries, toiletries
+- `Expenses:Groceries` covers sundries that are not consumed: kitchenware, storage cases, cables, small tools
+- `Expenses:Medical Expenses:Medicines` covers only what qualifies for the Japanese medical expense deduction (医療費控除). Contact lens solution, supplements, and other 医薬部外品 bought for daily care go to `Expenses:Supplies`
+
 ### Temporary Working Directory
 
 Create an OS-managed working directory for each import run:

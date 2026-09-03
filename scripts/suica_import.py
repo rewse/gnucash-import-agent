@@ -54,6 +54,9 @@ TOEI_SUBWAY_STATIONS = ['曙橋']
 # Keio stations
 KEIO_STATIONS = ['南大沢']
 
+# Keikyu stations (no prefix)
+KEIKYU_STATIONS = ['青物横丁']
+
 # Load personal settings
 PERSONAL_FILE = Path(__file__).parent.parent / '.kiro/skills/gnucash-import/references/personal.json'
 with open(PERSONAL_FILE) as f:
@@ -113,6 +116,12 @@ def get_railway_company(station1, station2):
         return 'Toei Subway'
     if station1 in KEIO_STATIONS:
         return 'Keio'
+    if station1 in KEIKYU_STATIONS:
+        return 'Keikyu'
+    if station1.startswith('KS'):
+        return 'Keisei'
+    if station1.startswith('臨'):
+        return 'TWR'
     if station1.startswith('地') or station2.startswith('地'):
         return 'Tokyo Metro'
     if station1.startswith('都') or station2.startswith('都'):

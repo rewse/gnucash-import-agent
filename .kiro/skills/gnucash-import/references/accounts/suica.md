@@ -82,6 +82,8 @@ Determine railway company from entry station:
    - `地` prefix → Tokyo Metro
    - `都` prefix → Toei Subway
    - `ゆ` prefix → Yurikamome
+   - `臨` prefix → TWR
+   - `KS` prefix → Keisei
    - No prefix → JR (default)
 
 #### Station-Specific Mappings
@@ -97,6 +99,7 @@ Stations without prefix that are NOT JR:
 | 赤坂見附 | Tokyo Metro |
 | 南大沢 | Keio |
 | 六本木一 | Tokyo Metro |
+| 青物横丁 | Keikyu |
 
 Add new stations here when discovered.
 
@@ -107,8 +110,11 @@ For train/bus rides, use the railway/bus company name in English:
 - Tokyo Metro
 - Toei Subway
 - Keio
+- Keikyu
+- Keisei
 - Tokyo Monorail
 - Toei Bus
+- TWR
 
 For 物販 (shopping) and ｵｰﾄ (auto-charge), set description to NULL unless user specifies a merchant name.
 

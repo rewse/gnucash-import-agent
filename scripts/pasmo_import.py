@@ -111,6 +111,8 @@ def get_railway_company(station1, station2):
         return 'Tokyo Metro'
     if station1 in KEIO_STATIONS:
         return 'Keio'
+    if station1.startswith('KS'):
+        return 'Keisei'
     if station1.startswith('地') or station2.startswith('地'):
         return 'Tokyo Metro'
     if station1.startswith('都') or station2.startswith('都'):

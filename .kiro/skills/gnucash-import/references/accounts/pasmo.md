@@ -71,6 +71,7 @@ Determine railway company from entry station:
    - `地` prefix → Tokyo Metro
    - `都` prefix → Toei Subway
    - `ゆ` prefix → Yurikamome
+   - `KS` prefix → Keisei
    - No prefix → JR (default)
 
 #### Station-Specific Mappings
@@ -106,6 +107,7 @@ For train/bus rides, use the railway/bus company name in English:
 - Tokyo Metro
 - Toei Subway
 - Keio
+- Keisei
 - Enoshima Electric Railway
 - Enoden Bus
 - Tokyo Monorail

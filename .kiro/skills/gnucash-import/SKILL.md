@@ -181,6 +181,10 @@ See [references/gnucash-schema.md](references/gnucash-schema.md) for:
 - Numeric value handling
 - Common queries
 
+## Fixed Assets
+
+See [references/fixed-assets.md](references/fixed-assets.md) for when to capitalize a purchase, what belongs in acquisition cost, how the market valuation accounts work, and how to record a disposal.
+
 ## Account List
 
 See [references/account-guid-cache.json](references/account-guid-cache.json) for account paths and GUIDs.

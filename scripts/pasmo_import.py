@@ -72,7 +72,14 @@ ACCOUNT_NAMES = {
 }
 
 # Stations without a prefix that are NOT JR
-TOKYO_METRO_STATIONS = ['溜池山王', '赤坂見附', '後楽園']
+TOKYO_METRO_STATIONS = [
+    '溜池山王',
+    '赤坂見附',
+    '後楽園',
+    '西新宿',
+    '外苑前',
+    '表参道',
+]
 KEIO_STATIONS = ['南大沢']
 ENODEN_STATIONS = ['江電鎌倉', '長谷', '稲村ケ崎', '江ノ島']
 
@@ -195,23 +202,24 @@ def parse_transactions(raw_data):
 
 
 def get_railway_company(station1, station2):
-    if station1 in ENODEN_STATIONS or station2 in ENODEN_STATIONS:
+    stations = (station1, station2)
+    if any(station in ENODEN_STATIONS for station in stations):
         return 'Enoshima Electric Railway'
-    if station1 in TOKYO_METRO_STATIONS:
+    if any(station in TOKYO_METRO_STATIONS for station in stations):
         return 'Tokyo Metro'
-    if station1 in KEIO_STATIONS:
+    if any(station in KEIO_STATIONS for station in stations):
         return 'Keio'
-    if station1.startswith('KS'):
+    if any(station.startswith('KS') for station in stations):
         return 'Keisei'
-    if station1.startswith('地') or station2.startswith('地'):
+    if any(station.startswith('地') for station in stations):
         return 'Tokyo Metro'
-    if station1.startswith('都') or station2.startswith('都'):
+    if any(station.startswith('都') for station in stations):
         return 'Toei Subway'
-    if station1.startswith('ゆ') or station2.startswith('ゆ'):
+    if any(station.startswith('ゆ') for station in stations):
         return 'Yurikamome'
     if PERSONAL_SETTINGS_ERROR:
         raise ValueError(PERSONAL_SETTINGS_ERROR)
-    if station1 == NEAREST_STATION:
+    if NEAREST_STATION in stations:
         return 'Tokyo Metro'
     return 'JR'
 

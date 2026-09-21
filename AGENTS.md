@@ -42,6 +42,7 @@ This repository provides a Kiro skill and source-specific Python scripts for imp
 ## Validation
 
 - Run `python3 -m unittest discover -s tests -v` after changing import behavior.
-- Run `python3 -m compileall -q scripts` after changing Python files.
-- Run `basedpyright scripts` and require zero errors. Existing warnings need not be resolved unless they relate to the change.
+- Run `python3 -m compileall -q scripts .kiro/skills/gnucash-import/scripts` after changing Python files.
+- Run `basedpyright scripts .kiro/skills/gnucash-import/scripts` and require zero errors. Existing warnings need not be resolved unless they relate to the change.
+- Before executing generated import SQL, run `.kiro/skills/gnucash-import/scripts/validate_sql.py` with the selected source account and expected currency GUID, then run the exact inspected SQL against the target database with only the terminal `COMMIT` changed to `ROLLBACK`, `ON_ERROR_STOP=1`, and `standard_conforming_strings=on`.
 - Run `git diff --check` before finishing.

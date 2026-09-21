@@ -184,9 +184,12 @@ def output_sql(transactions):
     print("BEGIN;")
     print()
 
+    total = len(transactions)
     for idx, tx in enumerate(transactions, 1):
         tx_guid = str(uuid.uuid4()).replace('-', '')
-        date_str = tx['date'].strftime('%Y-%m-%d 12:00:00')
+        reverse_idx = total - idx + 1
+        minutes, seconds = divmod(reverse_idx, 60)
+        date_str = tx['date'].strftime(f'%Y-%m-%d 12:{minutes:02d}:{seconds:02d}')
         description = get_description(tx)
         desc_sql = f"'{description.replace(chr(39), chr(39)*2)}'" if description else 'NULL'
 

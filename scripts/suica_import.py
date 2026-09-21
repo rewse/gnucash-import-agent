@@ -79,7 +79,16 @@ ACCOUNT_NAMES = {
 }
 
 # Tokyo Metro stations (no prefix)
-TOKYO_METRO_STATIONS = ['神谷町', '溜池山王', '赤坂見附', '六本木一', '後楽園']
+TOKYO_METRO_STATIONS = [
+    '神谷町',
+    '溜池山王',
+    '赤坂見附',
+    '六本木一',
+    '後楽園',
+    '西新宿',
+    '外苑前',
+    '表参道',
+]
 
 # Toei Subway stations (no prefix)
 TOEI_SUBWAY_STATIONS = ['曙橋']
@@ -89,6 +98,11 @@ KEIO_STATIONS = ['南大沢']
 
 # Keikyu stations (no prefix)
 KEIKYU_STATIONS = ['青物横丁']
+
+# Bus location name -> company
+BUS_COMPANIES = {
+    '都電都Ｂ': 'Toei Bus',
+}
 
 # Load personal settings
 PERSONAL_FILE = PROJECT_ROOT / ".kiro/skills/gnucash-import/references/personal.json"
@@ -141,8 +155,9 @@ def parse_transactions(raw_data):
         type1 = parts[1]
         if type1 == '物販':
             transactions.append({'date_str': date_str, 'type': type1, 'station1': '', 'station2': '', 'amount': int(parts[2])})
-        elif type1 == 'ｵｰﾄ':
-            transactions.append({'date_str': date_str, 'type': type1, 'station1': parts[2], 'station2': '', 'amount': int(parts[3])})
+        elif type1 in ('ｵｰﾄ', 'ﾊﾞｽ等'):
+            station = ' '.join(parts[2:-1])
+            transactions.append({'date_str': date_str, 'type': type1, 'station1': station, 'station2': '', 'amount': int(parts[-1])})
         elif type1 == '繰':
             continue
         else:
@@ -161,21 +176,24 @@ def parse_transactions(raw_data):
 
 
 def get_railway_company(station1, station2):
-    if station1 == NEAREST_STATION or station1 in TOKYO_METRO_STATIONS:
+    stations = (station1, station2)
+    if NEAREST_STATION in stations or any(
+        station in TOKYO_METRO_STATIONS for station in stations
+    ):
         return 'Tokyo Metro'
-    if station1 in TOEI_SUBWAY_STATIONS:
+    if any(station in TOEI_SUBWAY_STATIONS for station in stations):
         return 'Toei Subway'
-    if station1 in KEIO_STATIONS:
+    if any(station in KEIO_STATIONS for station in stations):
         return 'Keio'
-    if station1 in KEIKYU_STATIONS:
+    if any(station in KEIKYU_STATIONS for station in stations):
         return 'Keikyu'
-    if station1.startswith('KS'):
+    if any(station.startswith('KS') for station in stations):
         return 'Keisei'
-    if station1.startswith('臨'):
+    if any(station.startswith('臨') for station in stations):
         return 'TWR'
-    if station1.startswith('地') or station2.startswith('地'):
+    if any(station.startswith('地') for station in stations):
         return 'Tokyo Metro'
-    if station1.startswith('都') or station2.startswith('都'):
+    if any(station.startswith('都') for station in stations):
         return 'Toei Subway'
     return 'JR'
 
@@ -216,6 +234,8 @@ def get_transaction_info(transactions, idx, tx):
             description = override_desc
         elif tx['type'] in ['入', '＊入']:
             description = get_railway_company(tx['station1'], tx['station2'])
+        elif tx['type'] == 'ﾊﾞｽ等':
+            description = BUS_COMPANIES.get(tx['station1'])
         else:
             description = None
     elif tx['type'] == 'ｵｰﾄ':
@@ -227,6 +247,9 @@ def get_transaction_info(transactions, idx, tx):
     elif tx['type'] in ['入', '＊入']:
         expense_account = BUSINESS_ACCOUNT if is_business_trip(tx) else TRANSIT_ACCOUNT
         description = get_railway_company(tx['station1'], tx['station2'])
+    elif tx['type'] == 'ﾊﾞｽ等':
+        expense_account = TRANSIT_ACCOUNT
+        description = BUS_COMPANIES.get(tx['station1'])
     else:
         return None, None
     return expense_account, description
@@ -240,6 +263,8 @@ def get_purpose(tx):
         return 'オート'
     elif tx['type'] == '物販':
         return '物販'
+    elif tx['type'] == 'ﾊﾞｽ等':
+        return f"バス {tx['station1']}"
     return ''
 
 

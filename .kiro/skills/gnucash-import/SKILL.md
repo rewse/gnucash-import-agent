@@ -65,6 +65,45 @@ When running from another directory, set the repository root explicitly:
 GNUCASH_IMPORT_ROOT=/path/to/gnucash-import-agent python3 "$work_dir/import.py" review
 ```
 
+### SQL validation and execution
+
+Run the shared static validator after generating and manually inspecting SQL. Pass the exact source account path from the selected source reference and the expected currency GUID verified against the live database:
+
+```bash
+python3 .kiro/skills/gnucash-import/scripts/validate_sql.py \
+  --source-account 'Assets:JPY - Current Assets:Prepaid:Example' \
+  --currency-guid 'a77d4ee821e04f02bb7429e437c645e4' \
+  "$work_dir/import.sql"
+```
+
+Do not execute SQL when validation fails. The validator permits only a `BEGIN`/`COMMIT` boundary and generated inserts into `transactions` and `splits`; it also checks GUIDs, the expected currency, cached accounts, one source split per transaction, balance, valid timestamps, positive denominators, nonzero quantities, value/quantity sign agreement, cleared states, printable ASCII-or-NULL descriptions without backslashes, and stable same-day order. Continue to inspect source-specific mappings and exact quantity semantics manually because static SQL structure cannot establish their business meaning.
+
+Immediately before execution, rerun row-level duplicate detection against the live database. Confirm that every referenced account exists and that the expected currency GUID has the source reference's namespace and mnemonic. Query both `transactions` and `splits` to confirm that every generated GUID has zero matches. A prior check or a matching statement total is not sufficient.
+
+Test the exact inspected SQL against the target database with only its terminal `COMMIT;` changed to `ROLLBACK;`. Create the rollback copy inside `work_dir` and require psql to stop on the first error:
+
+```bash
+python3 - "$work_dir/import.sql" "$work_dir/rollback.sql" <<'PY'
+from pathlib import Path
+import sys
+
+source, destination = map(Path, sys.argv[1:])
+sql = source.read_text().rstrip()
+if not sql.endswith("COMMIT;"):
+    raise SystemExit("generated SQL does not end with COMMIT;")
+destination.write_text(sql[:-len("COMMIT;")] + "ROLLBACK;\n")
+PY
+
+PGOPTIONS='-c standard_conforming_strings=on' \
+  PGPASSWORD="$DB_PASSWORD" psql -X -v ON_ERROR_STOP=1 \
+  -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" \
+  -f "$work_dir/rollback.sql"
+```
+
+Execute the inspected `import.sql` with the same `PGOPTIONS`, `ON_ERROR_STOP=1`, and `standard_conforming_strings=on` only after the rollback trial succeeds. When one approved import run has multiple SQL files, execute their inspected bodies inside one outer `BEGIN`/`COMMIT` transaction so a failure cannot leave a partial multi-source import.
+
+After commit, query by the generated transaction GUIDs and verify the exact expected transaction and split counts, every imported split has `reconcile_state = 'c'`, every transaction balances using rational `value_num / value_denom`, and all expected source and transfer account mappings are present. Keep the SQL and logs in the owner-only `work_dir` until post-checks pass. Then delete them, or move required audit artifacts to an owner-only location. Never write database passwords to an artifact or log.
+
 ### Account GUID cache
 
 Use [`references/account-guid-cache.json`](references/account-guid-cache.json) to resolve account paths. Regenerate this ignored file when it is missing or its `updated_at` value is more than one month old:

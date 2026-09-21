@@ -51,7 +51,7 @@ The parser splits on whitespace. The amount is the final field. For `ｵｰﾄ` 
 | `ｵｰﾄ` | `Liabilities:Credit Card:TOKYU CARD ClubQ JMB` | `NULL` |
 | `繰` or amount 0 | Skip | None |
 
-Railway detection checks these general exceptions before prefixes: `溜池山王`, `赤坂見附`, and `後楽園` are Tokyo Metro; `南大沢` is Keio; `江電鎌倉`, `長谷`, `稲村ケ崎`, and `江ノ島` are Enoshima Electric Railway when either endpoint matches. Prefixes map `KS` to Keisei, `地` on either endpoint to Tokyo Metro, `都` on either endpoint to Toei Subway, and `ゆ` on either endpoint to Yurikamome; otherwise use JR. `江ノ電Ｂ` maps to Enoden Bus.
+Railway detection checks these general exceptions before prefixes: `溜池山王`, `赤坂見附`, `後楽園`, `西新宿`, `外苑前`, and `表参道` are Tokyo Metro; `南大沢` is Keio; `江電鎌倉`, `長谷`, `稲村ケ崎`, and `江ノ島` are Enoshima Electric Railway. Exceptions, `nearest_station`, and prefixes are checked on both endpoints. Prefixes map `KS` to Keisei, `地` to Tokyo Metro, `都` to Toei Subway, and `ゆ` to Yurikamome; otherwise use JR. `江ノ電Ｂ` maps to Enoden Bus.
 
 ## Source-specific Rules
 

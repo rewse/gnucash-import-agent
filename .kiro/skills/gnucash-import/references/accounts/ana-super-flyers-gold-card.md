@@ -1,127 +1,61 @@
-# ANA Super Flyers Gold Card Statement Import
+# ANA Super Flyers Gold Card statement import
 
-## GnuCash Account
+Script: [`scripts/ana_super_flyers_gold_card_import.py`](../../../../../scripts/ana_super_flyers_gold_card_import.py)
+
+Use the shared [credit-card workflow and safety rules](../../SKILL.md#credit-cards) for duplicate detection, current-cycle handling, payment registration, review, and SQL execution.
+
+## Accounts
 
 - Card: `Liabilities:Credit Card:ANA Super Flyers Gold Card`
 - Payment debit: `Assets:JPY - Current Assets:Banks:DOCOMO SMTB Net Bank`
-- Payment date: 10th (or next business day if 10th is a holiday)
+- Payment date: 10th, or the next business day when the 10th is a holiday
 
-## Credentials
+## Access
 
-Password field on Vpass login does not accept automated input. You MUST use `agent-browser --auto-connect` and ask the user to enter the password manually.
+Open `https://www.smbc-card.com/mem/index.jsp` with `agent-browser --auto-connect`. The Vpass password field does not accept automated input, so ask the user to enter the password and complete login.
 
-## Import Workflow
+Select `ＡＮＡ　ＶＩＳＡゴールド` in the card selector, open `ご利用明細`, and select billing months from `お支払い月`. Extract `document.querySelector('body').innerText`. The month selector provides the past 15 months.
 
-This is a credit card. Transactions may appear on the statement with a delay, so you MUST follow the billing-statement-based verification workflow below to avoid missing transactions.
+## Statement Data
 
-### Billing Statement Verification
+### Confirmed format
 
-1. Check if `account-guid-cache.json` exists and `updated_at` is within 1 month; regenerate if needed (see SKILL.md)
-2. `agent-browser --auto-connect open https://www.smbc-card.com/mem/index.jsp`
-3. Ask user to enter password manually and log in
-4. Switch card to `ＡＮＡ　ＶＩＳＡゴールド` using the card selector dropdown
-5. Click `ご利用明細` to open the WEB明細書 page
-6. For each billing month (starting from the most recent confirmed statement, going backwards):
-   a. Select the month from the `お支払い月` dropdown
-   b. Note the `お支払い合計額` (total payment amount) and `お支払い日` (payment date)
-   c. Check if this total already exists in GnuCash (see SKILL.md "Credit Card: Billing Total Check")
-   d. If the total exists → all transactions in this statement are already imported; stop going further back
-   e. If the total does NOT exist → extract all transactions from this statement and proceed to duplicate detection
-7. For statements where the total is not in GnuCash, extract transaction data via `agent-browser --auto-connect eval "document.querySelector('body').innerText"`
-8. Perform per-transaction duplicate detection (see SKILL.md "Credit Card: Duplicate Detection")
-9. Prepare RAW_DATA with only new transactions
-10. Copy RAW_DATA into `tmp/ana_super_flyers_gold_card_import_YYYYMMDD.py`
-11. Run `python3 tmp/ana_super_flyers_gold_card_import_YYYYMMDD.py review` to show review table
-12. User reviews and specifies manual overrides by ID
-13. Run `python3 tmp/ana_super_flyers_gold_card_import_YYYYMMDD.py sql > tmp/ana_super_flyers_gold_card_import_YYYYMMDD.sql` to generate SQL
-14. Execute SQL to insert transactions
+The WEB明細書 output is tab-separated. Transaction rows may start with `B#` or `#`:
 
-### Current Statement (Unconfirmed)
-
-See SKILL.md "Credit Card: Current Statement (Unconfirmed)".
-
-## Script Template
-
-- `scripts/ana_super_flyers_gold_card_import.py`
-
-## Browser Data Format
-
-Text extracted via `eval "document.querySelector('body').innerText"` from the WEB明細書 page.
-
-Tab-separated table with card-holder sections. Each section starts with a header line containing the card number and card type. Transaction lines may have `B#` or `#` markers before the date.
-
-Example:
-```
-柴田　竜典　様　ご利用分　4980-00**-****-****　（ＡＮＡＶＩＳＡゴールド）
-B#	25/12/28	レストラン　新宿店	2,500	１	１	2,500		◎
-#	26/01/01	ソフトウェア会社	330	１	１	330		◎
-#	26/01/05	ALIEXPRESS (SINGAPORE )	2,000	１	１	2,000	15.00	USD	133.333	01 05	◎
-＜お支払金額総合計＞	 	 	5,160		 
+```text
+EXAMPLE USER 様 ご利用分 9999-98**-****-**** （ＡＮＡＶＩＳＡゴールド）
+B#	99/03/06	レストラン　新宿店	1,111	１	１	1,111		◎
+#	99/03/14	ソフトウェア会社	222	１	１	222		◎
+#	99/03/25	ALIEXPRESS (SINGAPORE )	1,851	１	１	1,851	12.00	USD	154.250	03 25	◎
+＜お支払金額総合計＞			3,184
 ```
 
-Notes:
-- Card section header: `柴田　竜典　様　ご利用分　4980-XX**-****-****　（ＡＮＡＶＩＳＡゴールド）`
-- Transaction lines may start with `B#` or `#` marker (before tab+date)
-- Date format: `YY/MM/DD`
-- Columns (tab-separated): [marker], date, merchant, amount, payment_type, installment, payment_amount, then optionally remarks OR foreign currency fields
-- Amount format: comma-separated integers (e.g., `2,500`)
-- Full-width characters for merchant names
-- Foreign transactions have extra fields: local_amount, currency_code, exchange_rate, exchange_date
-- Remarks field (備考) may contain `◎` (point-eligible marker) or store details
-- `お支払い月` dropdown allows selecting past 15 months
-- Payment date is the 10th of each month
+After removing an optional `B#` or `#`, script input columns are `date, merchant, amount, pay_type, installment, pay_amount, [remarks | local_amount, currency_code, exchange_rate, exchange_date]`. The parser skips lines containing `ご利用分` or `お支払金額総合計`, converts `YY/MM/DD` to `20YY-MM-DD`, and negates the comma-stripped amount. It ignores a domestic `◎` marker. For foreign rows, fields 7 and 8 become `{local_amount} {currency_code}` when the currency is one of `AUD`, `CAD`, `EUR`, `GBP`, `HKD`, `SGD`, `THB`, `TRY`, or `USD`.
 
-## Conversion Rules
+### Unconfirmed format
 
-### Transaction Types
+The ご利用明細照会 output is tab-separated:
 
-| Pattern | GnuCash Account | Description |
-|---------|-----------------|-------------|
-| セブン－イレブン | Expenses:Foods:Dining | SEVEN-ELEVEN |
-| ファミリーマート | Expenses:Foods:Dining | Family Mart |
-| ローソン | Expenses:Foods:Dining | LAWSON |
-| ALIEXPRESS | (email lookup) | AliExpress |
+```text
+99/04/09	レストラン　新宿店	EXAMPLE USER	1回払い		99/05	777
+```
 
-For any transaction not matching the above patterns, check past GnuCash transactions for the same description. If no match found, ask the user.
+Script input columns are `date, merchant, card_holder, pay_type, empty, pay_month, amount`. The parser detects this form when column 3 is not numeric and reads the amount from column 7.
 
-### Email Lookup for Missing Information
+## Mapping
 
-If you don't know the account or the merchant, search emails with the amount. See [email-lookup.md](email-lookup.md).
+| Statement pattern | GnuCash account | Description | Handling |
+|---|---|---|---|
+| `セブン－イレブン` or normalized `SEVEN-ELEVEN` | `Expenses:Foods:Dining` | `SEVEN-ELEVEN` | Automatic |
+| Merchant containing `ファミリーマート` | `Expenses:Foods:Dining` | `Family Mart` | Automatic |
+| Merchant containing `ローソン` | `Expenses:Foods:Dining` | `LAWSON` | Automatic |
+| `ALIEXPRESS` | Account determined from order details | `AliExpress` | Use `MANUAL_OVERRIDES` after [email lookup](../email-lookup.md) |
 
-## Script Input Format
+Resolve every other row from past GnuCash transactions or ask the user, then add it to `MANUAL_OVERRIDES`.
 
-Same as Amazon MasterCard Gold. Supports both confirmed (WEB明細書) and unconfirmed (ご利用明細照会) formats. The parser auto-detects the format by checking if the column after the date is a number.
+## Source-specific Rules
 
-### Confirmed format (WEB明細書)
-
-Tab-separated: `[marker], date, merchant, amount, pay_type, installment, pay_amount, [remarks | foreign_fields]`
-
-Transaction lines may be prefixed with `B#` or `#` markers.
-
-### Unconfirmed format (ご利用明細照会)
-
-Tab-separated: `date, merchant, card_holder, pay_type, empty, pay_month, amount`
-
-### Common parsing rules
-- Lines matching `ご利用分` are card section headers (skip)
-- Transaction lines contain a date pattern `YY/MM/DD`
-- Strip `B#` or `#` markers before parsing columns
-- Amount: remove commas, parse as integer; always negative (credit card spending)
-- Foreign transactions: fields after payment_amount are local_amount, currency_code, exchange_rate, exchange_date
-- Domestic transactions: field after payment_amount may be empty or contain `◎`
-- Skip `＜お支払金額総合計＞` line and blank lines
-
-## Review Table Structure
-
-Display transactions sorted by date descending (newest first) with:
-- ID: Sequential number for user to reference
-- Date: YYYY-MM-DD with weekday (Mon, Tue, etc.)
-- Merchant: Merchant name from statement (normalized to ASCII)
-- Desc: Description for GnuCash
-- Transfer: Target account
-- Amount: Amount (JPY, always shown as positive for readability)
-
-## Notes
-
-- All descriptions MUST be in English
-- Same Vpass portal as Amazon MasterCard Gold but different card selector
+- Strip only a leading `B#` or `#` marker before parsing the date and fields.
+- Merchant and remarks normalization converts full-width ASCII, digits, spaces, periods, and asterisks to half-width before automatic matching.
+- Preserve non-`◎` remarks and foreign amount/currency details for classification.
+- Accepted commands are `review` and `sql`.

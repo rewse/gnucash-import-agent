@@ -1,129 +1,65 @@
-# dPOINT Statement Import
+# dPoint statement import
 
-## GnuCash Account
+Script: `scripts/dpoint_import.py` (`review`, `sql`)
 
-`Assets:JPY - Current Assets:Reward Programs:dPOINT`
+## Accounts
 
-## Credentials
+- Source account: `Assets:JPY - Current Assets:Reward Programs:dPoint`
+- Valuation: 1 point = 1 JPY
 
-Login via passkey (dAccount). You MUST use `agent-browser --auto-connect` and ask the user to authenticate manually.
+## Access
 
-## Import Workflow
+- Open `https://dpoint.docomo.ne.jp/` with `agent-browser --auto-connect open`; dAccount passkey authentication is manual.
+- Open the total-points link, then `ポイント獲得・利用履歴を見る`.
+- Select each required month, up to 13 months back, and extract with `agent-browser --auto-connect snapshot -c -d 3`. Filters are `すべて`, `獲得`, `利用`, and `失効`.
 
-1. Check if `account-guid-cache.json` exists and `updated_at` is within 1 month; regenerate if needed (see SKILL.md)
-2. Check DB for last imported transaction date to determine how far back to fetch
-3. `agent-browser --auto-connect open https://dpoint.docomo.ne.jp/`
-4. Click "dアカウントでログイン", ask user to authenticate via passkey
-5. Click on "dポイント合計 Nポイント" link to go to point details
-6. Click "ポイント獲得・利用履歴を見る"
-7. Select month from dropdown (up to 13 months back) based on last imported date
-8. `agent-browser --auto-connect snapshot -c -d 3` to get transaction data
-9. Repeat for each month needed
-10. Prepare RAW_DATA
-11. Copy RAW_DATA into `tmp/dpoint_import_YYYYMMDD.py`
-12. Run `python3 tmp/dpoint_import_YYYYMMDD.py review` to show review table
-13. User reviews and specifies manual overrides by ID
-14. Run `python3 tmp/dpoint_import_YYYYMMDD.py sql > tmp/dpoint_import_YYYYMMDD.sql` to generate SQL
-15. Execute SQL to insert transactions
+## Statement Data
 
-## Script Template
+Each entry contains reflection date, full-width description, signed point amount and action, usage date, optional expiry, and optional tags. Preserve the blank lines between fields:
 
-- `scripts/d_point_import.py`
-
-## Browser Data Format
-
-Transaction list on the point history page. Each entry contains:
-
-- 反映日 (reflection date): YYYY/MM/DD
-- Description: full-width text (merchant name or bonus description)
-- Amount: +/-NP 獲得/利用/失効
-- 利用日 (usage date): YYYY/MM/DD
-- 有効期限 (expiry): YYYY/MM/DD (only for 期間・用途限定 points)
-- Tags: 期間・用途限定, ランク判定対象, ポイント倍率アップ特典対象
-
-Example (from snapshot):
-```
-2026/01/29(反映日)
-ＣＦ新宿三丁目店
+```text
+2030/04/29(反映日)
+ＣＦ例示店
 +34P 獲得
-利用日：2026/01/29
+利用日：2030/04/29
 ランク判定対象
 ポイント倍率アップ特典対象
 
-2026/01/23(反映日)
-モスバーガー新宿三丁目店
+2030/04/23(反映日)
+モスバーガー例示店
 -100P 利用
-利用日：2026/01/23
+利用日：2030/04/23
 
-2026/01/01(反映日)
+2030/04/01(反映日)
 失効ポイント
 -10P 失効
 期間・用途限定
 ```
 
-Notes:
-- Month selector dropdown at top of page (up to 13 months back)
-- Filter tabs: すべて / 獲得 / 利用 / 失効
-- Descriptions use full-width characters (e.g., ＡＭＡＺＯＮ．ＣＯ．ＪＰ)
-- Rank bonus entries start with 【ｄポイントカード】ポイント倍率アップ特典
-- Campaign entries may be prefixed with （キャンペーン）
+Rank bonuses start with `【ｄポイントカード】ポイント倍率アップ特典`; campaigns may start with `（キャンペーン）`. Script input is three tab-separated fields: `{date}\t{description}\t{points}`. Leading tabs are tolerated.
 
-## Conversion Rules
-
-### Transaction Types
-
-| Pattern | GnuCash Account | Description |
-|---------|-----------------|-------------|
-| 獲得 (earn, any) | Income:Point Charge | Merchant name (translated to English) |
-| 利用 (use): モスバーガー | Expenses:Foods:Dining | Mos Burger |
-| 利用 (use): others | (ask user) | Merchant name (translated to English) |
-| 失効 (expiry) | Expenses:Point Lapse | Point Expiry |
-
-### Known Merchants
-
-| Browser Text | English Description |
-|-------------|-------------------|
-| ＡＭＡＺＯＮ．ＣＯ．ＪＰ | Amazon |
-| （キャンペーン）ＡＭＡＺＯＮ．ＣＯ．ＪＰ | Amazon |
-| モスバーガー新宿三丁目店 | Mos Burger |
-| ＣＦ新宿三丁目店 | Ito-Yokado |
-| 鼎泰豐 | Din Tai Fung |
-| 失効ポイント | null |
-
-### Email Lookup for Missing Information
-
-If you don't know the account or the merchant, search emails with the amount. See [email-lookup.md](email-lookup.md).
-
-## Script Input Format
-
-Tab-separated format with 3 columns: `{date}\t{description}\t{points}`
-
-```
-2026/01/29	Ito-Yokado	+34
-2026/01/29	Rank Bonus	+17
-2026/01/23	Mos Burger	-374
-2026/01/23	Mos Burger	+9
-2026/01/01	Point Expiry	-10
+```text
+2030/04/29	Ito-Yokado	+34
+2030/04/29	Rank Bonus	+17
+2030/04/23	Mos Burger	-374
+2030/04/01	Point Expiry	-10
 ```
 
-Parsing rules:
-- Points: positive for earn, negative for use/expiry
-- Description should already be translated to English
-- Rank bonus and campaign entries are separate transactions (do not merge with the base earn)
+Descriptions are prepared in English. Commas and leading `+` are accepted.
 
-## Review Table Structure
+## Mapping
 
-Display transactions sorted by date descending (newest first) with:
-- ID: Sequential number for user to reference
-- Date: YYYY-MM-DD with weekday (Mon, Tue, etc.)
-- Desc: Description (English)
-- Transfer: Target account
-- Increase/Decrease: Points
+| Statement pattern | GnuCash account | Description |
+|---|---|---|
+| Any earned points | `Income:Point Charge` | English merchant name |
+| Used at Mos Burger | `Expenses:Foods:Dining` | `Mos Burger` |
+| Other usage | User-selected account | English merchant name |
+| Expiry | `Expenses:Point Lapse` | `Point Expiry` |
 
-## Notes
+Known translations include `ＡＭＡＺＯＮ．ＣＯ．ＪＰ` and its campaign-prefixed form to `Amazon`, Mos Burger store names to `Mos Burger`, `ＣＦ...店` to `Ito-Yokado`, `鼎泰豐` to `Din Tai Fung`, and `失効ポイント` to `NULL` at extraction time.
 
-- 1 point = 1 JPY
-- Point history page shows up to 13 months of transactions
-- Login requires dAccount (passkey authentication)
-- 期間・用途限定 (limited period/purpose) points have an expiry date and expire at end of month
-- Rank bonus points are always 期間・用途限定
+## Source-specific Rules
+
+- Positive points are earned; negative points are used or expire.
+- Keep base earnings, rank bonuses, and campaign entries as separate transactions.
+- `期間・用途限定` points carry an expiry date; rank bonuses are limited-period points.

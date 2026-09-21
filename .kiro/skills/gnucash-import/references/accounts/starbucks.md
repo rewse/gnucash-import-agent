@@ -1,97 +1,53 @@
-# Starbucks Card Statement Import
+# Starbucks Card statement import
 
-## GnuCash Account
+Script: `scripts/starbucks_import.py` (`review`, `sql`)
 
-`Assets:JPY - Current Assets:Prepaid:Starbucks`
+## Accounts
 
-## Credentials
+- Source account: `Assets:JPY - Current Assets:Prepaid:Starbucks`
+- Currency: JPY
 
-- Username: `op://gnucash/Starbucks/username`
-- Password: `op://gnucash/Starbucks/password`
+## Access
 
-## Import Workflow
+- Open `https://login.starbucks.co.jp/login` with `agent-browser --auto-connect open`; credentials are `op://gnucash/Starbucks/username` and `op://gnucash/Starbucks/password`.
+- Open history with `agent-browser --auto-connect open https://sbcard.starbucks.co.jp/card/history`, then extract with `agent-browser --auto-connect snapshot`.
+- The page loads about four months of history without pagination.
 
-1. Check if `account-guid-cache.json` exists and `updated_at` is within 1 month; regenerate if needed (see SKILL.md)
-2. Check DB for last imported transaction date to determine how far back to fetch
-3. `agent-browser --auto-connect open https://login.starbucks.co.jp/login`
-4. Login with 1Password credentials
-5. `agent-browser open https://sbcard.starbucks.co.jp/card/history`
-6. `agent-browser --auto-connect snapshot` to get transaction data
-7. Prepare RAW_DATA
-8. Copy RAW_DATA into `tmp/starbucks_import_YYYYMMDD.py`
-9. Run `python3 tmp/starbucks_import_YYYYMMDD.py review` to show review table
-10. User reviews and specifies manual overrides by ID
-11. Run `python3 tmp/starbucks_import_YYYYMMDD.py sql > tmp/starbucks_import_YYYYMMDD.sql` to generate SQL
-12. Execute SQL to insert transactions
+## Statement Data
 
-## Script Template
+Items are grouped by `YYYY年MM月`; each item has a description line followed by an amount and date line:
 
-- `scripts/starbucks_import.py`
-
-## Browser Data Format
-
-List items grouped by month, each item contains: Description (line 1), Amount and Date (line 2)
-
-Example (from snapshot):
-```
-2026年01月
+```text
+2030年04月
 オートチャージ
-¥2,000 2026/01/27
+¥2,000 2030/04/27
 モバイルオーダー&ペイ
-- ¥481 2026/01/27
-晴海 トリトンスクエア店
-- ¥496 2025/12/19
+- ¥481 2030/04/27
+例示店
+- ¥496 2030/03/19
 他社ポイント交換
-¥4,000 2025/11/25
+¥4,000 2030/02/25
 ```
 
-Notes:
-- Transactions are grouped by month (YYYY年MM月)
-- Amount: `¥N` (positive = charge), `- ¥N` (negative = payment)
-- No pagination; all history loads on single page
+Script input is three tab-separated fields: `{description}\t{amount}\t{date}`.
 
-## Conversion Rules
-
-### Transaction Types
-
-| Pattern | Type | Transfer Account | Description |
-|---------|------|------------------|-------------|
-| オートチャージ | Charge | Liabilities:Credit Card:ANA Super Flyers Gold Card | null |
-| 他社ポイント交換 | Charge | (lookup email) | null |
-| モバイルオーダー&ペイ | Payment | Expenses:Foods:Dining | Starbucks |
-| {店舗名}店 | Payment | Expenses:Foods:Dining | Starbucks |
-
-### Email Lookup for Missing Information
-
-If you don't know the account or the merchant, search emails with the amount. See [email-lookup.md](email-lookup.md).
-
-## Script Input Format
-
-Tab-separated format with 3 columns: `{description}\t{amount}\t{date}`
-
-```
-オートチャージ	¥2,000	2026/01/27
-モバイルオーダー&ペイ	- ¥481	2026/01/27
-晴海 トリトンスクエア店	- ¥496	2025/12/19
-他社ポイント交換	¥4,000	2025/11/25
+```text
+オートチャージ	¥2,000	2030/04/27
+モバイルオーダー&ペイ	- ¥481	2030/04/27
+例示店	- ¥496	2030/03/19
+他社ポイント交換	¥4,000	2030/02/25
 ```
 
-Parsing rules:
-- Fields are tab-separated
-- Amount: `¥N` (positive = charge), `- ¥N` (negative = payment)
-- Date format: YYYY/MM/DD
+Preserve the `- ` prefix in source examples. The parser removes `¥`, commas, and spaces; dates use `YYYY/MM/DD`.
 
-## Review Table Structure
+## Mapping
 
-Display transactions sorted by date descending (newest first) with:
-- ID: Sequential number for user to reference
-- Date: YYYY-MM-DD with weekday (Mon, Tue, etc.)
-- Type: Charge/Payment
-- Desc: Transaction description
-- Transfer: Target account
-- Increase/Decrease: Amount
+| Statement pattern | GnuCash account | Description |
+|---|---|---|
+| `オートチャージ` | `Liabilities:Credit Card:ANA Super Flyers Gold Card` | `NULL` |
+| Any other row, including mobile order, store payment, and point exchange | `Expenses:Foods:Dining` | `Starbucks` |
 
-## Notes
+## Source-specific Rules
 
-- History shows approximately 4 months of transactions
-- Amount sign: positive = charge (入金), negative with `- ` prefix = payment (支払い)
+- Positive amounts charge the card; negative amounts pay from it.
+- Use a manual override when a non-auto-charge row is not dining.

@@ -1,119 +1,45 @@
 # Sompo Japan DC Securities Statement Import
 
-## GnuCash Accounts
+Script: [`scripts/sompo_japan_dc_import.py`](../../../../../scripts/sompo_japan_dc_import.py)
 
-### Fund Accounts
+## Accounts
 
+- Transfer: `Assets:JPY - Current Assets:Securities:Sompo Japan DC Securities`
 - `Assets:JPY - Current Assets:Securities:Sompo Japan DC Securities:DIAM Japan Stock Index Fund <DC Pension>`
 - `Assets:JPY - Current Assets:Securities:Sompo Japan DC Securities:Index Fund Global Stock NoHedge (DC)`
 
-### Transfer Account
+A `掛金` buy moves value from the transfer account to the fund on the settlement date.
 
-- `Assets:JPY - Current Assets:Securities:Sompo Japan DC Securities`
+## Access
 
-Buy (掛金): Transfer Account → Fund Account (on settlement date)
+Open `https://www.rk.sjdc.co.jp/RKWEB/RkDCMember/Common/JP_D_BFKLogin.aspx` with `agent-browser --auto-connect`. Retrieve the username and password from `op://gnucash/Sompo Japan DC Securities/username` and `op://gnucash/Sompo Japan DC Securities/password`. If prompted, select `今はパスワードを変更しない`.
 
-## Credentials
+Open `取引履歴等の確認 > 取引履歴`, select `当月を含む12ヶ月`, and click `実行`. Extract `document.querySelector('body').innerText`; capture each 10-row page with `次へ >>`. No CSV download is available.
 
-- Username: `op://gnucash/Sompo Japan DC Securities/username`
-- Password: `op://gnucash/Sompo Japan DC Securities/password`
+## Statement Data
 
-## Import Workflow
+Each transaction is one tab-separated row:
 
-1. Check if `account-guid-cache.json` exists and `updated_at` is within 1 month; regenerate if needed (see SKILL.md)
-2. Check DB for last imported transaction date to determine how far back to fetch
-3. `agent-browser --auto-connect open https://www.rk.sjdc.co.jp/RKWEB/RkDCMember/Common/JP_D_BFKLogin.aspx`
-4. Login with 1Password credentials
-5. If password change prompt appears, click 「今はパスワードを変更しない」
-6. Click 「取引履歴等の確認」 in the sidebar
-7. Click 「取引履歴」
-8. Select period (当月を含む12ヶ月) and click 「実行」
-9. `agent-browser --auto-connect eval "document.querySelector('body').innerText"` to get transaction data
-10. If multiple pages, click 「次へ >>」 and repeat step 9
-11. Extract transaction rows from the text
-12. Copy RAW_DATA into `tmp/sompo_japan_dc_import_YYYYMMDD.py`
-13. Run `python3 tmp/sompo_japan_dc_import_YYYYMMDD.py review` to show review table
-14. User reviews and specifies manual overrides by ID
-15. Run `python3 tmp/sompo_japan_dc_import_YYYYMMDD.py sql > tmp/sompo_japan_dc_import_YYYYMMDD.sql` to generate SQL
-16. Execute SQL to insert transactions
-
-## Script Template
-
-- `scripts/sompo_japan_dc_import.py`
-
-## Browser Data Format
-
-Text extracted via `eval "document.querySelector('body').innerText"` from the 取引履歴 page.
-
-Transaction rows are tab-separated:
-
-```
+```text
 2026/01/28	2026/01/29	ＤＩＡＭ国内株式インデックス	598	6.4375	10,000	買 掛金
 2026/01/28	2026/01/30	インデックス海外株式ヘッジなし	4,599	11.1212	40,000	買 掛金
 ```
 
-Columns: 約定日, 受渡日, 運用商品名, 数量(口), 約定単価(円/口), 受渡金額(円), 取引区分
+Columns are trade date, settlement date, fund name, quantity in units (`口`), unit price (`円/口`), settlement amount in JPY, and transaction type. Dates use `YYYY/MM/DD`; numeric fields may contain commas. Paste these rows directly into `RAW_DATA`. The parser retains both dates and posts on the settlement date.
 
-Notes:
-- Date format: YYYY/MM/DD
-- Fund names use full-width characters (shortened on the page)
-- Amounts have commas (e.g., 40,000)
-- Pagination: 10 rows per page, navigate with 「次へ >>」
-- Past 1 year of history available
+## Mapping
 
-## Conversion Rules
+| Browser fund name | Account |
+|---|---|
+| `インデックス海外株式ヘッジなし` | `Assets:JPY - Current Assets:Securities:Sompo Japan DC Securities:Index Fund Global Stock NoHedge (DC)` |
+| `ＤＩＡＭ国内株式インデックス` | `Assets:JPY - Current Assets:Securities:Sompo Japan DC Securities:DIAM Japan Stock Index Fund <DC Pension>` |
 
-### Fund Name Mapping
+`買 掛金` transactions have a NULL description. Ask for a mapping when the fund name is unknown.
 
-| Browser Name | GnuCash Account |
-|-------------|-----------------|
-| ＤＩＡＭ国内株式インデックス | ...Sompo Japan DC Securities:DIAM Japan Stock Index Fund <DC Pension> |
-| インデックス海外株式ヘッジなし | ...Sompo Japan DC Securities:Index Fund Global Stock NoHedge (DC) |
+## Source-specific Rules
 
-### Quantity Handling
-
-Fund units are stored in GnuCash as:
-- `value_num` = 受渡金額 (円), `value_denom` = 1
-- `quantity_num` = 数量 (口) × 10000, `quantity_denom` = 10000
-
-The cash-side split (Transfer Account) uses 1:1 (`value = quantity = amount`, denom = 1).
-
-### Transaction Types
-
-| Pattern | Description |
-|---------|-------------|
-| 買 掛金 | null |
-
-### Description
-
-All descriptions are set to NULL.
-
-### Email Lookup for Missing Information
-
-If you don't know the account or the merchant, search emails with the amount. See [email-lookup.md](email-lookup.md).
-
-## Script Input Format
-
-Same as Browser Data Format. Paste the transaction rows directly (tab-separated lines).
-
-Parsing rules:
-- Lines matching `YYYY/MM/DD\t` start a new transaction
-- Split by tab: trade_date, settlement_date, fund_name, quantity, unit_price, amount, tx_type
-- Remove commas from numeric fields
-
-## Review Table Structure
-
-Display transactions sorted by date descending (newest first) with:
-- ID: Sequential number for user to reference
-- Date: YYYY-MM-DD with weekday (Mon, Tue, etc.) — uses settlement date
-- Fund: Fund name (shortened)
-- Quantity: Number of units purchased
-- Unit Price: Price per unit
-- Desc: Transaction description
-- Amount: Settlement amount
-- Fund Account: Target GnuCash account (shortened)
-
-## Notes
-
-- Transaction history available for past 1 year only
-- No CSV download available; use browser text extraction
+- Fund split: `value_num = settlement amount`, `value_denom = 1`, `quantity_num = units × 10000`, and `quantity_denom = 10000`.
+- Transfer-account split: `value_num = quantity_num = -settlement amount`, with both denominators equal to 1.
+- The review and posting date is the settlement date; retain the trade date from the first input column for source comparison.
+- History is limited to the current month plus the preceding 11 months.
+- Source-specific commands are `review` and `sql`.

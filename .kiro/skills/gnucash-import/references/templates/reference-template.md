@@ -1,79 +1,57 @@
-# {SOURCE_NAME} Statement Import
+# {SOURCE_NAME} statement import
 
-## GnuCash Account
+Script: `scripts/{source_slug}_import.py`
 
-`{ACCOUNT_PATH}`
+## Accounts
 
-For multi-currency sources, list each currency account:
-- JPY: `Assets:JPY - Current Assets:Banks:Example`
-- USD: `Assets:USD - Current Assets:Banks:Example`
+- Source account: `{ACCOUNT_PATH}`
+- Transfer account: `{TRANSFER_ACCOUNT_PATH}`
+- Currency or commodity: `{CURRENCY_OR_COMMODITY}`
 
-## Credentials
+## Access
 
-{CREDENTIAL_INSTRUCTIONS}
+- Login URL: `{LOGIN_URL}`
+- Authentication: `{AUTHENTICATION_METHOD}`
+- Statement navigation: `{STATEMENT_NAVIGATION}`
+- History or paging limit: `{HISTORY_LIMIT}`
 
-## Import Workflow
+Extract statement rows with `agent-browser --auto-connect`:
 
-1. Check if `account-guid-cache.json` exists and `updated_at` is within 1 month; regenerate if needed (see SKILL.md)
-2. Check DB for last imported transaction date to determine how far back to fetch
-3. `agent-browser --auto-connect open {LOGIN_URL}`
-4. {LOGIN_STEPS}
-5. {NAVIGATE_TO_STATEMENT}
-6. `agent-browser --auto-connect snapshot` to get transaction data
-7. Prepare RAW_DATA
-8. Copy RAW_DATA into `tmp/{source_slug}_import_YYYYMMDD.py`
-9. Run `python3 tmp/{source_slug}_import_YYYYMMDD.py review` to show review table
-10. User reviews and specifies manual overrides by ID
-11. Run `python3 tmp/{source_slug}_import_YYYYMMDD.py sql > tmp/{source_slug}_import_YYYYMMDD.sql` to generate SQL
-12. Execute SQL to insert transactions
-
-## Script Template
-
-- `scripts/{source_slug}_import.py`
-
-## Browser Data Format
-
-{FORMAT_DESCRIPTION}
-
-Example (from snapshot):
-```
-{EXAMPLE_DATA}
+```text
+{BROWSER_EXTRACTION_STEPS}
 ```
 
-Notes:
-{BROWSER_NOTES}
+## Statement Data
 
-## Conversion Rules
+Browser or download format:
 
-### Transaction Types
-
-| Pattern | GnuCash Account | Description |
-|---------|-----------------|-------------|
-| {PATTERN_1} | {ACCOUNT_1} | {DESC_1} |
-| {PATTERN_2} | {ACCOUNT_2} | {DESC_2} |
-
-### Email Lookup for Missing Information
-
-If you don't know the account or the merchant, search emails with the amount. See [email-lookup.md](email-lookup.md).
-
-## Script Input Format
-
-{INPUT_FORMAT_DESCRIPTION}
-
-```
-{INPUT_EXAMPLE}
+```text
+{EXACT_SOURCE_COLUMNS_AND_EXAMPLE}
 ```
 
-Parsing rules:
-{PARSING_RULES}
+Script input format, including exact column order, delimiters, empty fields, line breaks, and full-width characters:
 
-## Review Table Structure
+```text
+{EXACT_SCRIPT_INPUT_FORMAT_AND_EXAMPLE}
+```
 
-Display transactions sorted by date descending (newest first) with:
-- ID: Sequential number for user to reference
-- Date: YYYY-MM-DD with weekday (Mon, Tue, etc.)
-{REVIEW_COLUMNS}
+Parsing notes:
 
-## Notes
+- `{PARSING_RULE_1}`
+- `{PARSING_RULE_2}`
 
-{ADDITIONAL_NOTES}
+## Mapping
+
+| Statement pattern | GnuCash account | Description | Split or amount rule |
+|---|---|---|---|
+| `{PATTERN_1}` | `{ACCOUNT_1}` | `{DESCRIPTION_1}` | `{RULE_1}` |
+| `{PATTERN_2}` | `{ACCOUNT_2}` | `{DESCRIPTION_2}` | `{RULE_2}` |
+
+Ask the user to resolve any row that does not match a documented rule.
+
+## Source-specific Rules
+
+- `{AUTHORIZATION_OR_PENDING_RULE}`
+- `{DISCOUNT_OR_MULTICURRENCY_RULE}`
+- `{MIRROR_SKIP_OR_QUANTITY_RULE}`
+- `{SOURCE_EXCEPTION}`

@@ -1,134 +1,65 @@
-# V Point Statement Import
+# V Point statement import
 
-## GnuCash Account
+Script: `scripts/v_point_import.py` (`review`, `sql`)
 
-- Regular: `Assets:JPY - Current Assets:Reward Programs:V Point`
-- Store-limited (ANA Mileage Transferable): `Assets:JPY - Current Assets:Reward Programs:V Point - ANA Mileage Transferable Points`
+## Accounts
 
-## Credentials
+- Regular source: `Assets:JPY - Current Assets:Reward Programs:V Point`
+- Store-limited source: `Assets:JPY - Current Assets:Reward Programs:V Point - ANA Mileage Transferable Points`
+- Valuation: 1 point = 1 JPY
 
-Email authentication is required. You MUST use `agent-browser --auto-connect` and ask the user to log in manually.
+## Access
 
-## Import Workflow
+- Open `https://tsite.jp/tm/pc/login/STKIp0001001.do` with `agent-browser --auto-connect open`; Yahoo! JAPAN email or SMS authentication is manual.
+- Complete cookie consent, log in, open `マイページ` then `ポイント履歴`, and select `利用日順`.
+- Extract with `agent-browser --auto-connect snapshot -c`. Click `もっと見る` and repeat for additional rows. History covers up to three years; the alternative sort is `反映日順`.
 
-1. Check if `account-guid-cache.json` exists and `updated_at` is within 1 month; regenerate if needed (see SKILL.md)
-2. Check DB for last imported transaction date to determine how far back to fetch
-3. `agent-browser --auto-connect open https://tsite.jp/tm/pc/login/STKIp0001001.do`
-4. Click "設定を始める" (cookie consent)
-5. Click "Yahoo! JAPAN IDでログイン"
-6. Ask user to complete Yahoo! JAPAN ID login manually (email/SMS auth)
-7. After login, click "マイページ"
-8. Click "ポイント履歴" to view history
-9. Select "利用日順" for date ordering
-10. `agent-browser --auto-connect snapshot -c` to get transaction data
-11. Click "もっと見る" to load more transactions if needed (repeat snapshot)
-12. Prepare RAW_DATA
-13. Copy RAW_DATA into `tmp/v_point_import_YYYYMMDD.py`
-14. Run `python3 tmp/v_point_import_YYYYMMDD.py review` to show review table
-15. User reviews and specifies manual overrides by ID
-16. Run `python3 tmp/v_point_import_YYYYMMDD.py sql > tmp/v_point_import_YYYYMMDD.sql` to generate SQL
-17. Execute SQL to insert transactions
+## Statement Data
 
-## Script Template
+Each transaction is a paragraph containing date, description, points, and optional tags. Preserve quoted negative point lines and blank lines:
 
-- `scripts/v_point_import.py`
-
-## Browser Data Format
-
-Paragraphs grouped per transaction: date, description, points, and optional tags.
-
-Example (from snapshot):
-```
-2026/01/25
+```text
+2030/04/25
 三井住友カード カードご利用分 ＡＮＡ ＶＩＳＡゴールド
 15 pt
 ストア限定
 
-2025/12/19
-三井住友カード プリペイドカードチャージ特典 ＡＮＡ ＶＩＳＡゴールド
-12 pt
-
-2025/10/31
+2030/03/31
 Ｖポイント
 "-50 pt"
 失効
 期間限定
 
-2026/02/11
+2030/04/11
 三井住友カード ＶポイントＰａｙ残高チャージ（ポイント優先払い）
 "-500 pt"
 ```
 
-Notes:
-- Date format: YYYY/MM/DD
-- Positive points: `NNN pt`, negative points: `"-NNN pt"` (quoted with minus)
-- Optional tags appear after points: `ストア限定`, `期間限定`, `失効`
-- A transaction may have multiple tags (e.g., `失効` + `期間限定` or `失効` + `ストア限定`)
-- History shows up to 3 years of transactions
-- "もっと見る" button loads more transactions (pagination)
-- Two sort modes: 利用日順 (by usage date) and 反映日順 (by posting date)
+Tags include `ストア限定`, `期間限定`, and `失効`, and may be combined. Script input is tab-separated `{date}\t{description}\t{points}\t{tags}`; keep the empty description or tags field with adjacent or trailing tabs.
 
-## Conversion Rules
-
-### Account Selection
-
-- Transactions tagged `ストア限定` → `Assets:JPY - Current Assets:Reward Programs:V Point - ANA Mileage Transferable Points`
-- All other transactions (including `期間限定`) → `Assets:JPY - Current Assets:Reward Programs:V Point`
-
-### Transaction Types
-
-| Pattern | GnuCash Account | Description |
-|---------|-----------------|-------------|
-| Positive points (earning) | Income:Point Charge | Translate description to English |
-| Negative points with `失効` tag (expiry) | Expenses:Point Lapse | null |
-| Negative points, VポイントPay残高チャージ | Assets:JPY - Current Assets:Prepaid:V Point Pay | null |
-| Other negative points | (ask user) | Translate description to English |
-
-### Description Translation
-
-Translate Japanese descriptions to English:
-- 三井住友カード カードご利用分 ＡＮＡ ＶＩＳＡゴールド → SMBC Card
-- 三井住友カード プリペイドカードチャージ特典 ＡＮＡ ＶＩＳＡゴールド → SMBC Card
-- 三井住友カード ＶポイントＰａｙ残高チャージ（ポイント優先払い）→ null
-- セブンマイル交換 → Seven Eleven
-- おかえりＶポイント → V POINT
-- 吉野家 → Yoshinoya
-- ロッテリア → Lotteria
-
-### Email Lookup for Missing Information
-
-If you don't know the account or the merchant, search emails with the amount. See [email-lookup.md](email-lookup.md).
-
-## Script Input Format
-
-Tab-separated format: `{date}\t{description}\t{points}\t{tags}`
-
-```
-2026/02/11	V POINT -515	
-2026/01/25	SMBC Card 15	ストア限定
-2025/10/31		-50	失効,期間限定
-2025/10/13	Yoshinoya 3	
+```text
+2030/04/11		-515
+2030/04/25	SMBC Card	15	ストア限定
+2030/03/31		-50	失効,期間限定
+2030/03/13	Yoshinoya	3
 ```
 
-Parsing rules:
-- Points: integer, positive for earn, negative for use/expiry
-- Tags: comma-separated, may be empty
-- Description should already be translated to English
+Dates use `YYYY/MM/DD`; points are signed integers and may contain commas. Tags are comma-separated; descriptions are prepared in English or left empty.
 
-## Review Table Structure
+## Mapping
 
-Display transactions sorted by date descending (newest first) with:
-- ID: Sequential number for user to reference
-- Date: YYYY-MM-DD with weekday (Mon, Tue, etc.)
-- Desc: Description (English)
-- Account: Source account (V Point or ANA Mileage Transferable)
-- Transfer: Target account
-- Increase/Decrease: Points
+| Statement pattern | Source / transfer account | Description |
+|---|---|---|
+| `ストア限定` | Store-limited source / normal transfer mapping | As below |
+| Other tags, including `期間限定` | Regular source / normal transfer mapping | As below |
+| Positive points | Selected source / `Income:Point Charge` | English description |
+| `失効` | Selected source / `Expenses:Point Lapse` | `NULL` |
+| Negative points with an empty description | Selected source / `Assets:JPY - Current Assets:Prepaid:V Point Pay` | `NULL` |
+| Other negative points | Selected source / user-selected account | English description |
 
-## Notes
+Known translations include SMBC Card earnings and prepaid-charge benefits to `SMBC Card`, V Point Pay balance charge to an empty description, Seven Mile exchange to `Seven Eleven`, return points to `V POINT`, and Yoshinoya and Lotteria to their English names.
 
-- 1 point = 1 JPY
-- Point history page shows up to 3 years of transactions
-- ストア限定 (store-limited) points can only be used at specific stores and are tracked in the ANA Mileage Transferable Points account
-- 期間限定 (time-limited) points have an expiration date but are tracked in the regular V Point account
-- Connected services shown on my page: 三井住友カード, 三井住友銀行（Olive）
+## Source-specific Rules
+
+- `ストア限定` selects the ANA Mileage Transferable Points source account. `期間限定` alone remains in the regular account.
+- Positive points are earned; negative points are used or expire.

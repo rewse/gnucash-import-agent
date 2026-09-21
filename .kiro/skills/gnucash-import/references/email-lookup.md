@@ -1,43 +1,57 @@
-# Email Lookup
+# Email lookup
 
-Search emails for transaction details when order pages don't show product names.
+Search email only when the source reference requires details that the statement or order page does not provide.
 
-## Apple Mail Envelope Index
+## Locate the Mail index
 
-Use Apple Mail's SQLite index for fast searches:
+List the versioned Mail directories and select the active directory, normally the newest one containing `MailData/Envelope Index`:
 
 ```bash
-sqlite3 ~/Library/Mail/V10/MailData/"Envelope Index" "
-SELECT m.ROWID, s.subject, datetime(m.date_sent, 'unixepoch', 'localtime') as sent
+ls -dt ~/Library/Mail/V*/
+```
+
+Set `MAIL_VERSION` to that directory's basename and choose the earliest relevant date as `START_DATE`:
+
+```bash
+MAIL_VERSION="VNN"
+START_DATE="YYYY-MM-DD"
+ENVELOPE_INDEX="$HOME/Library/Mail/$MAIL_VERSION/MailData/Envelope Index"
+```
+
+## Search by subject
+
+```bash
+sqlite3 "$ENVELOPE_INDEX" "
+SELECT m.ROWID, s.subject, datetime(m.date_sent, 'unixepoch', 'localtime') AS sent
 FROM messages m
 JOIN subjects s ON m.subject = s.ROWID
-WHERE s.subject LIKE '%KEYWORD%' AND m.date_sent > strftime('%s', '2026-01-01')
+WHERE s.subject LIKE '%KEYWORD%'
+  AND m.date_sent > strftime('%s', '$START_DATE')
 ORDER BY m.date_sent DESC
 LIMIT 10;
 "
 ```
 
-## Searching by Amount
+## Search by amount
 
-The `summaries` table contains email body text and can be searched by amount:
+The `summaries` table contains indexed message text:
 
 ```bash
-sqlite3 ~/Library/Mail/V10/MailData/"Envelope Index" "
+sqlite3 "$ENVELOPE_INDEX" "
 SELECT m.ROWID, s.subject, su.summary
 FROM messages m
 JOIN subjects s ON m.subject = s.ROWID
 JOIN summaries su ON m.summary = su.ROWID
 WHERE su.summary LIKE '%¥1,234%'
-AND m.date_sent > strftime('%s', '2026-01-01')
+  AND m.date_sent > strftime('%s', '$START_DATE')
 ORDER BY m.date_sent;
 "
 ```
 
-Note: Not all emails have summaries indexed (`m.summary` is NULL for some). If a needed email has no summary, fall back to reading the emlx file directly (path: `~/Library/Mail/V10/.../Data/{s[2]}/{s[1]}/{s[0]}/Messages/{ROWID}.emlx` where s = str(ROWID)).
+Some messages have a NULL `m.summary`. Locate the matching `.emlx` file under `$HOME/Library/Mail/$MAIL_VERSION` and read it directly when indexed text is unavailable. Apple Mail shards message files by digits from the message row ID, so search by filename instead of assuming a fixed shard path.
 
-## Amazon Order/Shipped Email Patterns
+## Amazon email patterns
 
-- **注文済み** emails: contain item names and individual prices, order total
-- **発送済み** emails: contain items in this shipment and `合計 {amount} JPY` (the actual charged amount, after discounts)
-- Use **発送済み** emails to match the exact charged amount to the credit card statement
-- Multiple items from the same order may ship separately with separate charges
+- Use order-confirmation emails to identify item names, individual prices, and the order total.
+- Use shipping-confirmation emails to match `合計 {amount} JPY`, the amount charged after discounts.
+- Handle separate shipments as separate charges even when they belong to one order.

@@ -1,154 +1,61 @@
-# Mobile PASMO Statement Import
+# Mobile PASMO statement import
 
-## GnuCash Account
+Script: `scripts/pasmo_import.py` (`review`, `sql`)
 
-`Assets:JPY - Current Assets:Prepaid:PASMO Child`
+## Accounts
 
-## Credentials
+- Source account: `accounts.pasmo.source` from ignored `../personal.json`
+- Shopping account: `accounts.pasmo.shopping` from ignored `../personal.json`
+- Schema and dummy values: `../personal.example.json`
+- Currency: JPY
 
-CAPTCHA is required. You MUST use `agent-browser --auto-connect` and ask the user to input CAPTCHA manually.
+## Access
 
-## Import Workflow
+- Open `https://www.mobile.pasmo.jp/` with `agent-browser --auto-connect open`; CAPTCHA login is manual.
+- Select `次へ`, then `SF（電子マネー） 利用履歴`, and extract with `agent-browser --auto-connect snapshot`.
 
-1. Check if `account-guid-cache.json` exists and `updated_at` is within 1 month; regenerate if needed (see SKILL.md)
-2. Check DB for last imported transaction date to determine how far back to fetch
-3. `agent-browser --auto-connect open https://www.mobile.pasmo.jp/`
-4. Manual login (CAPTCHA required)
-5. Click "次へ"
-6. Click "SF（電子マネー） 利用履歴"
-7. `agent-browser --auto-connect snapshot` to get table data
-8. Prepare RAW_DATA
-9. Copy RAW_DATA into `tmp/pasmo_import_YYYYMMDD.py`
-10. Run `python3 tmp/pasmo_import_YYYYMMDD.py review` to show review table
-11. User reviews and specifies manual overrides by ID
-12. Run `python3 tmp/pasmo_import_YYYYMMDD.py sql > tmp/pasmo_import_YYYYMMDD.sql` to generate SQL
-13. Execute SQL to insert transactions
+## Statement Data
 
-## Script Template
+Browser columns are `月日`, `種別`, `利用場所`, `種別`, `利用場所`, `残額`, `入金・利用額`:
 
-- `scripts/pasmo_import.py` (handles 入/出, ＊入, 定, ﾊﾞｽ等, ｵｰﾄ, 物販; supports station names with spaces)
-
-## Browser Data Format
-
-HTML table with columns: 月日, 種別, 利用場所, 種別, 利用場所, 残額, 入金・利用額
-
-Example (white-space separated text from snapshot):
-```
+```text
 月日 種別 利用場所 種別 利用場所 残額 入金・利用額
-01/28 入 目黒 出 新宿 4,822 -178
-01/26 物販 5,000 -590
-01/21 ｵｰﾄ 新宿 5,590 +5,000
-01/18 入 地 渋谷 出 北参道 590 -178
-11/25 繰 768
+04/28 入 例駅A 出 例駅B 4,820 -180
+04/26 物販 5,000 -590
+04/21 ｵｰﾄ 例駅A 5,590 +5,000
+04/18 入 地 例駅C 出 例駅D 590 -180
+03/25 繰 770
 ```
 
-Notes:
-- Station names with prefix (地, 都) may or may not have a space (e.g., "地 新宿" or "地麻布十")
-- 繰 (carried balance) rows have no amount
+Station prefixes may be joined or separated by a space, such as `地例駅` and `地 例駅`. Script input removes the header and cumulative-balance column:
 
-## Conversion Rules
-
-### Transaction Types
-
-| 種別 | Meaning | GnuCash Account | Description |
-|------|---------|-----------------|-------------|
-| 入/出 | Train entry/exit | Expenses:Transit | Railway company |
-| ＊入 | Transfer entry | Expenses:Transit | Railway company |
-| 定 | Commuter pass out-of-zone ride | Expenses:Transit | Railway company |
-| ﾊﾞｽ等 | Bus | Expenses:Transit | Bus company |
-| 物販 | Shopping | Assets:JPY - Current Assets:Reimbursement:Child (default) | NULL (default) |
-| ｵｰﾄ | Auto-charge | Liabilities:Credit Card:TOKYU CARD ClubQ JMB | NULL |
-| 繰 | Carried balance | (skip) | - |
-
-PASMO never uses Expenses:Business Expenses. Transit defaults to Expenses:Transit. For leisure trips, the user may override to Expenses:Entertainment:Travel by ID.
-
-### Railway Company Detection
-
-Determine railway company from entry station:
-
-1. Check station-specific mappings first (see below)
-2. Check station name prefix:
-   - `地` prefix → Tokyo Metro
-   - `都` prefix → Toei Subway
-   - `ゆ` prefix → Yurikamome
-   - `KS` prefix → Keisei
-   - No prefix → JR (default)
-
-#### Station-Specific Mappings
-
-Stations without prefix that are NOT JR:
-
-| Station | Railway |
-|---------|---------|
-| 新宿御苑 | Tokyo Metro |
-| 曙橋 | Toei Subway |
-| 明治神宮 | Tokyo Metro |
-| 後楽園 | Tokyo Metro |
-| 溜池山王 | Tokyo Metro |
-| 赤坂見附 | Tokyo Metro |
-| 南大沢 | Keio |
-| 江電鎌倉 | Enoshima Electric Railway |
-| 長谷 | Enoshima Electric Railway |
-| 稲村ケ崎 | Enoshima Electric Railway |
-| 江ノ島 | Enoshima Electric Railway |
-
-Add new stations here when discovered.
-
-#### Bus Mappings
-
-| 利用場所 | Bus Company |
-|---------|-------------|
-| 江ノ電Ｂ | Enoden Bus |
-
-### Description Format
-
-For train/bus rides, use the railway/bus company name in English:
-- JR
-- Tokyo Metro
-- Toei Subway
-- Keio
-- Keisei
-- Enoshima Electric Railway
-- Enoden Bus
-- Tokyo Monorail
-- Toei Bus
-
-For 物販 (shopping) and ｵｰﾄ (auto-charge), set description to NULL unless user specifies a merchant name.
-
-## Script Input Format
-
-Same as Browser Data Format, but without header row and 残額 column:
-```
-01/28 入 目黒 出 新宿 -178
-01/26 物販 -590
-01/21 ｵｰﾄ 新宿 +5000
-01/18 入 地 渋谷 出 北参道 -178
-01/15 定 曙橋 出 都 新宿 -178
-01/12 ﾊﾞｽ等 江ノ電Ｂ -390
-11/25 繰
+```text
+04/28 入 例駅A 出 例駅B -180
+04/26 物販 -590
+04/21 ｵｰﾄ 例駅A +5000
+04/18 入 地 例駅C 出 例駅D -180
+04/15 定 曙橋 出 都 例駅E -180
+04/12 ﾊﾞｽ等 江ノ電Ｂ -390
+03/25 繰
 ```
 
-Parsing rules:
-- Split by whitespace
-- Skip 繰 (carried balance) rows
-- Skip rows with amount 0
-- Amount is the last numeric value
-- For ｵｰﾄ and ﾊﾞｽ等, the location is everything between the type and the amount (may contain spaces, e.g. "地 新宿")
-- 定 (commuter pass) parses like 入/出: `定 station1 出 station2 amount`
+The parser splits on whitespace. The amount is the final field. For `ｵｰﾄ` and `ﾊﾞｽ等`, the location is every field between the type and amount. `入`, `＊入`, and `定` use `type station1 出 station2 amount`, allowing prefixed station names with a space. The year is inferred: a month later than the current month belongs to the previous year.
 
-## Review Table Structure
+## Mapping
 
-Display transactions sorted by date descending (newest first) with:
-- ID: Sequential number for user to reference
-- Date: YYYY-MM-DD with weekday (Mon, Tue, etc.)
-- Purpose: "駅名 → 駅名" for transit, "物販" for shopping, "オート" for auto-charge
-- Desc: Railway company or merchant name (becomes transaction description in GnuCash)
-- Transfer: Target account
-- Increase/Decrease: Amount
+| Statement type | GnuCash account | Description |
+|---|---|---|
+| `入`, `＊入`, `定` | `Expenses:Transit` | Detected railway company |
+| `ﾊﾞｽ等` | `Expenses:Transit` | Bus mapping, otherwise `NULL` |
+| `物販` | `accounts.pasmo.shopping` from ignored `../personal.json` | `NULL` |
+| `ｵｰﾄ` | `Liabilities:Credit Card:TOKYU CARD ClubQ JMB` | `NULL` |
+| `繰` or amount 0 | Skip | None |
 
-## Notes
+Railway detection checks these general exceptions before prefixes: `溜池山王`, `赤坂見附`, and `後楽園` are Tokyo Metro; `南大沢` is Keio; `江電鎌倉`, `長谷`, `稲村ケ崎`, and `江ノ島` are Enoshima Electric Railway when either endpoint matches. Prefixes map `KS` to Keisei, `地` on either endpoint to Tokyo Metro, `都` on either endpoint to Toei Subway, and `ゆ` on either endpoint to Yurikamome; otherwise use JR. `江ノ電Ｂ` maps to Enoden Bus.
 
-- Year is not shown; infer from current date (if month > current month, use previous year)
-- Balance column is cumulative; use amount column for actual transaction value
-- Always show review table before inserting to database
-- User can specify manual overrides by ID for account and/or description
+## Source-specific Rules
+
+- `accounts.pasmo.source`, `accounts.pasmo.shopping`, and `nearest_station` are read from ignored `../personal.json`; use `../personal.example.json` as the schema. Account paths are resolved through the account cache and actual configured values are never printed.
+- Missing, blank, or malformed `nearest_station` prevents ambiguous railway classification. Public station exceptions and prefixes listed above remain usable without it.
+- PASMO never maps transit automatically to `Expenses:Business Expenses`. Override leisure trips to `Expenses:Entertainment:Travel` when needed.
+- The cumulative balance is retained only for reading the source page; the script uses the signed amount column.

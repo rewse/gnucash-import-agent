@@ -1,95 +1,47 @@
-# World of Hyatt Statement Import
+# World of Hyatt statement import
 
-## GnuCash Account
+Script: `scripts/world_of_hyatt_import.py` (`review`, `sql`)
 
-`Assets:JPY - Current Assets:Reward Programs:World of Hyatt`
+## Accounts
 
-## Credentials
+- Source account: `Assets:JPY - Current Assets:Reward Programs:World of Hyatt`
+- Valuation: 1 point = 0.4 JPY (`value = points * 2 / 5`, integer floor)
 
-Passkey is required. You MUST use `agent-browser --auto-connect` and ask the user to input Passkey manually.
+## Access
 
-## Import Workflow
+- Open `https://www.hyatt.com/ja-JP/member/sign-in?returnUrl=https://www.hyatt.com/loyalty/ja-JP` with `agent-browser --auto-connect --args "--disable-blink-features=AutomationControlled" open`; passkey login is manual.
+- Open activity with `agent-browser --auto-connect open https://www.hyatt.com/profile/ja-JP/account-activity`, then extract with `agent-browser --auto-connect snapshot -c`.
+- Expand entries when the base, bonus, and eligible-spend breakdown is needed. The anti-detection flag is required.
 
-1. Check if `account-guid-cache.json` exists and `updated_at` is within 1 month; regenerate if needed (see SKILL.md)
-2. Check DB for last imported transaction date to determine how far back to fetch
-3. `agent-browser --auto-connect --args "--disable-blink-features=AutomationControlled" open https://www.hyatt.com/ja-JP/member/sign-in?returnUrl=https://www.hyatt.com/loyalty/ja-JP`
-4. User manually logs in with passkey
-5. After login, navigate to account activity: `agent-browser open https://www.hyatt.com/profile/ja-JP/account-activity`
-6. `agent-browser --auto-connect snapshot -c` to get transaction data
-7. Expand entries with the expand button if detail breakdown is needed
-8. Prepare RAW_DATA
-9. Copy RAW_DATA into `tmp/world_of_hyatt_import_YYYYMMDD.py`
-10. Run `python3 tmp/world_of_hyatt_import_YYYYMMDD.py review` to show review table
-11. User reviews and specifies manual overrides by ID
-12. Run `python3 tmp/world_of_hyatt_import_YYYYMMDD.py sql > tmp/world_of_hyatt_import_YYYYMMDD.sql` to generate SQL
-13. Execute SQL to insert transactions
+## Statement Data
 
-## Script Template
+Entries contain type, Japanese hotel name, date or stay range, and points:
 
-- `scripts/world_of_hyatt_import.py`
-
-## Browser Data Format
-
-Structured entries on the account activity page at `https://www.hyatt.com/profile/ja-JP/account-activity`. Each entry contains type, hotel name, date range, and points.
-
-Example (from snapshot):
-```
-滞在 ハイアット リージェンシー 横浜 2月8日 - 2025年2月9日 ポイント 0
-滞在 グランド ハイアット シアトル 2月19日 - 2024年2月22日 ポイント 3,000
-アワードの交換 ハイアット リージェンシー 横浜 2024年2月15日 交換済み無料宿泊 1
-滞在 ハイアット プレイス サンカルロス 2月10日 - 2024年2月14日 ポイント 5,000
+```text
+滞在 ハイアット リージェンシー 例示市 4月8日 - 2030年4月9日 ポイント 0
+滞在 グランド ハイアット 例示市 3月19日 - 2030年3月22日 ポイント 3,000
+アワードの交換 ハイアット リージェンシー 例示市 2030年2月15日 交換済み無料宿泊 1
 ```
 
-Notes:
-- Hotel names are in Japanese on the activity page; translate to English for descriptions
-- Date format varies: "2月8日 - 2025年2月9日" (range) or "2024年2月15日" (single)
-- Use the end date of the range as the transaction date
-- Kasada bot protection requires `--disable-blink-features=AutomationControlled` flag
-- Activity may take up to 72 hours after checkout to appear
-- Expanded details show breakdown (base points, bonus points, eligible spend)
+Use the range end date. Translate hotel names to English. Script input is four tab-separated fields: `{date}\t{description}\t{amount}\t{account}`.
 
-## Conversion Rules
-
-### Transaction Types
-
-| Pattern | GnuCash Account | Description |
-|---------|-----------------|-------------|
-| 滞在 {hotel} (points > 0) | Income:Point Charge | Hotel name in English |
-| 滞在 {hotel} (0 points) | (skip) | No point movement |
-| アワードの交換 {hotel} (交換済み無料宿泊) | (skip) | Free night certificate, no point movement |
-| アワードの交換 {hotel} (points) | Expenses:Entertainment:Travel | Hotel name in English (point redemption) |
-
-### Email Lookup for Missing Information
-
-If you don't know the account or the merchant, search emails with the amount. See [email-lookup.md](email-lookup.md).
-
-## Script Input Format
-
-Tab-separated format with 4 columns: `{date}\t{description}\t{amount}\t{account}`
-
-```
-2024/02/22	Grand Hyatt Seattle	3000	Income:Point Charge
-2024/02/14	Hyatt Place San Carlos	5000	Income:Point Charge
+```text
+2030/03/22	Grand Hyatt Example City	3000	Income:Point Charge
+2030/02/14	Hyatt Place Example City	5000	Income:Point Charge
 ```
 
-Parsing rules:
-- Date: YYYY/MM/DD (use end date of stay range)
-- Amount: positive for points earned, negative for points redeemed (no comma separators)
-- Description: hotel name in English
-- Account: full GnuCash account path for the transfer account
-- Skip rows with 0 points and free night certificate redemptions
+Dates use `YYYY/MM/DD`; point amounts may contain commas and retain their sign.
 
-## Review Table Structure
+## Mapping
 
-Display transactions sorted by date descending (newest first) with:
-- ID: Sequential number for user to reference
-- Date: YYYY-MM-DD with weekday (Mon, Tue, etc.)
-- Desc: Hotel name in English
-- Transfer: Target account
-- Increase/Decrease: Points
+| Statement pattern | GnuCash account | Description |
+|---|---|---|
+| Stay with positive points | `Income:Point Charge` | English hotel name |
+| Stay with 0 points | Skip | None |
+| Redeemed free-night certificate | Skip | None |
+| Point award redemption | `Expenses:Entertainment:Travel` | English hotel name |
 
-## Notes
+## Source-specific Rules
 
-- Unit is pt (World of Hyatt points)
-- Transaction currency is JPY (1 point = 0.4 JPY for accounting)
-- Hotel names on the activity page are in Japanese; translate to English
+- Positive points are earned and negative points are redeemed.
+- Activity may take up to 72 hours after checkout to appear.

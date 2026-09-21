@@ -1,97 +1,49 @@
-# IHG Rewards Club Statement Import
+# IHG Rewards Club statement import
 
-## GnuCash Account
+Script: `scripts/ihg_rewards_club_import.py` (`review`, `sql`)
 
-`Assets:JPY - Current Assets:Reward Programs:IHG Rewards Club`
+## Accounts
 
-## Credentials
+- Source account: `Assets:JPY - Current Assets:Reward Programs:IHG Rewards Club`
+- Valuation: 1 point = 0.5 JPY (`value = points * 1 / 2`, integer floor)
 
-- Username: `op://gnucash/IHG/username`
-- Password: `op://gnucash/IHG/password`
+## Access
 
-## Import Workflow
+- Open `https://www.ihg.com/hotels/jp/ja/reservation` with `agent-browser --auto-connect open`; credentials are `op://gnucash/IHG/username` and `op://gnucash/IHG/password`.
+- Open `Account Home`, then `アカウントアクティビティ`, or `https://www.ihg.com/rewardsclub/jp/ja/account-mgmt/activity`.
+- Extract with `agent-browser --auto-connect snapshot -c`. Activity covers the past 365 days.
 
-1. Check if `account-guid-cache.json` exists and `updated_at` is within 1 month; regenerate if needed (see SKILL.md)
-2. Check DB for last imported transaction date to determine how far back to fetch
-3. `agent-browser --auto-connect open https://www.ihg.com/hotels/jp/ja/reservation`
-4. Click "ログイン", fill username and password from 1Password, click "ログイン"
-5. After login, click "Account Home" → "アカウントアクティビティ"
-6. Activity page URL: `https://www.ihg.com/rewardsclub/jp/ja/account-mgmt/activity`
-7. `agent-browser --auto-connect snapshot -c` to get transaction data
-8. Prepare RAW_DATA
-9. Copy RAW_DATA into `tmp/ihg_rewards_club_import_YYYYMMDD.py`
-10. Run `python3 tmp/ihg_rewards_club_import_YYYYMMDD.py review` to show review table
-11. User reviews and specifies manual overrides by ID
-12. Run `python3 tmp/ihg_rewards_club_import_YYYYMMDD.py sql > tmp/ihg_rewards_club_import_YYYYMMDD.sql` to generate SQL
-13. Execute SQL to insert transactions
+## Statement Data
 
-## Script Template
+The page emits `{date} {description} {hotel} {points} ポイント` lines:
 
-- `scripts/ihg_rewards_club_import.py`
-
-## Browser Data Format
-
-Plain text lines on the account activity page at `https://www.ihg.com/rewardsclub/jp/ja/account-mgmt/activity` with format: `{date} {description} {hotel} {points} ポイント`
-
-Example (from snapshot):
-```
-2025/09/18 対象となるご宿泊 Holiday Inn Istanbul - Old City 1,500 ポイント
-2025/08/19 無料宿泊特典 voco Seoul Myeongdong 0 ポイント
-2025/07/12 08/13/2025の無料宿泊特典をキャンセル voco Seoul Myeongdong 33,000 ポイント
-2025/07/12 2025年08月12日の無料宿泊特典に交換したポイント voco Seoul Myeongdong -34,000 ポイント
+```text
+2030/04/18 対象となるご宿泊 Holiday Inn Example City 1,500 ポイント
+2030/03/19 無料宿泊特典 voco Example Central 0 ポイント
+2030/02/12 03/13/2030の無料宿泊特典をキャンセル voco Example Central 33,000 ポイント
+2030/02/12 2030年03月12日の無料宿泊特典に交換したポイント voco Example Central -34,000 ポイント
 ```
 
-Notes:
-- Date format: YYYY/MM/DD
-- Shows past 365 days of activity
-- Points may take up to 5 business days to appear after a stay
-- Promotional points may take up to 6 weeks
-- Transactions with 0 points (無料宿泊特典) represent the stay record only; skip these
+Script input is four tab-separated fields: `{date}\t{description}\t{amount}\t{account}`.
 
-## Conversion Rules
-
-### Transaction Types
-
-| Pattern | GnuCash Account | Description |
-|---------|-----------------|-------------|
-| 対象となるご宿泊 {hotel} | Income:Point Charge | Hotel name in English |
-| {date}の無料宿泊特典に交換したポイント {hotel} | Expenses:Entertainment:Travel | Hotel name in English |
-| {date}の無料宿泊特典をキャンセル {hotel} | Expenses:Entertainment:Travel | Hotel name in English |
-| 無料宿泊特典 {hotel} (0 points) | (skip) | No point movement |
-
-### Email Lookup for Missing Information
-
-If you don't know the account or the merchant, search emails with the amount. See [email-lookup.md](email-lookup.md).
-
-## Script Input Format
-
-Tab-separated format with 4 columns: `{date}\t{description}\t{amount}\t{account}`
-
-```
-2025/09/18	Holiday Inn Istanbul - Old City	1500	Income:Point Charge
-2025/07/12	voco Seoul Myeongdong	33000	Expenses:Entertainment:Travel
-2025/07/12	voco Seoul Myeongdong	-34000	Expenses:Entertainment:Travel
+```text
+2030/04/18	Holiday Inn Example City	1500	Income:Point Charge
+2030/02/12	voco Example Central	33000	Expenses:Entertainment:Travel
+2030/02/12	voco Example Central	-34000	Expenses:Entertainment:Travel
 ```
 
-Parsing rules:
-- Date: YYYY/MM/DD
-- Amount: positive for points earned/refunded, negative for points redeemed (comma-separated thousands)
-- Description: hotel name in English
-- Account: full GnuCash account path for the transfer account
-- Skip rows with 0 points
+Dates use `YYYY/MM/DD`; amounts may contain commas. Skip zero-point rows.
 
-## Review Table Structure
+## Mapping
 
-Display transactions sorted by date descending (newest first) with:
-- ID: Sequential number for user to reference
-- Date: YYYY-MM-DD with weekday (Mon, Tue, etc.)
-- Desc: Description
-- Transfer: Target account
-- Increase/Decrease: Points
+| Statement pattern | GnuCash account | Description |
+|---|---|---|
+| Eligible stay | `Income:Point Charge` | English hotel name |
+| Points exchanged for a free-night award | `Expenses:Entertainment:Travel` | English hotel name |
+| Free-night award cancellation | `Expenses:Entertainment:Travel` | English hotel name |
+| Free-night stay record with 0 points | Skip | None |
 
-## Notes
+## Source-specific Rules
 
-- Unit is pt (IHG One Rewards points)
-- Transaction currency is JPY (1 point = 0.5 JPY for accounting)
-- Date format from browser is YYYY/MM/DD
-- Hotel names are already in English on the activity page
+- Positive points are earned or refunded; negative points are redeemed.
+- Stay points may post within five business days; promotions may take six weeks.

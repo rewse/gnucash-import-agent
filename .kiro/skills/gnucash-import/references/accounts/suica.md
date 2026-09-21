@@ -1,153 +1,55 @@
-# Mobile Suica Statement Import
+# Mobile Suica statement import
 
-## GnuCash Account
+Script: `scripts/suica_import.py` (`review`, `sql`)
 
-`Root Account:Assets:JPY - Current Assets:Prepaid:Suica iPhone`
+## Accounts
 
-## Credentials
+- Source account: `Assets:JPY - Current Assets:Prepaid:Suica iPhone`
+- Currency: JPY
 
-CAPTCHA is required. You MUST use `agent-browser --auto-connect` and ask the user to input CAPTCHA manually.
+## Access
 
-## Import Workflow
+- Open `https://www.mobilesuica.com/` with `agent-browser --auto-connect open`; CAPTCHA login is manual.
+- Open `SF（電子マネー） 利用履歴` and extract with `agent-browser --auto-connect snapshot`.
 
-1. Check if `account-guid-cache.json` exists and `updated_at` is within 1 month; regenerate if needed (see SKILL.md)
-2. Check DB for last imported transaction date to determine how far back to fetch
-3. `agent-browser --auto-connect open https://www.mobilesuica.com/`
-4. Manual login (CAPTCHA required)
-5. Click "SF（電子マネー） 利用履歴"
-6. `agent-browser --auto-connect snapshot` to get table data
-7. Prepare RAW_DATA
-8. Copy RAW_DATA into `tmp/suica_import_YYYYMMDD.py`
-9. Run `python3 tmp/suica_import_YYYYMMDD.py review` to show review table
-10. User reviews and specifies manual overrides by ID
-11. Run `python3 tmp/suica_import_YYYYMMDD.py sql > tmp/suica_import_YYYYMMDD.sql` to generate SQL
-12. Execute SQL to insert transactions
+## Statement Data
 
-## Script Template
+Browser columns are `月日`, `種別`, `利用場所`, `種別`, `利用場所`, `残額`, `入金・利用額`:
 
-- `scripts/suica_import.py`
-
-## Browser Data Format
-
-HTML table with columns: 月日, 種別, 利用場所, 種別, 利用場所, 残額, 入金・利用額
-
-Example (white-space separated text from snapshot):
-```
+```text
 月日 種別 利用場所 種別 利用場所 残額 入金・利用額
-01/28 入 目黒 出 新宿 4,822 -178
-01/26 物販 5,000 -590
-01/21 ｵｰﾄ 新宿 5,590 +5,000
-01/18 入 地 渋谷 出 北参道 590 -178
-11/25 繰 768
+04/28 入 例駅A 出 例駅B 4,820 -180
+04/26 物販 5,000 -590
+04/21 ｵｰﾄ 例駅A 5,590 +5,000
+04/18 入 地 例駅C 出 例駅D 590 -180
+03/25 繰 770
 ```
 
-Notes:
-- Station names with prefix (地, 都) may or may not have a space (e.g., "地 新宿" or "地麻布十")
-- 繰 (carried balance) rows have no amount
+Station prefixes may be joined or separated by a space. Script input removes the header and cumulative-balance column:
 
-## Conversion Rules
-
-### Transaction Types
-
-| 種別 | Meaning | GnuCash Account | Description |
-|------|---------|-----------------|-------------|
-| 入/出 | Train entry/exit | Expenses:Transit or Expenses:Business Expenses | Railway company |
-| ＊入 | Transfer entry | Expenses:Transit or Expenses:Business Expenses | Railway company |
-| 物販 | Shopping | Expenses:Foods:Dining (default) | NULL (ask user for merchant if known) |
-| ｵｰﾄ | Auto-charge | Liabilities:Credit Card:LUMINE CARD | NULL |
-| 繰 | Carried balance | (skip) | - |
-
-### Business Expense Detection
-
-On weekdays, classify a transit transaction as `Expenses:Business Expenses` only if it is one of these direct from→to pairs:
-
-- {nearest_station} → 六本木一
-- 六本木一 → {nearest_station}
-- {nearest_station} → 神谷町
-- 神谷町 → {nearest_station}
-
-See [references/personal.json](../personal.json) for the nearest station.
-
-Rules:
-- Only the specific transaction matching the pair is business expense, not all transactions on that day
-- 物販 or ｵｰﾄ transactions are never business expenses
-- Weekend transactions are never business expenses
-
-### Railway Company Detection
-
-Determine railway company from entry station:
-
-1. Check station-specific mappings first (see below)
-2. Check station name prefix:
-   - `地` prefix → Tokyo Metro
-   - `都` prefix → Toei Subway
-   - `ゆ` prefix → Yurikamome
-   - `臨` prefix → TWR
-   - `KS` prefix → Keisei
-   - No prefix → JR (default)
-
-#### Station-Specific Mappings
-
-Stations without prefix that are NOT JR:
-
-| Station | Railway |
-|---------|---------|
-| 神谷町 | Tokyo Metro |
-| 新宿御苑 | Tokyo Metro |
-| 曙橋 | Toei Subway |
-| 溜池山王 | Tokyo Metro |
-| 赤坂見附 | Tokyo Metro |
-| 南大沢 | Keio |
-| 六本木一 | Tokyo Metro |
-| 青物横丁 | Keikyu |
-
-Add new stations here when discovered.
-
-### Description Format
-
-For train/bus rides, use the railway/bus company name in English:
-- JR
-- Tokyo Metro
-- Toei Subway
-- Keio
-- Keikyu
-- Keisei
-- Tokyo Monorail
-- Toei Bus
-- TWR
-
-For 物販 (shopping) and ｵｰﾄ (auto-charge), set description to NULL unless user specifies a merchant name.
-
-## Script Input Format
-
-Same as Browser Data Format, but without header row and 残額 column:
-```
-01/28 入 目黒 出 新宿 -178
-01/26 物販 -590
-01/21 ｵｰﾄ 新宿 +5000
-01/18 入 地 渋谷 出 北参道 -178
-11/25 繰
+```text
+04/28 入 例駅A 出 例駅B -180
+04/26 物販 -590
+04/21 ｵｰﾄ 例駅A +5000
+04/18 入 地 例駅C 出 例駅D -180
+03/25 繰
 ```
 
-Parsing rules:
-- Split by whitespace
-- Skip 繰 (carried balance) rows
-- Skip rows with amount 0
-- Amount is the last numeric value
+The parser splits on whitespace, skips `繰`, and reads the final field as the signed amount. `入` and `＊入` use `type station1 出 station2 amount`; prefixed station names may include one space. The year is inferred: a month later than the current month belongs to the previous year.
 
-## Review Table Structure
+## Mapping
 
-Display transactions sorted by date descending (newest first) with:
-- ID: Sequential number for user to reference
-- Date: YYYY-MM-DD with weekday (Mon, Tue, etc.)
-- Purpose: "駅名 → 駅名" for transit, "物販" for shopping, "オート" for auto-charge
-- Desc: Railway company or merchant name (becomes transaction description in GnuCash)
-- Transfer: Target account
-- Increase/Decrease: Amount
+| Statement type | GnuCash account | Description |
+|---|---|---|
+| `入`, `＊入` | `Expenses:Transit`, or commute account below | Detected railway company |
+| `物販` | `Expenses:Foods:Dining` | `NULL` |
+| `ｵｰﾄ` | `Liabilities:Credit Card:LUMINE CARD` | `NULL` |
+| `繰` | Skip | None |
 
-## Notes
+General railway exceptions are: `神谷町`, `溜池山王`, `赤坂見附`, `六本木一`, and `後楽園` to Tokyo Metro; `曙橋` to Toei Subway; `南大沢` to Keio; and `青物横丁` to Keikyu. Prefixes map `KS` to Keisei, `臨` to TWR, `地` on either endpoint to Tokyo Metro, and `都` on either endpoint to Toei Subway; otherwise use JR.
 
-- Year is not shown; infer from current date (if month > current month, use previous year)
-- Balance column is cumulative; use amount column for actual transaction value
-- Always show review table before inserting to database
-- User can specify manual overrides by ID for account and/or description
+## Source-specific Rules
+
+- `nearest_station` comes from `../personal.json`. It classifies that entry station as `Tokyo Metro` and builds personal commute pairs, while remaining separate from the general railway exception table.
+- On weekdays, a direct `{nearest_station} ↔ {commute_station_1}` or `{nearest_station} ↔ {commute_station_2}` transit row maps to `Expenses:Business Expenses`. Only that row is classified as business; weekends, `物販`, and `ｵｰﾄ` are not.
+- The cumulative balance is retained only for reading the source page; the script uses the signed amount column.

@@ -1,133 +1,63 @@
-# Amazon MasterCard Gold Statement Import
+# Amazon MasterCard Gold statement import
 
-## GnuCash Account
+Script: [`scripts/amazon_mastercard_gold_import.py`](../../../../../scripts/amazon_mastercard_gold_import.py)
+
+Use the shared [credit-card workflow and safety rules](../../SKILL.md#credit-cards) for duplicate detection, current-cycle handling, payment registration, review, and SQL execution.
+
+## Accounts
 
 - Card: `Liabilities:Credit Card:Amazon MasterCard Gold`
 - Payment debit: `Assets:JPY - Current Assets:Banks:DOCOMO SMTB Net Bank`
-- Payment date: 26th (or next business day if 26th is a holiday)
+- Payment date: 26th, or the next business day when the 26th is a holiday
 
-## Credentials
+## Access
 
-Password field on Vpass login does not accept automated input. You MUST use `agent-browser --auto-connect` and ask the user to enter the password manually.
+Open `https://www.smbc-card.com/mem/index.jsp` with `agent-browser --auto-connect`. The Vpass password field does not accept automated input, so ask the user to enter the password and complete login.
 
-## Import Workflow
+Select `Ａｍａｚｏｎ旧ゴールド` with `#vp-view-VC0205-001_RS0051_cardIdentifyKey`, then open `ご利用明細`. Select each billing month from `お支払い月` and extract `document.querySelector('body').innerText`. The selector provides the past 15 months. Both `Amazonマスター` and `ApplePay` sections map to the same card account.
 
-This is a credit card. Transactions may appear on the statement with a delay, so you MUST follow the billing-statement-based verification workflow below to avoid missing transactions.
+## Statement Data
 
-### Billing Statement Verification
+### Confirmed format
 
-1. Check if `account-guid-cache.json` exists and `updated_at` is within 1 month; regenerate if needed (see SKILL.md)
-2. `agent-browser --auto-connect open https://www.smbc-card.com/mem/index.jsp`
-3. Ask user to enter password manually and log in
-4. Switch card to `Ａｍａｚｏｎ旧ゴールド` using the card selector dropdown (`#vp-view-VC0205-001_RS0051_cardIdentifyKey`)
-5. Click `ご利用明細` to open the WEB明細書 page
-6. For each billing month (starting from the most recent confirmed statement, going backwards):
-   a. Select the month from the `お支払い月` dropdown
-   b. Note the `お支払い合計額` (total payment amount) and `お支払い日` (payment date)
-   c. Check if this total already exists in GnuCash (see SKILL.md "Credit Card: Billing Total Check")
-   d. If the total exists → all transactions in this statement are already imported; stop going further back
-   e. If the total does NOT exist → extract all transactions from this statement and proceed to duplicate detection
-7. For statements where the total is not in GnuCash, extract transaction data via `agent-browser --auto-connect eval "document.querySelector('body').innerText"`
-8. Perform per-transaction duplicate detection (see SKILL.md "Credit Card: Duplicate Detection")
-9. Prepare RAW_DATA with only new transactions
-10. Copy RAW_DATA into `tmp/amazon_mastercard_gold_import_YYYYMMDD.py`
-11. Run `python3 tmp/amazon_mastercard_gold_import_YYYYMMDD.py review` to show review table
-12. User reviews and specifies manual overrides by ID
-13. Run `python3 tmp/amazon_mastercard_gold_import_YYYYMMDD.py sql > tmp/amazon_mastercard_gold_import_YYYYMMDD.sql` to generate SQL
-14. Execute SQL to insert transactions
+The WEB明細書 output is tab-separated. Section headers and totals surround transaction rows:
 
-### Current Statement (Unconfirmed)
-
-See SKILL.md "Credit Card: Current Statement (Unconfirmed)".
-
-## Script Template
-
-- `scripts/amazon_mastercard_gold_import.py`
-
-## Browser Data Format
-
-Text extracted via `eval "document.querySelector('body').innerText"` from the WEB明細書 page.
-
-Tab-separated table with card-holder sections. Each section starts with a header line containing the card number and card type.
-
-Example:
-```
-柴田　竜典　様　ご利用分　5302-32**-****-****　（Ａｍａｚｏｎマスター）
-	26/01/03	ＡＭＡＺＯＮ．ＣＯ．ＪＰ	5,000	１	１	5,000		
-	26/01/04	ＡＭＡＺＯＮ．ＣＯ．ＪＰ	1,200	１	１	1,200		
-	26/01/14	ＡｍａｚｏｎＰａｙ提携サイト	800	１	１	800	ＡＭＺ＊アマゾン社員食堂	
-	26/01/03	ALIEXPRESS (SINGAPORE )	2,000	１	１	2,000	15.00	USD	133.333	01 03	
-柴田　竜典　様　ご利用分　5302-39**-****-****　（ＡｐｐｌｅＰａｙ）
-	26/01/04	セブン－イレブン	500	１	１	500		
-	26/01/05	ファミリーマート	300	１	１	300	ファミリーマート　新宿三丁目	
-＜お支払金額総合計＞	 	 	24,641		 
+```text
+EXAMPLE USER 様 ご利用分 9999-99**-****-**** （Ａｍａｚｏｎマスター）
+	99/04/02	ＡＭＡＺＯＮ．ＣＯ．ＪＰ	1,237	１	１	1,237
+	99/04/11	ＡｍａｚｏｎＰａｙ提携サイト	678	１	１	678	ＡＭＺ＊アマゾン社員食堂
+	99/04/19	ALIEXPRESS (SINGAPORE )	2,468	１	１	2,468	16.00	USD	154.250	04 19
+＜お支払金額総合計＞			4,383
 ```
 
-Notes:
-- Card section header: `柴田　竜典　様　ご利用分　5302-XX**-****-****　（カード名）`
-- Two card sections: Amazonマスター (main card) and ApplePay
-- Date format: `YY/MM/DD`
-- Columns (tab-separated): date, merchant, amount, payment_type, installment, payment_amount, then optionally remarks OR foreign currency fields
-- Amount format: comma-separated integers (e.g., `1,200`)
-- Full-width characters for merchant names (e.g., `ＡＭＡＺＯＮ．ＣＯ．ＪＰ`)
-- Foreign transactions have extra fields: local_amount, currency_code, exchange_rate, exchange_date
-- Remarks field (備考) may contain store details (e.g., `ＡＭＺ＊アマゾン社員食堂`, `ファミリーマート　新宿三丁目`)
-- `お支払い月` dropdown allows selecting past 15 months
-- Payment date is the 26th of each month
+Script input columns are `date, merchant, amount, pay_type, installment, pay_amount, [remarks | local_amount, currency_code, exchange_rate, exchange_date]`. Transaction rows may have a leading tab. The parser skips lines containing `ご利用分` or `お支払金額総合計`, converts `YY/MM/DD` to `20YY-MM-DD`, and negates the comma-stripped amount. For domestic rows, field 7 is retained as remarks. For foreign rows, fields 7 and 8 become `{local_amount} {currency_code}` when the currency is one of `AUD`, `CAD`, `EUR`, `GBP`, `HKD`, `SGD`, `THB`, `TRY`, or `USD`.
 
-## Conversion Rules
+### Unconfirmed format
 
-### Transaction Types
+The ご利用明細照会 output is tab-separated with no required leading tab:
 
-| Pattern | GnuCash Account | Description |
-|---------|-----------------|-------------|
-| ＡＭＡＺＯＮ．ＣＯ．ＪＰ | (email lookup) | Amazon |
-| ＡｍａｚｏｎＰａｙ提携サイト + ＡＭＺ＊アマゾン社員食堂 | Expenses:Foods:Dining | AMZ Employee Cafe |
-| ＡｍａｚｏｎＰａｙ提携サイト (other) | (email lookup) | (from email) |
-| セブン－イレブン | Expenses:Foods:Dining | SEVEN-ELEVEN |
-| ファミリーマート | Expenses:Foods:Dining | Family Mart |
-| ローソン | Expenses:Foods:Dining | LAWSON |
-| ALIEXPRESS | (email lookup) | AliExpress |
+```text
+99/05/07	ＡＭＡＺＯＮ．ＣＯ．ＪＰ	EXAMPLE USER	1回払い		99/06	912
+```
 
-For any transaction not matching the above patterns, check past GnuCash transactions for the same description. If no match found, ask the user.
+Script input columns are `date, merchant, card_holder, pay_type, empty, pay_month, amount`. The parser detects this form when column 3 is not numeric and reads the amount from column 7.
 
-### Email Lookup for Missing Information
+## Mapping
 
-If you don't know the account or the merchant, search emails with the amount. See [email-lookup.md](email-lookup.md).
+| Statement pattern | GnuCash account | Description | Handling |
+|---|---|---|---|
+| `ＡｍａｚｏｎＰａｙ提携サイト` with remarks containing `AMZ*` after normalization and `アマゾン社員食堂` | `Expenses:Foods:Dining` | `AMZ Employee Cafe` | Automatic |
+| `セブン－イレブン` or normalized `SEVEN-ELEVEN` | `Expenses:Foods:Dining` | `SEVEN-ELEVEN` | Automatic |
+| Merchant containing `ファミリーマート` | `Expenses:Foods:Dining` | `Family Mart` | Automatic |
+| Merchant containing `ローソン` | `Expenses:Foods:Dining` | `LAWSON` | Automatic |
+| `ＡＭＡＺＯＮ．ＣＯ．ＪＰ` | Account determined from order details | `Amazon` | Use `MANUAL_OVERRIDES` after [email lookup](../email-lookup.md) |
+| Other `ＡｍａｚｏｎＰａｙ提携サイト` | Account determined from order details | Description from order details | Use `MANUAL_OVERRIDES` after [email lookup](../email-lookup.md) |
+| `ALIEXPRESS` | Account determined from order details | `AliExpress` | Use `MANUAL_OVERRIDES` after [email lookup](../email-lookup.md) |
 
-## Script Input Format
+Resolve every other row from past GnuCash transactions or ask the user, then add it to `MANUAL_OVERRIDES`.
 
-Supports both confirmed (WEB明細書) and unconfirmed (ご利用明細照会) formats. The parser auto-detects the format by checking if the third column is a number.
+## Source-specific Rules
 
-### Confirmed format (WEB明細書)
-
-Tab-separated: `date, merchant, amount, pay_type, installment, pay_amount, [remarks | foreign_fields]`
-
-### Unconfirmed format (ご利用明細照会)
-
-Tab-separated: `date, merchant, card_holder, pay_type, empty, pay_month, amount`
-
-### Common parsing rules
-- Lines matching `ご利用分` are card section headers (skip, but note the card type)
-- Lines starting with `\tYY/MM/DD\t` are transaction lines (tab-separated)
-- Split by tab: [empty, date, merchant, amount, payment_type, installment, payment_amount, ...]
-- Amount: remove commas, parse as integer; always negative (credit card spending)
-- Foreign transactions: fields after payment_amount are local_amount, currency_code, exchange_rate, exchange_date
-- Domestic transactions: field after payment_amount is remarks (may be empty)
-- Skip `＜お支払金額総合計＞` line and blank lines
-
-## Review Table Structure
-
-Display transactions sorted by date descending (newest first) with:
-- ID: Sequential number for user to reference
-- Date: YYYY-MM-DD with weekday (Mon, Tue, etc.)
-- Merchant: Merchant name from statement (normalized to ASCII)
-- Desc: Description for GnuCash
-- Transfer: Target account
-- Amount: Amount (JPY, always shown as positive for readability)
-
-## Notes
-
-- All descriptions MUST be in English
-- Amazon purchases map to many different accounts; email lookup is essential
-- Both card sections (Amazonマスター and ApplePay) belong to the same GnuCash account
+- Merchant and remarks normalization converts full-width ASCII, digits, spaces, periods, and asterisks to half-width before automatic matching.
+- Preserve remarks because Amazon Pay and foreign-currency rows may require them for classification.
+- Accepted commands are `review` and `sql`.

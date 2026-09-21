@@ -3,199 +3,80 @@ name: gnucash-import
 description: Import online statement data into GnuCash PostgreSQL database. Use when inserting transactions from Mobile Suica, credit cards, or bank statements into GnuCash. Also use when adding a new financial source (bank, credit card, prepaid card, etc.) to the import system. Triggers on "add a new account", "set up import for X card", or "create a new source".
 ---
 
-# GnuCash Statement Importer
+# GnuCash statement importer
 
-Import online financial statements into GnuCash PostgreSQL database.
+Import online financial statements into a GnuCash PostgreSQL database.
 
-## Import Workflow
+## Workflow
 
-1. Retrieve statement data via browser automation
-2. Parse transaction data
-3. Map to GnuCash accounts
-4. Present all transactions to user for review before inserting
-5. Generate and execute INSERT statements
-6. For credit cards: register the payment (debit) transaction from the payment account to the credit card account for each billing statement imported
-7. For credit cards: also import unconfirmed transactions from the current billing cycle
+Follow this sequence for every import:
 
-Rules:
-- Each transaction from the online statement MUST be imported at the original granularity (one row per statement line). Do NOT aggregate, summarize, or combine multiple statement entries by date or category.
-- Description must be in English (e.g., merchant name)
-- If you cannot determine how to map a transaction (account, description, etc.), you MUST ask the user instead of guessing
-- You MUST check for duplicates before inserting: if a transaction with the same date and amount already exists, you MUST compare the statement details (description, transaction type, etc.) to determine if it's a duplicate or a separate transaction with the same amount
-- You MUST NOT delete or modify transactions whose reconciliation status (reconcile_state) is 'y' (reconciled) or 'c' (cleared)
-- When inserting transactions verified against a statement, set reconcile_state to 'c' (cleared) for ALL splits in the transaction
-- When inserting transactions verified against a statement, set reconcile_state to 'c' (cleared) for the credit card account split
-- Temporary files MUST be stored in a unique per-run working directory created with `mktemp` as described below
-- Add separator lines between different dates in review table for readability
+1. Select the matching source reference from [`references/accounts/`](references/accounts/).
+2. Create a unique `work_dir`.
+3. Refresh the account GUID cache if needed.
+4. Retrieve the statement as described by the source reference.
+5. Compare statement rows with existing GnuCash transactions.
+6. Copy the source script into `$work_dir` and prepare its statement data there.
+7. Run the script's `review` command and review every proposed transaction with the user.
+8. Run the script's `sql` command and save the generated SQL in `$work_dir`.
+9. Inspect the SQL for mappings, signs, GUIDs, balance, descriptions, and reconciliation states.
+10. Execute the inspected SQL against GnuCash.
 
-### Account Selection
+Use `agent-browser --auto-connect` for web automation. Run `agent-browser --help` before its first use in each session. If a page never finishes loading or reports an unusual automation error, retry with `--args "--disable-blink-features=AutomationControlled"`.
 
-- `Expenses:Supplies` covers consumables, things used up by being used: cleaning sheets, contact lens solution, batteries, toiletries
-- `Expenses:Groceries` covers sundries that are not consumed: kitchenware, storage cases, cables, small tools
-- `Expenses:Medical Expenses:Medicines` covers only what qualifies for the Japanese medical expense deduction (医療費控除). Contact lens solution, supplements, and other 医薬部外品 bought for daily care go to `Expenses:Supplies`
+## Safety Rules
 
-### Temporary Working Directory
+- Import each statement row at its original granularity. Do not aggregate, summarize, or combine rows by date or category.
+- Ask the user when an account, description, split, or other mapping is ambiguous. Do not guess.
+- Require English only for non-NULL transaction descriptions. Preserve NULL descriptions when the source script uses them.
+- Set `reconcile_state` to `c` for every split in a transaction verified against a statement.
+- Use `reconcile_state = 'n'` only for generic or unverified transactions.
+- Do not delete or modify transactions whose `reconcile_state` is `y` or `c`.
+- Add separators between dates in review output.
+- Inspect generated SQL before execution. Confirm that every transaction balances and that `value` and `quantity` use the correct signs and denominators.
 
-Create an OS-managed working directory for each import run:
+Use these shared mappings unless a source reference defines a more specific rule:
+
+- Map consumables such as cleaning sheets, contact lens solution, batteries, and toiletries to `Expenses:Supplies`.
+- Map non-consumed sundries such as kitchenware, storage cases, cables, and small tools to `Expenses:Groceries`.
+- Map only items eligible for the Japanese medical expense deduction to `Expenses:Medical Expenses:Medicines`. Map supplements, contact lens solution, and other daily-care quasi-drugs to `Expenses:Supplies`.
+
+## Workspace
+
+From the repository root, create one OS-managed workspace per run:
 
 ```bash
 work_dir=$(mktemp -d "/tmp/gnucash-import.XXXXXX")
 ```
 
-Use the exact path returned by `mktemp` for all temporary scripts, generated SQL, downloads, and intermediate data. Filenames inside `$work_dir` may be simple, such as `import.py`, `import.sql`, and `statement.csv`.
+Store downloaded statements, statement data, temporary scripts, intermediate data, and generated SQL only in the exact directory returned by `mktemp`. Do not create import artifacts in the repository or a shared `tmp` directory.
 
-### Browser Automation
-
-- You MUST use `agent-browser --auto-connect` for web automation
-- You MUST run `agent-browser --help` BEFORE the FIRST `agent-browser` command in each session
-- If encountering unusual errors or pages that never finish loading, you SHOULD retry with `--args "--disable-blink-features=AutomationControlled"` to bypass bot detection
-
-### Credit Card: Billing Total Check
-
-For credit cards, check if a billing statement has already been fully imported by looking for the payment transaction:
-
-```sql
-SELECT t.post_date::date, t.description, s.value_num
-FROM transactions t
-JOIN splits s ON t.guid = s.tx_guid
-JOIN accounts a ON s.account_guid = a.guid
-WHERE a.name = '{account_name}'
-AND s.value_num > 0
-AND to_char(t.post_date, 'YYYY-MM') = '{YYYY-MM}'
-AND s.value_num = {total_amount};
-```
-
-Replace `{account_name}` with the credit card account name, `{YYYY-MM}` with the payment month. If this returns a row, the billing statement is already fully imported.
-
-### Credit Card: Duplicate Detection
-
-For statements where the billing total is NOT in GnuCash, you MUST check each transaction individually:
-
-1. Query existing transactions for the statement's date range:
-```sql
-SELECT t.post_date::date, s.value_num, COUNT(*) as cnt
-FROM transactions t
-JOIN splits s ON t.guid = s.tx_guid
-JOIN accounts a ON s.account_guid = a.guid
-WHERE a.name = '{account_name}'
-AND s.value_num < 0
-AND t.post_date::date BETWEEN '{start_date}' AND '{end_date}'
-GROUP BY t.post_date::date, s.value_num
-ORDER BY t.post_date::date;
-```
-
-2. For each (date, amount) pair in the statement, count how many times it appears
-3. Compare with the count from GnuCash
-4. If the statement has more occurrences than GnuCash → the difference is new transactions to import
-5. If counts match → already imported, skip
-
-### Credit Card: Current Statement (Unconfirmed)
-
-The current month's statement may show unconfirmed transactions. These transactions are still accumulating and may change. You SHOULD still import them but be aware that re-checking will be needed in the next import cycle.
-
-## New Source Workflow
-
-Add a new financial source (bank, credit card, prepaid card, etc.) to the import system.
-
-1. Gather account information from user (see Information Checklist below)
-2. Create reference file from template: [references/templates/reference-template.md](references/templates/reference-template.md)
-3. Ask user to review the reference file before proceeding
-4. Create import script from template: [references/templates/script-template.py](references/templates/script-template.py)
-5. Register the new source under "Supported Sources" and "Project Structure" below
-
-### Information Checklist
-
-Gather from user before creating files. Ask incrementally, not all at once.
-
-Essential:
-- Source name (e.g., "Mobile Suica", "Revolut")
-- GnuCash account path (infer from [account-guid-cache.json](references/account-guid-cache.json))
-- Login URL and authentication method (CAPTCHA, passkey, 1Password)
-- Browser data format (ask user to show a sample snapshot)
-- Transaction types and their GnuCash account mappings
-- Currency (JPY, USD, etc.)
-
-Optional (fill in as discovered):
-- Script input format (if different from browser format)
-- Business expense detection rules
-- Email lookup needs
-- Station/merchant-specific mappings
-
-### Output Files
-
-| File | Path |
-|------|------|
-| Reference | `references/accounts/{source-slug}.md` |
-| Script | `scripts/{source_slug}_import.py` |
-
-Naming: source-slug uses kebab-case for reference files, snake_case for scripts (e.g., `amazon-gc.md`, `amazon_gc_import.py`).
-
-### Guidelines
-
-- Match the style and structure of existing reference files in `references/accounts/`
-- Import scripts MUST support both `review` and `sql` subcommands
-- All transaction descriptions MUST be in English
-- If mapping is ambiguous, the reference file MUST instruct to ask the user
-- Reference `email-lookup.md` when the source may need email-based transaction lookup
-- Reference the shared gnucash-schema.md for SQL patterns; do not duplicate schema details
-- Amounts in Browser Data Format examples in reference files MUST be replaced with dummy values to avoid exposing real financial data
-- Credit card numbers in reference files: the first 6 digits (BIN) MAY be shown, but the last 4 digits MUST be masked (e.g., `4980-01**-****-****`)
-
-## Supported Sources
-
-- Amazon MasterCard Gold - See [references/accounts/amazon-mastercard-gold.md](references/accounts/amazon-mastercard-gold.md)
-- Amazon Gift Certificate - See [references/accounts/amazon-gc.md](references/accounts/amazon-gc.md)
-- Amazon Point - See [references/accounts/amazon-point.md](references/accounts/amazon-point.md)
-- ANA Mileage Club - See [references/accounts/ana-mileage-club.md](references/accounts/ana-mileage-club.md)
-- ANA SKY Coin - See [references/accounts/ana-sky-coin.md](references/accounts/ana-sky-coin.md)
-- ANA Super Flyers Gold Card - See [references/accounts/ana-super-flyers-gold-card.md](references/accounts/ana-super-flyers-gold-card.md)
-- Bic Point - See [references/accounts/bic-point.md](references/accounts/bic-point.md)
-- DOCOMO SMTB Net Bank - See [references/accounts/docomo-smtb-net-bank.md](references/accounts/docomo-smtb-net-bank.md)
-- dPOINT - See [references/accounts/dpoint.md](references/accounts/dpoint.md)
-- GOLD POINT CARD + - See [references/accounts/gold-point-card-plus.md](references/accounts/gold-point-card-plus.md)
-- Hapitas - See [references/accounts/hapitas.md](references/accounts/hapitas.md)
-- IHG Rewards Club - See [references/accounts/ihg-rewards-club.md](references/accounts/ihg-rewards-club.md)
-- Marriott Rewards - See [references/accounts/marriott-rewards.md](references/accounts/marriott-rewards.md)
-- Ponta - See [references/accounts/ponta.md](references/accounts/ponta.md)
-- JRE Bank - See [references/accounts/jre-bank.md](references/accounts/jre-bank.md)
-- LUMINE CARD - See [references/accounts/lumine-card.md](references/accounts/lumine-card.md)
-- Luxury Card Mastercard Titanium - See [references/accounts/luxury-card-mastercard-titanium.md](references/accounts/luxury-card-mastercard-titanium.md)
-- JRE Point - See [references/accounts/jre-point.md](references/accounts/jre-point.md)
-- Mobile PASMO - See [references/accounts/pasmo.md](references/accounts/pasmo.md)
-- Mobile Suica - See [references/accounts/suica.md](references/accounts/suica.md)
-- PayPay Card JCB - See [references/accounts/paypay-card-jcb.md](references/accounts/paypay-card-jcb.md)
-- Revolut - See [references/accounts/revolut.md](references/accounts/revolut.md)
-- SBI Securities - See [references/accounts/sbi-securities.md](references/accounts/sbi-securities.md)
-- SBI Shinsei Bank - See [references/accounts/sbi-shinsei-bank.md](references/accounts/sbi-shinsei-bank.md)
-- Rakuten Super Point - See [references/accounts/rakuten-super-point.md](references/accounts/rakuten-super-point.md)
-- Starbucks - See [references/accounts/starbucks.md](references/accounts/starbucks.md)
-- V Point - See [references/accounts/v-point.md](references/accounts/v-point.md)
-- World of Hyatt - See [references/accounts/world-of-hyatt.md](references/accounts/world-of-hyatt.md)
-- Yodobashi Gold Point - See [references/accounts/yodobashi-gold-point.md](references/accounts/yodobashi-gold-point.md)
-
-## GnuCash Schema
-
-See [references/gnucash-schema.md](references/gnucash-schema.md) for:
-- Table structures (transactions, splits, accounts)
-- GUID generation
-- Numeric value handling
-- Common queries
-
-## Fixed Assets
-
-See [references/fixed-assets.md](references/fixed-assets.md) for when to capitalize a purchase, what belongs in acquisition cost, how the market valuation accounts work, and how to record a disposal.
-
-## Account List
-
-See [references/account-guid-cache.json](references/account-guid-cache.json) for account paths and GUIDs.
-
-This file is in `.gitignore` and should be regenerated if:
-- File does not exist
-- `updated_at` is older than 1 month
-
-To regenerate:
+Copy the selected script into the workspace, then run the copy from the repository root so it can resolve the account cache and personal settings:
 
 ```bash
+cp scripts/{source_slug}_import.py "$work_dir/import.py"
+python3 "$work_dir/import.py" review
+python3 "$work_dir/import.py" sql > "$work_dir/import.sql"
+```
+
+When running from another directory, set the repository root explicitly:
+
+```bash
+GNUCASH_IMPORT_ROOT=/path/to/gnucash-import-agent python3 "$work_dir/import.py" review
+```
+
+### Account GUID cache
+
+Use [`references/account-guid-cache.json`](references/account-guid-cache.json) to resolve account paths. Regenerate this ignored file when it is missing or its `updated_at` value is more than one month old:
+
+```bash
+set -euo pipefail
+
+cache_path=.kiro/skills/gnucash-import/references/account-guid-cache.json
+cache_dir=$(dirname "$cache_path")
+cache_tmp=$(mktemp "$cache_dir/.account-guid-cache.json.XXXXXX")
+trap 'rm -f "$cache_tmp"' EXIT
+
 DB_HOST=$(op read "op://gnucash/gnucash-db/server")
 DB_PORT=$(op read "op://gnucash/gnucash-db/port")
 DB_NAME=$(op read "op://gnucash/gnucash-db/database")
@@ -211,53 +92,80 @@ SELECT json_build_object(
   'updated_at', NOW(),
   'accounts', (SELECT json_object_agg(path, guid) FROM path_list WHERE path NOT LIKE 'Template Root%' AND hidden = 0 AND placeholder = 0)
 );
-" | python3 -c "import json,sys; d=json.load(sys.stdin); d['accounts']=dict(sorted(d['accounts'].items())); json.dump(d,sys.stdout,indent=4)" > .kiro/skills/gnucash-import/references/account-guid-cache.json
+" | python3 -c "import json,sys; d=json.load(sys.stdin); d['accounts']=dict(sorted(d['accounts'].items())); json.dump(d,sys.stdout,indent=4)" > "$cache_tmp"
+python3 -c "import json,sys; d=json.load(open(sys.argv[1])); a=d.get('accounts'); assert isinstance(a,dict) and all(isinstance(k,str) and isinstance(v,str) and len(v)==32 and all(c in '0123456789abcdef' for c in v) for k,v in a.items()), 'malformed account GUID cache'" "$cache_tmp"
+mv "$cache_tmp" "$cache_path"
+trap - EXIT
 ```
 
-## Check Last Imported Transaction
+## Duplicate Detection
 
-Replace `{account_name}` with the account name (e.g., 'Amazon Gift Certificate', 'Suica iPhone').
+Query the source account over the statement date range. Treat equal dates and amounts as candidates, then compare descriptions, transaction types, occurrence counts, and other statement details. Import the excess occurrence when the statement contains the same date and amount more times than GnuCash.
 
-Use the latest reconciled (`reconcile_state = 'y'`) transaction's `post_date` as the cutoff. Only transactions marked reconciled are guaranteed to have been fully verified against a statement, so partially-imported statements (where some transactions are cleared but others are missing) will not be mistaken for fully-imported ones.
-
-If no reconciled transactions exist for the account, fall back to the latest transaction regardless of reconciliation state.
+Use the latest reconciled transaction as a retrieval cutoff only when the source reference permits it. Cleared rows may belong to a partially imported statement, so include them when checking duplicates. If no reconciled row exists, inspect the latest transaction without relying on it as proof of completeness.
 
 ```sql
-SELECT
-  COALESCE(
-    (SELECT MAX(t.post_date::date)
-     FROM transactions t
-     JOIN splits s ON t.guid = s.tx_guid
-     JOIN accounts a ON s.account_guid = a.guid
-     WHERE a.name = '{account_name}'
-     AND s.reconcile_state = 'y'),
-    (SELECT MAX(t.post_date::date)
-     FROM transactions t
-     JOIN splits s ON t.guid = s.tx_guid
-     JOIN accounts a ON s.account_guid = a.guid
-     WHERE a.name = '{account_name}')
-  ) AS last_date;
-```
-
-To inspect recent transactions including cleared ones (useful for duplicate detection):
-
-```sql
-SELECT t.post_date::date, t.description, s.value_num as amount, s.reconcile_state
+SELECT t.post_date::date, t.description, s.value_num, s.value_denom, s.reconcile_state
 FROM transactions t
 JOIN splits s ON t.guid = s.tx_guid
 JOIN accounts a ON s.account_guid = a.guid
 WHERE a.name = '{account_name}'
-ORDER BY t.post_date DESC
-LIMIT 50;
+  AND t.post_date::date BETWEEN '{start_date}' AND '{end_date}'
+ORDER BY t.post_date, t.guid;
+```
+
+## Credit Cards
+
+Import each confirmed statement row and register its payment transaction from the payment account to the credit card account. Also import unconfirmed rows from the current billing cycle, and recheck them during the next import because amounts and status may change.
+
+A payment matching the billing total is a duplicate candidate, not proof that every statement row was imported. Compare the statement line count, occurrence counts, dates, amounts, descriptions, and transaction details before declaring the billing cycle complete. Continue row-level duplicate detection even when the total matches.
+
+Use this query only to find billing-total candidates:
+
+```sql
+SELECT t.post_date::date, t.description, s.value_num, s.value_denom
+FROM transactions t
+JOIN splits s ON t.guid = s.tx_guid
+JOIN accounts a ON s.account_guid = a.guid
+WHERE a.name = '{account_name}'
+  AND s.value_num > 0
+  AND to_char(t.post_date, 'YYYY-MM') = '{YYYY-MM}'
+  AND s.value_num = {total_amount};
 ```
 
 ## Personal Settings
 
-See [references/personal.json](references/personal.json) for personal settings.
+Create the ignored settings file from the tracked example with owner-only permissions:
 
-This file is in `.gitignore`. If it does not exist, ask the user for the following and create it:
-- `nearest_station`: Nearest station name (for business expense detection)
+```bash
+install -m 600 .kiro/skills/gnucash-import/references/personal.example.json \
+  .kiro/skills/gnucash-import/references/personal.json
+```
 
-## Notes
+Edit `.kiro/skills/gnucash-import/references/personal.json` with local personal settings. Keep its mode at `0600`; verify the mode on macOS without printing the file:
 
-- `DOCOMO SMTB Net Bank` is the GnuCash account name for the bank also known as 住信SBIネット銀行 / SBI Sumishin Net Bank (former trade name), ドコモSMTBネット銀行 (current trade name), ドコモの銀行 (consumer service brand), and d NEOBANK (retired service brand). Statements, ATM screens, and mailings may still show any of these.
+```bash
+stat -f '%Lp' .kiro/skills/gnucash-import/references/personal.json
+```
+
+Use `nearest_station` for source-specific transit classification, `accounts.pasmo` for PASMO source and shopping account paths, and `transfer_rules` for source-specific personal transfer mappings. Read only the source key required by the selected script. Fail with a clear value-free error when a required setting or mapping is absent; do not infer a default account. Resolve account paths through `account-guid-cache.json`.
+
+## Adding a Source
+
+1. Collect the source name, GnuCash account paths, currency, login URL, authentication method, statement extraction format, script input format, mapping rules, and source-specific exceptions. Ask incrementally when details are missing.
+2. Create `references/accounts/{source-slug}.md` from [`references/templates/reference-template.md`](references/templates/reference-template.md).
+3. Ask the user to review the source reference.
+4. Create `scripts/{source_slug}_import.py` from [`references/templates/script-template.py`](references/templates/script-template.py).
+5. Support both `review` and `sql` commands.
+6. Replace amounts and personal details in examples with dummy values. Mask card numbers except an optional six-digit BIN.
+7. Keep generic workflow, duplicate checks, review columns, and SQL execution in this file. Keep authentication, extraction, input format, mappings, and exceptions in the source reference.
+
+The source catalog is the set of files in [`references/accounts/`](references/accounts/) paired with scripts in the repository-root [`scripts/`](../../../scripts/). Do not maintain a separate handwritten catalog.
+
+## References
+
+- Read [`references/gnucash-schema.md`](references/gnucash-schema.md) when generating or reviewing SQL.
+- Read [`references/fixed-assets.md`](references/fixed-assets.md) when a transaction may acquire, revalue, or dispose of a fixed asset.
+- Read [`references/email-lookup.md`](references/email-lookup.md) only when a source reference requires email details.
+- Read [`references/personal.example.json`](references/personal.example.json) for the tracked personal-settings schema. Store real values only in ignored `references/personal.json`.
+- Treat [`references/accounts/`](references/accounts/) and repository-root [`scripts/`](../../../scripts/) as the authoritative source list.

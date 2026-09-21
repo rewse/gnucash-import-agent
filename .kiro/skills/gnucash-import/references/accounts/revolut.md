@@ -1,101 +1,49 @@
-# Revolut Statement Import
+# Revolut statement import
 
-## GnuCash Account
+Script: `scripts/revolut_import.py` (`review`, `sql`)
 
-`Assets:JPY - Current Assets:Prepaid:Revolut`
+## Accounts
 
-## Credentials
+- Source account: `Assets:JPY - Current Assets:Prepaid:Revolut`
+- Currency: JPY
 
-CAPTCHA is required. You MUST use `agent-browser --auto-connect` and ask the user to login manually.
+## Access
 
-## Import Workflow
+- Open `https://app.revolut.com/start` with `agent-browser --auto-connect open`; CAPTCHA login is manual.
+- Select `すべて表示`, expand each month, and collect the full list with `agent-browser --auto-connect snapshot -i`, scrolling and repeating as needed.
 
-1. Check if `account-guid-cache.json` exists and `updated_at` is within 1 month; regenerate if needed (see SKILL.md)
-2. Check DB for last imported transaction date to determine how far back to fetch
-3. `agent-browser --auto-connect open https://app.revolut.com/start`
-4. Ask user to login manually (CAPTCHA required)
-5. Click "すべて表示" to see full transaction history
-6. Click month buttons to expand each month's transactions
-7. `agent-browser --auto-connect snapshot -i` to get transaction data
-8. Scroll and repeat snapshot to get all transactions
-9. Prepare RAW_DATA
-10. Copy RAW_DATA into `tmp/revolut_import_YYYYMMDD.py`
-11. Run `python3 tmp/revolut_import_YYYYMMDD.py review` to show review table
-12. User reviews and specifies manual overrides by ID
-13. Run `python3 tmp/revolut_import_YYYYMMDD.py sql > tmp/revolut_import_YYYYMMDD.sql` to generate SQL
-14. Execute SQL to insert transactions
+## Statement Data
 
-## Script Template
+Each transaction button contains merchant, date, time, JPY amount, and an optional foreign-currency amount. Month headers may be `YYYY年M月` or `M月`.
 
-- `scripts/revolut_import.py`
-
-## Browser Data Format
-
-Button list on home screen, each button contains: Merchant, Date, Time, JPY Amount, USD Amount (optional)
-
-Example (from snapshot):
-```
-AliExpress 1月3日 15:21 -￥2,060.00 -$12.96
-Apple Pay経由でチャージされました 2025年12月26日 14:40 +￥30,000.00
-Apple Pay経由でチャージされました 失敗しました · 2025年12月26日 14:39 +￥30,000.00
-Www.lumesca.com 2025年12月26日 13:40 -￥6,256.00 -$39.99
-AliExpress 2025年12月14日 22:09 -￥5,163.00 -$32.69
-Kiro Pro+ 2025年12月1日 14:00 -￥3,437.00 -$22.00
+```text
+Example Market 4月3日 15:21 -￥2,060.00 -$12.96
+Apple Pay経由でチャージされました 2030年3月26日 14:40 +￥30,000.00
+Apple Pay経由でチャージされました 失敗しました · 2030年3月26日 14:39 +￥30,000.00
+Example Service 2030年3月26日 13:40 -￥6,256.00 -$39.99
 ```
 
-Notes:
-- Click "すべて表示" to see full transaction history
-- Failed transactions show "失敗しました" status
-- Multi-currency transactions show both JPY and USD amounts
+Script input is the same, one transaction per line. Preserve status text and both currency amounts:
 
-## Conversion Rules
-
-### Transaction Types
-
-| Pattern | GnuCash Account | Description |
-|---------|-----------------|-------------|
-| Apple Pay経由でチャージされました | Liabilities:Credit Card:Amazon MasterCard Gold | NULL |
-| ・・経由でお金が追加されました | Liabilities:Credit Card:Amazon MasterCard Gold (default) | NULL |
-| カード配送料 | Expenses:Fees | Revolut |
-| AliExpress | Expenses:Groceries (default) | AliExpress |
-| PayPal | (lookup email) | PayPal |
-| Other merchants | (infer or lookup email) | Merchant name |
-
-Overseas trip spending goes to `Expenses:Entertainment:Travel`, covering restaurants, local transport, admission tickets, and souvenirs alike.
-
-A transaction whose status line reads 却下されました, 失敗しました, or 取り消されました never moved money, so it MUST be skipped.
-
-### Email Lookup for Missing Information
-
-If you don't know the account or the merchant, search emails with the amount. See [email-lookup.md](email-lookup.md).
-
-## Script Input Format
-
-Same as Browser Data Format (one transaction per line):
-```
-AliExpress 1月3日 15:21 -￥2,060.00 -$12.96
-Apple Pay経由でチャージされました 2025年12月26日 14:40 +￥30,000.00
-Www.lumesca.com 2025年12月26日 13:40 -￥6,256.00 -$39.99
+```text
+Example Market 4月3日 15:21 -￥2,060.00 -$12.96
+Apple Pay経由でチャージされました 2030年3月26日 14:40 +￥30,000.00
+Example Service 2030年3月26日 13:40 -￥6,256.00 -$39.99
 ```
 
-Parsing rules:
-- Date format: `YYYY年M月D日` or `M月D日` (year inferred from current date)
-- Amount: `-￥N` (expense), `+￥N` (income)
-- Skip transactions with `￥0.00` amount
-- Skip transactions with `失敗しました` or `取り消されました` status
+Dates are `YYYY年M月D日` or `M月D日`; short dates use the current year unless their month is later than the current month. The parser uses the JPY amount, accepts decimals, removes time and amount text from the merchant, and truncates JPY decimals to an integer.
 
-## Review Table Structure
+## Mapping
 
-Display transactions sorted by date descending (newest first) with:
-- ID: Sequential number for user to reference
-- Date: YYYY-MM-DD with weekday (Mon, Tue, etc.)
-- Merchant: Merchant name from browser
-- Desc: Description for GnuCash
-- Transfer: Target account
-- Increase/Decrease: Amount (JPY)
+| Statement pattern | GnuCash account | Description |
+|---|---|---|
+| `...経由でチャージされました` or `...経由でお金が追加されました` | `Liabilities:Credit Card:Amazon MasterCard Gold` | `NULL` |
+| `カード配送料` | `Expenses:Fees` | `Revolut` |
+| `AliExpress` | `Expenses:Groceries` | `AliExpress` |
+| Any other merchant | `Expenses:Groceries` | Parsed merchant |
 
-## Notes
+## Source-specific Rules
 
-- Multi-currency: Transactions show both JPY and USD amounts; use JPY for GnuCash
-- Always show review table before inserting to database
-- User can specify manual overrides by ID for account and/or description
+- Skip rows containing `却下されました`, `失敗しました`, or `取り消されました`, and skip a JPY amount of zero.
+- Positive JPY amounts increase Revolut; negative amounts decrease it. Ignore the displayed foreign-currency amount for GnuCash.
+- Override overseas travel rows to `Expenses:Entertainment:Travel`; the script does not infer travel from merchant text.

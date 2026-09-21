@@ -1,169 +1,130 @@
-# GnuCash PostgreSQL Schema Reference
+# GnuCash PostgreSQL schema reference
 
-## Core Transaction Tables
+Use these fields when import scripts query accounts and generate transactions. GnuCash defines its string columns as `varchar`, while recursive path concatenation produces PostgreSQL `text`.
+
+## Fields used by import scripts
 
 ### transactions
 
-```sql
-CREATE TABLE transactions (
-    guid            CHAR(32) PRIMARY KEY NOT NULL,
-    currency_guid   CHAR(32) NOT NULL,
-    num             text(2048) NOT NULL,
-    post_date       timestamp NOT NULL,
-    enter_date      timestamp NOT NULL,
-    description     text(2048)
-);
-```
+| Field | Type | Use |
+|---|---|---|
+| `guid` | `char(32)` | Transaction identifier |
+| `currency_guid` | `char(32)` | Transaction currency |
+| `num` | `varchar(2048)` | Transaction number, usually empty |
+| `post_date` | `timestamp` | Statement date and sort time |
+| `enter_date` | `timestamp` | Insert time |
+| `description` | `varchar(2048)` | English description or NULL |
 
 ### splits
 
-```sql
-CREATE TABLE splits (
-    guid            CHAR(32) PRIMARY KEY NOT NULL,
-    tx_guid         CHAR(32) NOT NULL,
-    account_guid    CHAR(32) NOT NULL,
-    memo            text(2048) NOT NULL,
-    action          text(2048) NOT NULL,
-    reconcile_state text(1) NOT NULL,
-    reconcile_date  timestamp NOT NULL,
-    value_num       integer NOT NULL,
-    value_denom     integer NOT NULL,
-    quantity_num    integer NOT NULL,
-    quantity_denom  integer NOT NULL,
-    lot_guid        CHAR(32)
-);
-```
+| Field | Type | Use |
+|---|---|---|
+| `guid` | `char(32)` | Split identifier |
+| `tx_guid` | `char(32)` | Parent transaction |
+| `account_guid` | `char(32)` | GnuCash account |
+| `memo` | `varchar(2048)` | Split memo, usually empty |
+| `action` | `varchar(2048)` | Split action, usually empty |
+| `reconcile_state` | `varchar(1)` | `c` for statement-cleared, `n` for unverified, `y` for reconciled |
+| `reconcile_date` | `timestamp` | NULL until reconciliation supplies a date |
+| `value_num`, `value_denom` | `bigint` | Amount in transaction currency |
+| `quantity_num`, `quantity_denom` | `bigint` | Amount or quantity in the account commodity |
+| `lot_guid` | `char(32)` | Lot identifier when used, otherwise NULL |
 
 ### accounts
 
-```sql
-CREATE TABLE accounts (
-    guid            CHAR(32) PRIMARY KEY NOT NULL,
-    name            text(2048) NOT NULL,
-    account_type    text(2048) NOT NULL,
-    commodity_guid  CHAR(32) NOT NULL,
-    commodity_scu   integer NOT NULL,
-    non_std_scu     integer NOT NULL,
-    parent_guid     CHAR(32),
-    code            text(2048),
-    description     text(2048),
-    hidden          integer NOT NULL,
-    placeholder     integer NOT NULL
-);
-```
+| Field | Type | Use |
+|---|---|---|
+| `guid` | `char(32)` | Account identifier |
+| `name` | `varchar(2048)` | Account name |
+| `parent_guid` | `char(32)` | Parent used to build a full path |
+| `commodity_guid` | `char(32)` | Account commodity |
+| `hidden`, `placeholder` | `integer` | Exclude non-posting accounts from the cache |
 
-### commodities
+### commodities and prices
 
-```sql
-CREATE TABLE commodities (
-    guid            CHAR(32) PRIMARY KEY NOT NULL,
-    namespace       text(2048) NOT NULL,
-    mnemonic        text(2048) NOT NULL,
-    fullname        text(2048),
-    cusip           text(2048),
-    fraction        integer NOT NULL,
-    quote_flag      integer NOT NULL,
-    quote_source    text(2048),
-    quote_tz        text(2048)
-);
-```
+| Table | Fields used |
+|---|---|
+| `commodities` | `guid`, `namespace`, `mnemonic`, `fraction` |
+| `prices` | `guid`, `commodity_guid`, `currency_guid`, `date`, `source`, `type`, `value_num`, `value_denom` |
 
-### prices
+## GUIDs
 
-```sql
-CREATE TABLE prices (
-    guid            CHAR(32) PRIMARY KEY NOT NULL,
-    commodity_guid  CHAR(32) NOT NULL,
-    currency_guid   CHAR(32) NOT NULL,
-    date            timestamp NOT NULL,
-    source          text(2048),
-    type            text(2048),
-    value_num       integer NOT NULL,
-    value_denom     integer NOT NULL
-);
-```
+Generate a 32-character lowercase hexadecimal GUID without hyphens:
 
-## GUID Generation
-
-32-character hex string without hyphens:
 ```python
 import uuid
+
 guid = uuid.uuid4().hex
 ```
 
-## Numeric Values
+## Values and quantities
 
-Amounts stored as `value_num / value_denom`:
-- JPY: `denom = 1` (¥1,234 → num=1234, denom=1)
-- USD: `denom = 100` ($12.34 → num=1234, denom=100)
+Store each rational number as `num / denom`. JPY normally uses denominator `1`; USD normally uses denominator `100`. `value` is in the transaction currency, while `quantity` is in the account commodity. They differ when a foreign-currency transaction touches an account in another commodity.
 
-`value` is denominated in the transaction currency, `quantity` in the account's own commodity. The two differ whenever a foreign-currency transaction touches a JPY account, so an account balance MUST be summed as `quantity_num / quantity_denom`:
+Sum account balances with `quantity`, preserving each denominator:
 
 ```sql
-SELECT sum(s.quantity_num::numeric / s.quantity_denom)
-FROM splits s JOIN accounts a ON s.account_guid = a.guid
+SELECT SUM(s.quantity_num::numeric / s.quantity_denom)
+FROM splits s
+JOIN accounts a ON s.account_guid = a.guid
 WHERE a.name = '{account_name}';
 ```
 
-Summing `value_num` instead mixes currencies and denominators, and silently reports a wrong balance.
+Do not sum raw `value_num` values across transactions with different currencies or denominators.
 
-## Transaction Structure
+## Transactions
 
-One transaction + two or more splits (must balance):
+Create one transaction and at least two balancing splits. Use `c` on every split when the imported row has been verified against a statement:
 
 ```sql
 INSERT INTO transactions (guid, currency_guid, num, post_date, enter_date, description)
-VALUES ('tx_guid', 'a77d4ee821e04f02bb7429e437c645e4', '', '2026-02-01 00:01:23', NOW(), 'Train fare');
+VALUES ('tx_guid', 'a77d4ee821e04f02bb7429e437c645e4', '', '2026-02-01 00:00:01', NOW(), 'Train fare');
 
-INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom)
-VALUES 
-  ('split1_guid', 'tx_guid', 'suica_guid', '', '', 'n', NULL, -500, 1, -500, 1),
-  ('split2_guid', 'tx_guid', 'transport_guid', '', '', 'n', NULL, 500, 1, 500, 1);
+INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)
+VALUES
+  ('split1_guid', 'tx_guid', 'suica_guid', '', '', 'c', NULL, -500, 1, -500, 1, NULL),
+  ('split2_guid', 'tx_guid', 'transport_guid', '', '', 'c', NULL, 500, 1, 500, 1, NULL);
 ```
 
-Important:
-- `currency_guid` MUST be the correct currency GUID from commodities table (see Currency GUIDs below)
-- `post_date` MUST include time. Use row index as time for sorting (oldest=00:00:01, newest=00:00:N)
-- `reconcile_date` SHOULD be NULL for unreconciled splits
+Use `n` for a generic transaction that has not been checked against a statement:
 
-## Common Queries
+```sql
+INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)
+VALUES
+  ('split1_guid', 'tx_guid', 'asset_guid', '', '', 'n', NULL, -1000, 1, -1000, 1, NULL),
+  ('split2_guid', 'tx_guid', 'expense_guid', '', '', 'n', NULL, 1000, 1, 1000, 1, NULL);
+```
 
-### Find account GUID by path
+Include a time in `post_date`. When statement rows lack times, assign stable row-index times so same-day rows retain their source order.
+
+## Account and commodity queries
+
+Cast the recursive seed path to `text` because `accounts.name` is `varchar(2048)` and concatenation returns `text`:
 
 ```sql
 WITH RECURSIVE path_list AS (
-   SELECT guid, parent_guid, name, name::text AS path FROM accounts WHERE parent_guid IS NULL
-   UNION ALL
-   SELECT c.guid, c.parent_guid, c.name, path || ':' || c.name
-   FROM accounts c JOIN path_list p ON p.guid = c.parent_guid
+  SELECT guid, parent_guid, name, name::text AS path
+  FROM accounts
+  WHERE parent_guid IS NULL
+  UNION ALL
+  SELECT child.guid, child.parent_guid, child.name, parent.path || ':' || child.name
+  FROM accounts child
+  JOIN path_list parent ON parent.guid = child.parent_guid
 )
-SELECT guid FROM path_list WHERE path = 'Root Account:Assets:JPY - Current Assets:Prepaid:Suica iPhone';
+SELECT guid
+FROM path_list
+WHERE path = 'Root Account:Assets:JPY - Current Assets:Prepaid:Suica iPhone';
 ```
 
-Note: `name::text` cast is required. Without it, PostgreSQL raises a type mismatch error because `name` is `varchar(2048)` but concatenation produces `text`.
-
-### Find JPY currency GUID
+Resolve a currency GUID from the database or cache instead of embedding an unverified value:
 
 ```sql
-SELECT guid FROM commodities WHERE namespace = 'CURRENCY' AND mnemonic = 'JPY';
+SELECT guid
+FROM commodities
+WHERE namespace = 'CURRENCY' AND mnemonic = 'JPY';
 ```
-
-### Currency GUIDs (Cache)
-
-| Currency | GUID |
-|----------|------|
-| CAD | f99a2253eb074ecc9cdf1d9e045d80a4 |
-| EUR | 12acd461abfd4f3abc3035fadee5a376 |
-| HKD | fe612fdac8294a05a11469ccc2e2637d |
-| JPY | a77d4ee821e04f02bb7429e437c645e4 |
-| KRW | 11e24d99cb3047d8a6e7bd89f7289fc5 |
-| MOP | 5baf61e3637342d78e2df019598c4426 |
-| SGD | b5f7dd0afe724e799dd2f62106f920ab |
-| THB | 7484252199024c678cd3252dbaec76f5 |
-| TRY | cdde4a47486d4033927156ffdc8e9a87 |
-| USD | 327c5a1bcfb147ceba2370ee17093159 |
 
 ## References
 
-- https://wiki.gnucash.org/wiki/SQL
-- https://wiki.gnucash.org/wiki/GnuCash_SQL_Examples
+- <https://wiki.gnucash.org/wiki/GnuCash_SQL_Examples>
+- <https://wiki.gnucash.org/wiki/SQL>

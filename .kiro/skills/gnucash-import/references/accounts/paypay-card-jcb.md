@@ -1,130 +1,59 @@
-# PayPay Card JCB Statement Import
+# PayPay Card JCB statement import
 
-## GnuCash Account
+Script: [`scripts/paypay_card_jcb_import.py`](../../../../../scripts/paypay_card_jcb_import.py)
+
+Use the shared [credit-card workflow and safety rules](../../SKILL.md#credit-cards) for duplicate detection, current-cycle handling, payment registration, review, and SQL execution.
+
+## Accounts
 
 - Card: `Liabilities:Credit Card:PayPay Card JCB`
 - Payment debit: `Assets:JPY - Current Assets:Banks:DOCOMO SMTB Net Bank`
-- Payment date: 27th of each month
+- Payment date: 27th
 
-## Credentials
+## Access
 
-Login via Yahoo! JAPAN ID with passkey. You MUST use `agent-browser --auto-connect` and ask the user to complete passkey authentication manually.
+Open `https://www.paypay-card.co.jp/member-login?promptParam=3` with `agent-browser --auto-connect`. Login uses a Yahoo! JAPAN ID passkey, so ask the user to complete authentication. Dismiss the post-login tutorial by clicking each `次へ` control and its final `閉じる` or `完了` control. Additional popups may appear when the statement page first opens.
 
-## Import Workflow
+Open `請求明細`, then the monthly statement at `https://www.paypay-card.co.jp/member/statement/monthly?dispmode=latest`. Transactions appear as menuitem elements in `agent-browser --auto-connect snapshot` output. Use `前月` and `翌月` to change months. Confirmed statements may also offer `明細出力` and `CSVダウンロード`.
 
-This is a credit card. Follow the billing-statement-based verification workflow.
+## Statement Data
 
-### Billing Statement Verification
+Confirmed (`仮確定`) and unconfirmed (`未確定`) pages expose the same menuitem text:
 
-1. Check if `account-guid-cache.json` exists and `updated_at` is within 1 month; regenerate if needed (see SKILL.md)
-2. `agent-browser --auto-connect open https://www.paypay-card.co.jp/member-login?promptParam=3`
-3. Ask user to complete Yahoo! JAPAN ID passkey login
-4. Dismiss any popups or tutorials that appear after login:
-   - Tutorial appears with `次へ` (Next) buttons/links
-   - Click through all `次へ` buttons until `閉じる` (Close) or `完了` (Complete) appears
-   - Click the final button to dismiss the tutorial
-   - May require multiple `snapshot -i` and click cycles
-5. Click `請求明細` in the top navigation to open the statement page
-6. Navigate directly to monthly statement page: `agent-browser open https://www.paypay-card.co.jp/member/statement/monthly?dispmode=latest`
-7. Wait for page load and check for popups:
-   - After first access to monthly statement page, a popup may appear
-   - Check snapshot for `閉じる` (Close) link/button
-   - If found, click it to dismiss the popup
-8. For each billing month (starting from the most recent confirmed statement, going backwards):
-   a. Note the total amount and status (仮確定/未確定)
-   b. Check if this total already exists in GnuCash (see SKILL.md "Credit Card: Billing Total Check")
-   c. If the total exists → all transactions in this statement are already imported; stop going further back
-   d. If the total does NOT exist → extract all transactions and proceed to duplicate detection
-9. Extract transaction data via `agent-browser --auto-connect snapshot` (transactions appear as menuitem elements)
-10. Perform per-transaction duplicate detection (see SKILL.md "Credit Card: Duplicate Detection")
-11. Prepare RAW_DATA with only new transactions
-12. Copy RAW_DATA into `tmp/paypay_card_jcb_import_YYYYMMDD.py`
-13. Run `python3 tmp/paypay_card_jcb_import_YYYYMMDD.py review` to show review table
-14. User reviews and specifies manual overrides by ID
-15. Run `python3 tmp/paypay_card_jcb_import_YYYYMMDD.py sql > tmp/paypay_card_jcb_import_YYYYMMDD.sql` to generate SQL
-16. Execute SQL to insert transactions
-
-### Current Statement (Unconfirmed)
-
-See SKILL.md "Credit Card: Current Statement (Unconfirmed)".
-
-## Script Template
-
-- `scripts/paypay_card_jcb_import.py`
-
-## Browser Data Format
-
-Transaction data extracted via `agent-browser --auto-connect snapshot` from the statement page (`/member/statement/monthly`).
-
-Each transaction appears as a menuitem element with text in the format: `{merchant} {date} {amount}円`
-
-Example (from snapshot):
-```
-menuitem "チャージ 2026年1月20日 1,000円"
-menuitem "RESTAURANT ABC 2026年1月18日 2,500円"
-menuitem "キッチンオリジン、オリジン 2026年1月6日 3,000円"
-menuitem "請求書払い 2026年1月4日 50,000円"
-menuitem "ヤフージャパン 2025年12月31日 800円"
+```text
+menuitem "チャージ 2099年1月20日 1,111円"
+menuitem "RESTAURANT ABC 2099年1月18日 2,222円"
+menuitem "キッチンオリジン、オリジン 2099年1月6日 3,333円"
+menuitem "請求書払い 2099年1月4日 44,444円"
+menuitem "ヤフージャパン 2098年12月31日 555円"
 ```
 
-Notes:
-- Date format: `YYYY年M月D日` (Japanese date)
-- Amount: comma-separated integers with `円` suffix
-- Merchant names may contain Japanese characters, commas, and spaces
-- Month navigation via `前月`/`翌月` buttons
-- Statement status: `仮確定` (semi-confirmed) or `未確定` (unconfirmed)
-- `明細出力` button and `CSVダウンロード` link available on confirmed statements
-- The page URL pattern: `/member/statement/monthly?dispmode=latest`
+Convert the menuitems to one tab-separated input row per transaction:
 
-## Conversion Rules
-
-### Transaction Types
-
-| Pattern | GnuCash Account | Description |
-|---------|-----------------|-------------|
-| チャージ | Assets:JPY - Current Assets:Prepaid:PayPay | null |
-| Dining/restaurant names | Expenses:Foods:Dining | (merchant name in English) |
-| ヤフージャパン | (ask user for split amounts) | Yahoo! |
-| 請求書払い | (ask user) | (ask user) |
-
-- `ヤフージャパン` typically requires a split transaction; ask the user for the breakdown each time
-- `請求書払い` can be various types of payments; always ask the user
-- For any transaction not matching the above patterns, check past GnuCash transactions for the same description. If no match found, ask the user
-
-### Email Lookup for Missing Information
-
-If you don't know the account or the merchant, search emails with the amount. See [email-lookup.md](email-lookup.md).
-
-## Script Input Format
-
-One transaction per line, extracted from snapshot menuitem text:
-
-```
-チャージ	2026年1月20日	1,000
-RESTAURANT ABC	2026年1月18日	2,500
-キッチンオリジン、オリジン	2026年1月6日	3,000
-請求書払い	2026年1月4日	50,000
-ヤフージャパン	2025年12月31日	800
+```text
+チャージ	2099年1月20日	1,111
+RESTAURANT ABC	2099年1月18日	2,222
+キッチンオリジン、オリジン	2099年1月6日	3,333
+請求書払い	2099年1月4日	44,444
+ヤフージャパン	2098年12月31日	555
 ```
 
-Tab-separated: `merchant\tdate\tamount`
+Script input columns are `merchant, date, amount`. The parser also accepts a fallback line in the form `merchant YYYY年M月D日 amount円`. It parses Japanese dates, removes amount commas, negates the amount, and preserves merchant spaces and punctuation.
 
-Parsing rules:
-- Split each line by tab
-- Date: parse `YYYY年M月D日` format
-- Amount: remove commas, parse as integer; always negative (credit card spending)
-- Skip blank lines
+## Mapping
 
-## Review Table Structure
+| Statement pattern | GnuCash account | Description | Handling |
+|---|---|---|---|
+| Exact merchant `チャージ` | `Assets:JPY - Current Assets:Prepaid:PayPay` | NULL | Automatic |
+| Merchant containing `オリジン`, `キッチンオリジン`, `マーラータン`, `セブン`, `ファミリーマート`, `ローソン`, `マクドナルド`, `すき家`, `吉野家`, `松屋`, `ガスト`, `サイゼリヤ`, or `RESTAURANT` | `Expenses:Foods:Dining` | Original merchant text | Automatic |
+| Merchant containing `ヤフージャパン` or `Yahoo` | Ask the user for split accounts and amounts | First split description | Use a list of `(account_guid, amount, description)` tuples in `MANUAL_OVERRIDES` |
+| Merchant containing `請求書払い` | Ask the user for account and description | Ask the user | Use `MANUAL_OVERRIDES` |
 
-Display transactions sorted by date descending (newest first) with:
-- ID: Sequential number for user to reference
-- Date: YYYY-MM-DD with weekday (Mon, Tue, etc.)
-- Merchant: Merchant name from statement
-- Desc: Description for GnuCash (English)
-- Transfer: Target account
-- Amount: Amount (JPY, always shown as positive for readability)
+Resolve every other row from past GnuCash transactions or ask the user, then add it to `MANUAL_OVERRIDES`.
 
-## Notes
+## Source-specific Rules
 
-- All descriptions MUST be in English
+- Yahoo! transactions commonly need multiple expense splits. The script accepts either one `(account_guid, description)` tuple or a list of `(account_guid, amount, description)` tuples for any override.
+- For a split override, the listed positive amounts must sum to the absolute card charge. The transaction description comes from the first split description.
+- Treat `仮確定` and `未確定` as unconfirmed source status under the shared current-cycle rules.
+- Accepted commands are `review` and `sql`.

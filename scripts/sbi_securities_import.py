@@ -306,7 +306,8 @@ def sql_usd_stock(transactions):
 # ── USD Cash ──────────────────────────────────────────────────
 
 def parse_usd_cash(raw_data):
-    blocks = re.split(r'\n\n+', raw_data.strip())
+    normalized_data = raw_data.replace('\r\n', '\n').replace('\r', '\n')
+    blocks = re.split(r'\n\n+', normalized_data.strip())
     transactions = []
     i = 0
     while i + 6 < len(blocks):
@@ -317,10 +318,13 @@ def parse_usd_cash(raw_data):
         dt = dt_match.group(1)
         tx_type = blocks[i + 1].strip()  # 入金/出金
         category = blocks[i + 2].strip()  # 分配金 or -
-        # blocks[i + 3] = currency (skip)
+        currency = blocks[i + 3].strip()
         desc = blocks[i + 4].strip()
         withdrawal = blocks[i + 5].strip()
         deposit = blocks[i + 6].strip()
+        i += 7
+        if currency != '米ドル':
+            continue
         y, m, d = dt.split('/')
         amount_str = deposit if deposit != '-' else withdrawal
         amount = float(amount_str.replace(',', ''))
@@ -330,7 +334,6 @@ def parse_usd_cash(raw_data):
             'date': date(int(y), int(m), int(d)),
             'category': category, 'desc': desc, 'amount': amount,
         })
-        i += 7
     return transactions
 
 

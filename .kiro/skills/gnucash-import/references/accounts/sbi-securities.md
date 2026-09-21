@@ -30,9 +30,9 @@ Open `https://login.sbisec.co.jp/login/entry` with `agent-browser --auto-connect
 
 For JPY mutual funds, open `口座管理 > 取引履歴`, set the date range, click `照会`, and extract `document.querySelector('body').innerText`. Capture every page with `次へ→`.
 
-For USD stocks, open `外国株式 > 取引照会 > 注文履歴` at `https://member.c.sbisec.co.jp/foreign/refer/us/order-history`, select `2年間`, and open each order's `詳細` page to collect its `約定結果`.
+For USD stocks, open `外国株式 > 取引照会 > 注文履歴` at `https://member.c.sbisec.co.jp/foreign/refer/us/order-history`, select `2年間`, and open each order's `詳細` page. Import only completed orders whose detail page contains `約定結果`; exclude `注文中` rows and any order without executed quantity and settlement results.
 
-For USD cash, open `入出金 > 外貨入出金・振替 > 入出金明細`, set the period, and extract `document.querySelector('body').innerText`.
+For USD cash, open `入出金 > 外貨入出金・振替 > 入出金明細`, select `5年`, set the page size to `200件`, and extract `document.querySelector('body').innerText`. The result can include rows whose currency is `-` or another non-USD value; retain only rows whose currency column is exactly `米ドル`.
 
 ## Statement Data
 
@@ -98,7 +98,7 @@ QQQ 銘柄名:インベ QQQ ETF
 100.00
 ```
 
-Paste this shape into `RAW_DATA_USD_CASH`. Dates use `YYYY/MM/DD`; type is `入金` or `出金`; category is `分配金` or `-`; an absent amount is `-`.
+Paste this shape into `RAW_DATA_USD_CASH`. Dates use `YYYY/MM/DD`; type is `入金` or `出金`; category is `分配金` or `-`; an absent amount is `-`. The parser accepts only groups whose currency field is exactly `米ドル` and ignores all other currency values.
 
 ## Mapping
 
@@ -139,5 +139,8 @@ Ask for a mapping when a ticker, fund, or cash pattern is unknown. All generated
 - JPY fund split: `value_num = signed settlement amount`, `value_denom = 1`, `quantity_num = signed units × 10000`, and `quantity_denom = 10000`. The payable split has the opposite value and uses `quantity_num = value_num`, denominator 1.
 - USD stock split: `value_num = signed execution amount × 100`, `value_denom = 100`, `quantity_num = signed shares × 10000`, and `quantity_denom = 10000`. Cash, fee, and tax splits use cents for both value and quantity with denominator 100.
 - USD cash splits use signed cents for both value and quantity with denominator 100.
+- For JPY fund duplicate detection, when an exact trade-date match is absent but prior import is confirmed, compare the same fund account, signed settlement value, and exact unit quantity within a bounded nearby-date window.
+- For USD stock duplicate detection, a single broker order may already be split across multiple SBI Securities subaccounts. Aggregate only matching ticker splits within the bounded date window and require both signed share quantity and execution value to equal the order detail before excluding it as a duplicate.
+- Never import an order without `約定結果`; recheck open or unfilled orders on a later run.
 - Available history is two years for JPY funds and USD stock orders, and five years for USD cash.
 - Source-specific commands are `review` and `sql` for JPY funds, `review-usd-stock` and `sql-usd-stock` for USD stocks, and `review-usd-cash` and `sql-usd-cash` for USD cash.

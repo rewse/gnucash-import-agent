@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """Sompo Japan DC Securities Statement Importer
 
 Usage:
@@ -59,7 +60,8 @@ DC = 'Assets:JPY - Current Assets:Securities:Sompo Japan DC Securities'
 SOURCE_ACCOUNT = get_guid(DC)
 
 FUND_MAP = {
-    'ＤＩＡＭ国内株式インデックス': f'{DC}:DIAM Japan Stock Index Fund <DC Pension>',
+    'ＤＩＡＭ国内株式インデックス': f'{DC}:One Japan Stock Index Fund <DC Pension>',
+    'Ｏｎｅ国内株式インデックス': f'{DC}:One Japan Stock Index Fund <DC Pension>',
     'インデックス海外株式ヘッジなし': f'{DC}:Index Fund Global Stock NoHedge (DC)',
 }
 

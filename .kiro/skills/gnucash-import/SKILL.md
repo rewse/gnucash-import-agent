@@ -145,6 +145,8 @@ Before duplicate detection, read the optional `import_not_before` date for the s
 
 Query the source account over the statement date range. Treat equal dates and amounts as candidates, then compare descriptions, transaction types, occurrence counts, and other statement details. Import the excess occurrence when the statement contains the same date and amount more times than GnuCash.
 
+When strict date-and-amount matching conflicts with a user-confirmed prior import, expand duplicate detection to a bounded nearby-date window and compare source identifiers, account paths, transaction types, rational values, and quantities. If one statement row was previously split across multiple GnuCash transactions, or multiple source rows were represented by one transaction, compare occurrence counts and aggregate values and quantities only for the matching source and security. A nearby or aggregate match is a duplicate only when all available statement details reconcile exactly. Use aggregation only for duplicate detection; import every genuinely new statement row at its original granularity.
+
 Use the latest reconciled transaction as a retrieval cutoff only when the source reference permits it. Cleared rows may belong to a partially imported statement, so include them when checking duplicates. If no reconciled row exists, inspect the latest transaction without relying on it as proof of completeness.
 
 ```sql

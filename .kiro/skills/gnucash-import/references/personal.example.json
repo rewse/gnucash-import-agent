@@ -8,6 +8,10 @@
   "import_not_before": {
     "jre_bank": "2030-01-01",
     "mufg_bank": "2030-01-01",
+    "sbi_securities_jpy": "2030-01-01",
+    "sbi_securities_usd_cash": "2030-01-01",
+    "sbi_securities_usd_stock": "2030-01-01",
+    "sompo_japan_dc": "2030-01-01",
     "sony_bank_jpy": "2030-01-01",
     "sony_bank_usd": "2030-01-01"
   },

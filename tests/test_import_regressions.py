@@ -18,7 +18,12 @@ SCRIPTS = ROOT / "scripts"
 
 
 class ImportRegressionTest(unittest.TestCase):
-    def _import_script(self, source_slug: str, personal: dict[str, Any] | None = None):
+    def _import_script(
+        self,
+        source_slug: str,
+        personal: dict[str, Any] | None = None,
+        extra_accounts: set[str] | None = None,
+    ):
         script_path = SCRIPTS / f"{source_slug}_import.py"
         tree = ast.parse(script_path.read_text())
         paths = {
@@ -31,6 +36,7 @@ class ImportRegressionTest(unittest.TestCase):
             and isinstance(node.args[0], ast.Constant)
             and isinstance(node.args[0].value, str)
         }
+        paths.update(extra_accounts or set())
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         project_root = Path(temporary.name)
@@ -93,6 +99,60 @@ class ImportRegressionTest(unittest.TestCase):
         self.assertLess(first_transaction, first_timestamp)
         self.assertLess(first_timestamp, second_transaction)
         self.assertLess(second_transaction, second_timestamp)
+
+    def test_sbi_securities_usd_cash_ignores_non_usd_rows(self):
+        module = self._import_script("sbi_securities")
+        fields = [
+            "2026/09/01",
+            "入金",
+            "分配金",
+            "米ドル",
+            "QQQ 銘柄名:EXAMPLE",
+            "-",
+            "12.34",
+            "2026/09/02",
+            "出金",
+            "-",
+            "-",
+            "入出金振替",
+            "999,999",
+            "-",
+        ]
+
+        for newline in ("\n", "\r\n"):
+            with self.subTest(newline=repr(newline)):
+                transactions = module.parse_usd_cash(
+                    (newline * 2).join(fields)
+                )
+
+                self.assertEqual(1, len(transactions))
+                self.assertEqual(12.34, transactions[0]["amount"])
+                self.assertEqual("分配金", transactions[0]["category"])
+
+    def test_sompo_japan_dc_maps_old_and_new_fund_names_to_current_account(self):
+        expected = (
+            "Assets:JPY - Current Assets:Securities:Sompo Japan DC Securities:"
+            "One Japan Stock Index Fund <DC Pension>"
+        )
+        module = self._import_script(
+            "sompo_japan_dc", extra_accounts={expected}
+        )
+        expected_guid = module.get_guid(expected)
+        self.assertIsNotNone(expected_guid)
+
+        for fund_name in (
+            "ＤＩＡＭ国内株式インデックス",
+            "Ｏｎｅ国内株式インデックス",
+        ):
+            with self.subTest(fund_name=fund_name):
+                transaction = module.parse_transactions(
+                    "2026/09/01\t2026/09/02\t"
+                    f"{fund_name}\t500\t7.7000\t3,850\t買 掛金"
+                )[0]
+                self.assertEqual(
+                    (expected_guid, None),
+                    module.get_transaction_info(1, transaction),
+                )
 
     def test_suica_parses_bus_rows(self):
         module = self._import_script("suica", self._personal_settings())

@@ -41,11 +41,14 @@ Script input is five tab-separated fields: `{date}\t{description}\t{type}\t{poin
 | `お買い物ポイント`, `ボーナスポイント`, campaign events | `Income:Point Charge` | `Amazon` |
 | Any Amazon Mastercard variant | `Income:Point Charge` | `Amazon` |
 | `利用・キャンセル` with `ポイントの利用` | Order-derived account | `Amazon` |
+| `返品によるポイントのキャンセル` | `Income:Point Charge` | `Amazon` |
+| `期限切れのポイント` | `Expenses:Point Lapse` | `Point Expiry` |
 
 Amazon Mastercard variants include Amazon purchases, convenience-store purchases, non-Amazon purchases, convenience-store campaigns, and Amazon Prime Mastercard offers.
 
 ## Source-specific Rules
 
 - Import `＊獲得予定` rows; they are confirmed later.
-- Follow the order-details link, get the product name, and select an available account from `../account-guid-cache.json`. If the page omits product names, use [`../email-lookup.md`](../email-lookup.md).
-- Positive points are earned and negative points are used.
+- Follow the order-details link for `ポイントの利用`, get the product name, and select an available account from `../account-guid-cache.json`. If the page omits product names, use [`../email-lookup.md`](../email-lookup.md).
+- Treat `返品によるポイントのキャンセル` as a negative reversal of point income, not as point usage against the returned item's expense account.
+- Positive points are earned. Negative points may be used, cancelled after a return, or expired; use the statement item and type to select the mapping.

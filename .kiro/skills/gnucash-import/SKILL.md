@@ -24,6 +24,12 @@ Follow this sequence for every import:
 
 Use `agent-browser --auto-connect` for web automation. Run `agent-browser --help` before its first use in each session. If a page never finishes loading or reports an unusual automation error, retry with `--args "--disable-blink-features=AutomationControlled"`.
 
+When attaching to the user's Chrome, keep one named agent-browser session and one dedicated tab for the entire import run. Process sources sequentially; do not start parallel `--auto-connect` sessions. If manual authentication closes the dedicated tab, create a new tab in the same session instead of creating another session.
+
+Scope snapshots of authenticated pages to the statement container. Do not save or print populated login forms or full account pages that contain names, addresses, member identifiers, balances, or other unrelated personal data. Delete an accidentally captured artifact immediately.
+
+Before asking for approval, make the complete review output visible to the user. For a long review, save it inside the owner-only `work_dir` and open it in a local viewer. Confirm that the user can see the output before accepting approval.
+
 ## Safety Rules
 
 - Import each statement row at its original granularity. Do not aggregate, summarize, or combine rows by date or category.

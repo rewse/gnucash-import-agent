@@ -5,6 +5,12 @@
       "source": "Assets:JPY - Current Assets:Prepaid:Example PASMO"
     }
   },
+  "import_not_before": {
+    "jre_bank": "2030-01-01",
+    "mufg_bank": "2030-01-01",
+    "sony_bank_jpy": "2030-01-01",
+    "sony_bank_usd": "2030-01-01"
+  },
   "nearest_station": "Example Station",
   "transfer_rules": {
     "docomo_smtb_net_bank": {

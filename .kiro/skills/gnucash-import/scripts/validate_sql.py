@@ -108,6 +108,7 @@ def validate_sql(
     source_account_guid: str,
     account_guids: set[str],
     expected_currency_guid: str,
+    allow_counterparty_unreconciled: bool = False,
 ) -> ValidationResult:
     """Validate one generated SQL file and return its row counts."""
     _require(re.fullmatch(_GUID, source_account_guid) is not None, "invalid source GUID")
@@ -174,7 +175,16 @@ def validate_sql(
         _require(guid not in known_guids, "duplicate generated GUID")
         known_guids.add(guid)
         _require(account_guid in account_guids, "split account is absent from cache")
-        _require(reconcile_state == "c", "every imported split must be cleared")
+        if allow_counterparty_unreconciled:
+            if account_guid == source_account_guid:
+                _require(reconcile_state == "c", "source split must be cleared")
+            else:
+                _require(
+                    reconcile_state in {"c", "n"},
+                    "counterparty split must be cleared or unreconciled",
+                )
+        else:
+            _require(reconcile_state == "c", "every imported split must be cleared")
         value_denominator = int(value_denom)
         quantity_denominator = int(quantity_denom)
         _require(value_denominator > 0, "value denominator must be positive")
@@ -248,6 +258,11 @@ def main() -> int:
     parser.add_argument("--source-account", required=True)
     parser.add_argument("--currency-guid", required=True)
     parser.add_argument(
+        "--allow-counterparty-unreconciled",
+        action="store_true",
+        help="Allow non-source splits to use reconcile_state n; source splits still require c.",
+    )
+    parser.add_argument(
         "--account-cache",
         type=Path,
         default=root / ".kiro/skills/gnucash-import/references/account-guid-cache.json",
@@ -262,6 +277,9 @@ def main() -> int:
             source_guid,
             set(accounts.values()),
             arguments.currency_guid,
+            allow_counterparty_unreconciled=(
+                arguments.allow_counterparty_unreconciled
+            ),
         )
     except (OSError, ValidationError) as error:
         print(f"Error: {error}", file=sys.stderr)

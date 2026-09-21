@@ -35,8 +35,9 @@ This repository provides a Kiro skill and source-specific Python scripts for imp
 
 ## Personal Settings
 
-- Store personal names, locations, account mappings, and transaction rules only in `.kiro/skills/gnucash-import/references/personal.json`.
+- Store personal names, locations, account mappings, transaction rules, and user-confirmed source-stream import cutoffs only in `.kiro/skills/gnucash-import/references/personal.json`.
 - Keep `personal.json` untracked with file mode `0600`, and document its schema with dummy values in `personal.example.json`.
+- Store inclusive source-stream cutoffs under `import_not_before` as ISO `YYYY-MM-DD` dates. Do not hardcode personal cutoff dates in scripts or account references, and do not infer them from transaction history or the current year.
 - Do not print personal settings in logs, reports, tests, or review artifacts.
 
 ## Validation
@@ -44,5 +45,5 @@ This repository provides a Kiro skill and source-specific Python scripts for imp
 - Run `python3 -m unittest discover -s tests -v` after changing import behavior.
 - Run `python3 -m compileall -q scripts .kiro/skills/gnucash-import/scripts` after changing Python files.
 - Run `basedpyright scripts .kiro/skills/gnucash-import/scripts` and require zero errors. Existing warnings need not be resolved unless they relate to the change.
-- Before executing generated import SQL, run `.kiro/skills/gnucash-import/scripts/validate_sql.py` with the selected source account and expected currency GUID, then run the exact inspected SQL against the target database with only the terminal `COMMIT` changed to `ROLLBACK`, `ON_ERROR_STOP=1`, and `standard_conforming_strings=on`.
+- Before executing generated import SQL, run `.kiro/skills/gnucash-import/scripts/validate_sql.py` with the selected source account and expected currency GUID. Pass `--allow-counterparty-unreconciled` only when the selected source reference explicitly requires verified non-source splits to remain `n`; source-account splits must still be `c`. Then run the exact inspected SQL against the target database with only the terminal `COMMIT` changed to `ROLLBACK`, `ON_ERROR_STOP=1`, and `standard_conforming_strings=on`.
 - Run `git diff --check` before finishing.

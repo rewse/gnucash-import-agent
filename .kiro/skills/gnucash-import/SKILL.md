@@ -29,8 +29,8 @@ Use `agent-browser --auto-connect` for web automation. Run `agent-browser --help
 - Import each statement row at its original granularity. Do not aggregate, summarize, or combine rows by date or category.
 - Ask the user when an account, description, split, or other mapping is ambiguous. Do not guess.
 - Require English only for non-NULL transaction descriptions. Preserve NULL descriptions when the source script uses them.
-- Set `reconcile_state` to `c` for every split in a transaction verified against a statement.
-- Use `reconcile_state = 'n'` only for generic or unverified transactions.
+- Set `reconcile_state` to `c` for every split in a transaction verified against a statement, unless the selected source reference explicitly requires `n` for verified counterparty splits.
+- Use `reconcile_state = 'n'` only for generic or unverified transactions, or for counterparty splits covered by an explicit source-specific rule.
 - Do not delete or modify transactions whose `reconcile_state` is `y` or `c`.
 - Add separators between dates in review output.
 - Inspect generated SQL before execution. Confirm that every transaction balances and that `value` and `quantity` use the correct signs and denominators.
@@ -78,6 +78,8 @@ python3 .kiro/skills/gnucash-import/scripts/validate_sql.py \
 
 Do not execute SQL when validation fails. The validator permits only a `BEGIN`/`COMMIT` boundary and generated inserts into `transactions` and `splits`; it also checks GUIDs, the expected currency, cached accounts, one source split per transaction, balance, valid timestamps, positive denominators, nonzero quantities, value/quantity sign agreement, cleared states, printable ASCII-or-NULL descriptions without backslashes, and stable same-day order. Continue to inspect source-specific mappings and exact quantity semantics manually because static SQL structure cannot establish their business meaning.
 
+When a source reference explicitly requires verified counterparty splits to remain `n`, pass `--allow-counterparty-unreconciled`. This opt-in still requires every source-account split to be `c`, permits only `c` or `n` on non-source splits, and leaves the default all-`c` policy unchanged.
+
 Immediately before execution, rerun row-level duplicate detection against the live database. Confirm that every referenced account exists and that the expected currency GUID has the source reference's namespace and mnemonic. Query both `transactions` and `splits` to confirm that every generated GUID has zero matches. A prior check or a matching statement total is not sufficient.
 
 Test the exact inspected SQL against the target database with only its terminal `COMMIT;` changed to `ROLLBACK;`. Create the rollback copy inside `work_dir` and require psql to stop on the first error:
@@ -102,7 +104,7 @@ PGOPTIONS='-c standard_conforming_strings=on' \
 
 Execute the inspected `import.sql` with the same `PGOPTIONS`, `ON_ERROR_STOP=1`, and `standard_conforming_strings=on` only after the rollback trial succeeds. When one approved import run has multiple SQL files, execute their inspected bodies inside one outer `BEGIN`/`COMMIT` transaction so a failure cannot leave a partial multi-source import.
 
-After commit, query by the generated transaction GUIDs and verify the exact expected transaction and split counts, every imported split has `reconcile_state = 'c'`, every transaction balances using rational `value_num / value_denom`, and all expected source and transfer account mappings are present. Keep the SQL and logs in the owner-only `work_dir` until post-checks pass. Then delete them, or move required audit artifacts to an owner-only location. Never write database passwords to an artifact or log.
+After commit, query by the generated transaction GUIDs and verify the exact expected transaction and split counts, every imported split has its expected `reconcile_state` (`c` by default, with only documented source-specific counterparty exceptions), every transaction balances using rational `value_num / value_denom`, and all expected source and transfer account mappings are present. Keep the SQL and logs in the owner-only `work_dir` until post-checks pass. Then delete them, or move required audit artifacts to an owner-only location. Never write database passwords to an artifact or log.
 
 ### Account GUID cache
 
@@ -138,6 +140,8 @@ trap - EXIT
 ```
 
 ## Duplicate Detection
+
+Before duplicate detection, read the optional `import_not_before` date for the selected source stream from `personal.json`. Use source-stream keys such as `jre_bank`, `mufg_bank`, `sony_bank_jpy`, and `sony_bank_usd`. Treat the configured ISO date as inclusive: discard statement rows before it from duplicate detection, review, mapping, and SQL generation, while processing rows on or after it normally. Use only an explicitly configured date after the user has confirmed the earlier history is complete; never infer a cutoff from the current year, the latest transaction, a matching total, or a prior run. When the source-stream key is absent, apply no hard cutoff.
 
 Query the source account over the statement date range. Treat equal dates and amounts as candidates, then compare descriptions, transaction types, occurrence counts, and other statement details. Import the excess occurrence when the statement contains the same date and amount more times than GnuCash.
 
@@ -187,7 +191,7 @@ Edit `.kiro/skills/gnucash-import/references/personal.json` with local personal 
 stat -f '%Lp' .kiro/skills/gnucash-import/references/personal.json
 ```
 
-Use `nearest_station` for source-specific transit classification, `accounts.pasmo` for PASMO source and shopping account paths, and `transfer_rules` for source-specific personal transfer mappings. Read only the source key required by the selected script. Fail with a clear value-free error when a required setting or mapping is absent; do not infer a default account. Resolve account paths through `account-guid-cache.json`.
+Use `import_not_before` for user-confirmed inclusive source-stream cutoffs, `nearest_station` for source-specific transit classification, `accounts.pasmo` for PASMO source and shopping account paths, and `transfer_rules` for source-specific personal transfer mappings. Read only the source key required by the selected script. Validate each configured cutoff as an ISO `YYYY-MM-DD` date and fail with a clear value-free error when it is malformed. Fail with a clear value-free error when a required setting or mapping is absent; do not infer a default account or cutoff. Resolve account paths through `account-guid-cache.json`.
 
 ## Adding a Source
 

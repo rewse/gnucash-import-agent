@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 import subprocess
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -83,6 +85,43 @@ class SqlValidatorTest(unittest.TestCase):
         with self.assertRaises(self.module.ValidationError):
             self.module.validate_sql(sql, SOURCE, {SOURCE, TARGET}, CURRENCY)
 
+    def test_rejects_unreconciled_counterparty_by_default(self):
+        sql = valid_sql().replace(
+            f"'{TARGET}', '', '', 'c', NULL",
+            f"'{TARGET}', '', '', 'n', NULL",
+        )
+        with self.assertRaises(self.module.ValidationError):
+            self.module.validate_sql(sql, SOURCE, {SOURCE, TARGET}, CURRENCY)
+
+    def test_accepts_unreconciled_counterparty_when_enabled(self):
+        sql = valid_sql().replace(
+            f"'{TARGET}', '', '', 'c', NULL",
+            f"'{TARGET}', '', '', 'n', NULL",
+        )
+        result = self.module.validate_sql(
+            sql,
+            SOURCE,
+            {SOURCE, TARGET},
+            CURRENCY,
+            allow_counterparty_unreconciled=True,
+        )
+        self.assertEqual(1, result.transaction_count)
+        self.assertEqual(2, result.split_count)
+
+    def test_rejects_unreconciled_source_when_counterparty_option_enabled(self):
+        sql = valid_sql().replace(
+            f"'{SOURCE}', '', '', 'c', NULL",
+            f"'{SOURCE}', '', '', 'n', NULL",
+        )
+        with self.assertRaises(self.module.ValidationError):
+            self.module.validate_sql(
+                sql,
+                SOURCE,
+                {SOURCE, TARGET},
+                CURRENCY,
+                allow_counterparty_unreconciled=True,
+            )
+
     def test_rejects_non_ascii_description(self):
         sql = valid_sql().replace("'Amazon; -- order'", "'アマゾン'")
         with self.assertRaises(self.module.ValidationError):
@@ -142,6 +181,73 @@ class SqlValidatorTest(unittest.TestCase):
         sql = valid_sql().replace(CURRENCY, "f" * 32)
         with self.assertRaises(self.module.ValidationError):
             self.module.validate_sql(sql, SOURCE, {SOURCE, TARGET}, CURRENCY)
+
+    def test_cli_counterparty_unreconciled_option(self):
+        counterparty_sql = valid_sql().replace(
+            f"'{TARGET}', '', '', 'c', NULL",
+            f"'{TARGET}', '', '', 'n', NULL",
+        )
+        source_sql = valid_sql().replace(
+            f"'{SOURCE}', '', '', 'c', NULL",
+            f"'{SOURCE}', '', '', 'n', NULL",
+        )
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            temporary_path = Path(temporary_directory)
+            cache_path = temporary_path / "accounts.json"
+            sql_path = temporary_path / "import.sql"
+            cache_path.write_text(
+                json.dumps(
+                    {
+                        "accounts": {
+                            "Assets:Source": SOURCE,
+                            "Expenses:Target": TARGET,
+                        }
+                    }
+                )
+            )
+            base_command = [
+                sys.executable,
+                str(VALIDATOR),
+                "--source-account",
+                "Assets:Source",
+                "--currency-guid",
+                CURRENCY,
+                "--account-cache",
+                str(cache_path),
+            ]
+
+            sql_path.write_text(counterparty_sql)
+            rejected = subprocess.run(
+                [*base_command, str(sql_path)],
+                capture_output=True,
+                check=False,
+                text=True,
+            )
+            accepted = subprocess.run(
+                [
+                    *base_command,
+                    "--allow-counterparty-unreconciled",
+                    str(sql_path),
+                ],
+                capture_output=True,
+                check=False,
+                text=True,
+            )
+            sql_path.write_text(source_sql)
+            source_rejected = subprocess.run(
+                [
+                    *base_command,
+                    "--allow-counterparty-unreconciled",
+                    str(sql_path),
+                ],
+                capture_output=True,
+                check=False,
+                text=True,
+            )
+
+        self.assertEqual(1, rejected.returncode)
+        self.assertEqual(0, accepted.returncode)
+        self.assertEqual(1, source_rejected.returncode)
 
     def test_optimized_mode_is_rejected(self):
         completed = subprocess.run(

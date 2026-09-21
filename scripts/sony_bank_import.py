@@ -5,27 +5,126 @@ Usage:
 1. Download CSV from Sony Bank, convert: iconv -f SHIFT_JIS -t UTF-8 FutsuRireki.csv
 2. Paste converted CSV rows (without header) into RAW_DATA
 3. Set MANUAL_OVERRIDES for any transactions that need custom accounts/descriptions
-4. Run: python3 tmp/sony_bank_import_YYYYMMDD.py review
-5. Run: python3 tmp/sony_bank_import_YYYYMMDD.py sql
+4. Run: python3 scripts/sony_bank_import.py review
+5. Run: python3 scripts/sony_bank_import.py sql
 6. Repeat for each currency (JPY, USD) separately
 """
 import csv
 import io
 import json
+import os
 import re
 import sys
 import uuid
 from datetime import date
 from pathlib import Path
 
-ACCOUNTS_FILE = Path(__file__).parent.parent / '.kiro/skills/gnucash-import/references/account-guid-cache.json'
-with open(ACCOUNTS_FILE) as f:
-    _data = json.load(f)
-    ACCOUNTS = {k.replace('Root Account:', ''): v for k, v in _data['accounts'].items()}
+def find_project_root():
+    configured_root = os.environ.get("GNUCASH_IMPORT_ROOT")
+    candidates = [Path(configured_root)] if configured_root else []
+    candidates.extend([Path.cwd(), Path(__file__).resolve().parent.parent])
+    for candidate in candidates:
+        if (candidate / ".kiro/skills/gnucash-import").is_dir():
+            return candidate
+    raise FileNotFoundError(
+        "Cannot find the repository root. Run from the repository root or set GNUCASH_IMPORT_ROOT."
+    )
+
+
+PROJECT_ROOT = find_project_root()
+ACCOUNTS_FILE = PROJECT_ROOT / ".kiro/skills/gnucash-import/references/account-guid-cache.json"
+
+
+def load_accounts():
+    with open(ACCOUNTS_FILE) as account_file:
+        data = json.load(account_file)
+    raw_accounts = data.get("accounts") if isinstance(data, dict) else None
+    if not isinstance(raw_accounts, dict):
+        raise ValueError("Malformed account GUID cache.")
+    accounts = {}
+    for path, value in raw_accounts.items():
+        if (
+            not isinstance(path, str)
+            or not isinstance(value, str)
+            or len(value) != 32
+            or any(character not in "0123456789abcdef" for character in value)
+        ):
+            raise ValueError("Malformed account GUID cache.")
+        accounts[path.replace("Root Account:", "")] = value
+    return accounts
+
+
+ACCOUNTS = load_accounts()
 
 
 def get_guid(path):
     return ACCOUNTS.get(path) or ACCOUNTS.get('Root Account:' + path)
+
+
+PERSONAL_FILE = PROJECT_ROOT / ".kiro/skills/gnucash-import/references/personal.json"
+
+
+def _personal_error(key):
+    suffix = "" if key == "personal.json" else f" {key}"
+    return f"Sony Bank: malformed personal.json{suffix}"
+
+
+def _is_nonempty_string(value):
+    return isinstance(value, str) and bool(value.strip())
+
+
+def _is_safe_identity_match(value):
+    if not _is_nonempty_string(value):
+        return False
+    normalized = "".join(value.split())
+    markers = ("振込",)
+    return len(normalized) >= 3 and not any(
+        normalized in marker for marker in markers
+    )
+
+
+def load_personal_rules(source_name):
+    if not PERSONAL_FILE.exists():
+        return {}, None
+    try:
+        with open(PERSONAL_FILE) as personal_file:
+            settings = json.load(personal_file)
+    except (OSError, json.JSONDecodeError):
+        return {}, _personal_error("personal.json")
+    if not isinstance(settings, dict):
+        return {}, _personal_error("personal.json")
+    transfer_rules = settings.get("transfer_rules", {})
+    if not isinstance(transfer_rules, dict):
+        return {}, _personal_error("transfer_rules")
+    rules = transfer_rules.get(source_name, {})
+    source_key = f"transfer_rules.{source_name}"
+    if not isinstance(rules, dict):
+        return {}, _personal_error(source_key)
+    for rule_name in rules:
+        if rule_name != "self_transfer":
+            return {}, _personal_error(f"{source_key}.{rule_name}")
+    if "self_transfer" not in rules:
+        return {}, None
+    rule = rules["self_transfer"]
+    key_prefix = f"{source_key}.self_transfer"
+    if not isinstance(rule, dict):
+        return {}, _personal_error(key_prefix)
+    unexpected_fields = set(rule) - {"account", "contains"}
+    if unexpected_fields:
+        field = sorted(unexpected_fields)[0]
+        return {}, _personal_error(f"{key_prefix}.{field}")
+    for field in ("account", "contains"):
+        if field not in rule or not _is_nonempty_string(rule[field]):
+            return {}, _personal_error(f"{key_prefix}.{field}")
+    if not _is_safe_identity_match(rule["contains"]):
+        return {}, _personal_error(f"{key_prefix}.contains")
+    account = get_guid(rule["account"])
+    if account is None:
+        return {}, _personal_error(f"{key_prefix}.account")
+    return {"self_transfer": {"account": account, "contains": rule["contains"]}}, None
+
+
+PERSONAL_RULES, PERSONAL_RULE_ERROR = load_personal_rules("sony_bank")
 
 
 SOURCE_ACCOUNTS = {
@@ -34,7 +133,7 @@ SOURCE_ACCOUNTS = {
 }
 INTEREST = get_guid('Income:Interest Income')
 CASHBACK = get_guid('Income:Cash Back')
-MUFG = get_guid('Assets:JPY - Current Assets:Banks:MUFG Bank')
+
 SONY_JPY = SOURCE_ACCOUNTS['JPY']
 SONY_USD = SOURCE_ACCOUNTS['USD']
 
@@ -47,7 +146,7 @@ CURRENCY_DENOM = {'JPY': 1, 'USD': 100}
 ACCOUNT_NAMES = {
     INTEREST: 'Income:Interest Income',
     CASHBACK: 'Income:Cash Back',
-    MUFG: 'Assets:Banks:MUFG Bank',
+
     SONY_JPY: 'Assets:Banks:Sony Bank (JPY)',
     SONY_USD: 'Assets:Banks:Sony Bank (USD)',
 }
@@ -103,8 +202,14 @@ def get_transaction_info(idx, tx):
         return INTEREST, None
 
     if currency == 'JPY':
-        if '振込' in desc and 'シバタ' in desc:
-            return MUFG, None
+        is_transfer = '振込' in desc
+        rule = PERSONAL_RULES.get("self_transfer")
+        if is_transfer and PERSONAL_RULE_ERROR:
+            raise ValueError(PERSONAL_RULE_ERROR)
+        if is_transfer and rule and rule["contains"] in desc:
+            return rule["account"], None
+        if is_transfer:
+            raise ValueError("Sony Bank: missing personal.json transfer_rules.sony_bank.self_transfer")
         if '外貨普通預金' in desc and '米ドル' in desc:
             return SONY_USD, None
         if 'キヤツシユバツク' in desc:

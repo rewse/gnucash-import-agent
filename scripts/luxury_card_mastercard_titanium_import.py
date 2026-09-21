@@ -4,22 +4,55 @@
 Usage:
 1. Copy raw data from browser snapshot into RAW_DATA (card) or RAW_DATA_POINTS (points)
 2. Set MANUAL_OVERRIDES for any transactions that need custom accounts/descriptions
-3. Run: python3 tmp/luxury_card_mastercard_titanium_import_YYYYMMDD.py review
-4. Run: python3 tmp/luxury_card_mastercard_titanium_import_YYYYMMDD.py sql
-5. Run: python3 tmp/luxury_card_mastercard_titanium_import_YYYYMMDD.py points-review
-6. Run: python3 tmp/luxury_card_mastercard_titanium_import_YYYYMMDD.py points-sql
+3. Run: python3 scripts/luxury_card_mastercard_titanium_import.py review
+4. Run: python3 scripts/luxury_card_mastercard_titanium_import.py sql
+5. Run: python3 scripts/luxury_card_mastercard_titanium_import.py points-review
+6. Run: python3 scripts/luxury_card_mastercard_titanium_import.py points-sql
 """
 import json
+import os
 import re
 import sys
 import uuid
 from datetime import date
 from pathlib import Path
 
-ACCOUNTS_FILE = Path(__file__).parent.parent / '.kiro/skills/gnucash-import/references/account-guid-cache.json'
-with open(ACCOUNTS_FILE) as f:
-    _data = json.load(f)
-    ACCOUNTS = {k.replace('Root Account:', ''): v for k, v in _data['accounts'].items()}
+def find_project_root():
+    configured_root = os.environ.get("GNUCASH_IMPORT_ROOT")
+    candidates = [Path(configured_root)] if configured_root else []
+    candidates.extend([Path.cwd(), Path(__file__).resolve().parent.parent])
+    for candidate in candidates:
+        if (candidate / ".kiro/skills/gnucash-import").is_dir():
+            return candidate
+    raise FileNotFoundError(
+        "Cannot find the repository root. Run from the repository root or set GNUCASH_IMPORT_ROOT."
+    )
+
+
+PROJECT_ROOT = find_project_root()
+ACCOUNTS_FILE = PROJECT_ROOT / ".kiro/skills/gnucash-import/references/account-guid-cache.json"
+
+
+def load_accounts():
+    with open(ACCOUNTS_FILE) as account_file:
+        data = json.load(account_file)
+    raw_accounts = data.get("accounts") if isinstance(data, dict) else None
+    if not isinstance(raw_accounts, dict):
+        raise ValueError("Malformed account GUID cache.")
+    accounts = {}
+    for path, value in raw_accounts.items():
+        if (
+            not isinstance(path, str)
+            or not isinstance(value, str)
+            or len(value) != 32
+            or any(character not in "0123456789abcdef" for character in value)
+        ):
+            raise ValueError("Malformed account GUID cache.")
+        accounts[path.replace("Root Account:", "")] = value
+    return accounts
+
+
+ACCOUNTS = load_accounts()
 
 
 def get_guid(path):

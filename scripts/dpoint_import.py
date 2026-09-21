@@ -4,19 +4,52 @@ dPoint Statement Importer
 
 Usage:
 1. Copy raw data into RAW_DATA (tab-separated: date, description, points)
-2. Run: python3 tmp/d_point_import_YYYYMMDD.py review    # Review transactions
-3. Run: python3 tmp/d_point_import_YYYYMMDD.py sql       # Generate SQL
+2. Run: python3 scripts/dpoint_import.py review    # Review transactions
+3. Run: python3 scripts/dpoint_import.py sql       # Generate SQL
 """
 import json
+import os
 import uuid
 import sys
 from datetime import datetime
 from pathlib import Path
 
-ACCOUNTS_FILE = Path(__file__).parent.parent / '.kiro/skills/gnucash-import/references/account-guid-cache.json'
-with open(ACCOUNTS_FILE) as f:
-    _data = json.load(f)
-    ACCOUNTS = {k.replace('Root Account:', ''): v for k, v in _data['accounts'].items()}
+def find_project_root():
+    configured_root = os.environ.get("GNUCASH_IMPORT_ROOT")
+    candidates = [Path(configured_root)] if configured_root else []
+    candidates.extend([Path.cwd(), Path(__file__).resolve().parent.parent])
+    for candidate in candidates:
+        if (candidate / ".kiro/skills/gnucash-import").is_dir():
+            return candidate
+    raise FileNotFoundError(
+        "Cannot find the repository root. Run from the repository root or set GNUCASH_IMPORT_ROOT."
+    )
+
+
+PROJECT_ROOT = find_project_root()
+ACCOUNTS_FILE = PROJECT_ROOT / ".kiro/skills/gnucash-import/references/account-guid-cache.json"
+
+
+def load_accounts():
+    with open(ACCOUNTS_FILE) as account_file:
+        data = json.load(account_file)
+    raw_accounts = data.get("accounts") if isinstance(data, dict) else None
+    if not isinstance(raw_accounts, dict):
+        raise ValueError("Malformed account GUID cache.")
+    accounts = {}
+    for path, value in raw_accounts.items():
+        if (
+            not isinstance(path, str)
+            or not isinstance(value, str)
+            or len(value) != 32
+            or any(character not in "0123456789abcdef" for character in value)
+        ):
+            raise ValueError("Malformed account GUID cache.")
+        accounts[path.replace("Root Account:", "")] = value
+    return accounts
+
+
+ACCOUNTS = load_accounts()
 
 def get_guid(path):
     return ACCOUNTS.get(path) or ACCOUNTS.get('Root Account:' + path)
@@ -129,7 +162,7 @@ def output_sql(transactions):
 
 def main():
     if len(sys.argv) < 2 or sys.argv[1] not in ['review', 'sql']:
-        print("Usage: python3 d_point_import.py [review|sql]", file=sys.stderr)
+        print("Usage: python3 scripts/dpoint_import.py [review|sql]", file=sys.stderr)
         sys.exit(1)
 
     if not RAW_DATA.strip():

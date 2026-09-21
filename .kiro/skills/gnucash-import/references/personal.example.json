@@ -1,0 +1,55 @@
+{
+  "accounts": {
+    "pasmo": {
+      "shopping": "Assets:Example",
+      "source": "Assets:JPY - Current Assets:Prepaid:Example PASMO"
+    }
+  },
+  "nearest_station": "Example Station",
+  "transfer_rules": {
+    "docomo_smtb_net_bank": {
+      "family_deposit": {
+        "account": "Income:Example",
+        "amount": 12345,
+        "description": "Family",
+        "pattern": "振込＊EXAMPLE A",
+        "withdrawal_account": "Assets:Example"
+      },
+      "family_split": {
+        "amount": -10000,
+        "description": "Family",
+        "pattern": "振込＊EXAMPLE B",
+        "splits": [
+          {
+            "account": "Assets:Example",
+            "amount": -6000
+          },
+          {
+            "account": "Expenses:Example",
+            "amount": -4000
+          }
+        ]
+      },
+      "friend_transfer": {
+        "account": "Assets:Example",
+        "pattern": "振込＊EXAMPLE C"
+      },
+      "self_transfer": {
+        "account": "Assets:JPY - Current Assets:Banks:Example",
+        "pattern": "振込＊EXAMPLE SELF"
+      }
+    },
+    "mufg_bank": {
+      "self_transfer": {
+        "account": "Assets:JPY - Current Assets:Banks:Example",
+        "contains": "EXAMPLE NAME"
+      }
+    },
+    "sony_bank": {
+      "self_transfer": {
+        "account": "Assets:JPY - Current Assets:Banks:Example",
+        "contains": "EXAMPLE NAME"
+      }
+    }
+  }
+}

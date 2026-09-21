@@ -12,24 +12,55 @@ PASMO never uses Expenses:Business Expenses. Transit defaults to
 Expenses:Transit; override leisure trips to Expenses:Entertainment:Travel by ID.
 """
 import json
+import os
 import uuid
 import sys
 from datetime import datetime
 from pathlib import Path
 
-ACCOUNTS_FILE = Path(__file__).parent.parent / '.kiro/skills/gnucash-import/references/account-guid-cache.json'
-with open(ACCOUNTS_FILE) as f:
-    _data = json.load(f)
-    ACCOUNTS = {k.replace('Root Account:', ''): v for k, v in _data['accounts'].items()}
+def find_project_root():
+    configured_root = os.environ.get("GNUCASH_IMPORT_ROOT")
+    candidates = [Path(configured_root)] if configured_root else []
+    candidates.extend([Path.cwd(), Path(__file__).resolve().parent.parent])
+    for candidate in candidates:
+        if (candidate / ".kiro/skills/gnucash-import").is_dir():
+            return candidate
+    raise FileNotFoundError(
+        "Cannot find the repository root. Run from the repository root or set GNUCASH_IMPORT_ROOT."
+    )
+
+
+PROJECT_ROOT = find_project_root()
+ACCOUNTS_FILE = PROJECT_ROOT / ".kiro/skills/gnucash-import/references/account-guid-cache.json"
+
+
+def load_accounts():
+    with open(ACCOUNTS_FILE) as account_file:
+        data = json.load(account_file)
+    raw_accounts = data.get("accounts") if isinstance(data, dict) else None
+    if not isinstance(raw_accounts, dict):
+        raise ValueError("Malformed account GUID cache.")
+    accounts = {}
+    for path, value in raw_accounts.items():
+        if (
+            not isinstance(path, str)
+            or not isinstance(value, str)
+            or len(value) != 32
+            or any(character not in "0123456789abcdef" for character in value)
+        ):
+            raise ValueError("Malformed account GUID cache.")
+        accounts[path.replace("Root Account:", "")] = value
+    return accounts
+
+
+ACCOUNTS = load_accounts()
 
 def get_guid(path):
     return ACCOUNTS.get(path) or ACCOUNTS.get('Root Account:' + path)
 
-PASMO_ACCOUNT = get_guid('Assets:JPY - Current Assets:Prepaid:PASMO Child')
 TRANSIT_ACCOUNT = get_guid('Expenses:Transit')
 DINING_ACCOUNT = get_guid('Expenses:Foods:Dining')
 TOKYU_CARD_ACCOUNT = get_guid('Liabilities:Credit Card:TOKYU CARD ClubQ JMB')
-REIMBURSEMENT_CHILD = get_guid('Assets:JPY - Current Assets:Reimbursement:Child')
 TRAVEL_ACCOUNT = get_guid('Expenses:Entertainment:Travel')
 JPY_CURRENCY = 'a77d4ee821e04f02bb7429e437c645e4'
 
@@ -37,7 +68,6 @@ ACCOUNT_NAMES = {
     TRANSIT_ACCOUNT: 'Expenses:Transit',
     DINING_ACCOUNT: 'Expenses:Foods:Dining',
     TOKYU_CARD_ACCOUNT: 'Liabilities:Credit Card:TOKYU CARD ClubQ JMB',
-    REIMBURSEMENT_CHILD: 'Assets:Reimbursement:Child',
     TRAVEL_ACCOUNT: 'Expenses:Entertainment:Travel',
 }
 
@@ -51,10 +81,70 @@ BUS_COMPANIES = {
     '江ノ電Ｂ': 'Enoden Bus',
 }
 
-PERSONAL_FILE = Path(__file__).parent.parent / '.kiro/skills/gnucash-import/references/personal.json'
-with open(PERSONAL_FILE) as f:
-    _personal = json.load(f)
-NEAREST_STATION = _personal.get('nearest_station', '')
+PERSONAL_FILE = PROJECT_ROOT / ".kiro/skills/gnucash-import/references/personal.json"
+
+
+def load_personal_settings():
+    if not PERSONAL_FILE.exists():
+        return (
+            "",
+            "Mobile PASMO: missing personal.json nearest_station",
+            {},
+            "Mobile PASMO: missing personal.json accounts.pasmo",
+        )
+    try:
+        with open(PERSONAL_FILE) as personal_file:
+            settings = json.load(personal_file)
+    except (OSError, json.JSONDecodeError):
+        error = "Mobile PASMO: malformed personal.json"
+        return "", error, {}, error
+    if not isinstance(settings, dict):
+        error = "Mobile PASMO: malformed personal.json"
+        return "", error, {}, error
+
+    nearest_station = settings.get("nearest_station")
+    if not isinstance(nearest_station, str) or not nearest_station.strip():
+        station_error = "Mobile PASMO: malformed personal.json nearest_station"
+        nearest_station = ""
+    else:
+        station_error = None
+
+    account_settings = settings.get("accounts")
+    pasmo_settings = (
+        account_settings.get("pasmo") if isinstance(account_settings, dict) else None
+    )
+    account_error = None
+    resolved_accounts = {}
+    if (
+        not isinstance(pasmo_settings, dict)
+        or set(pasmo_settings) != {"shopping", "source"}
+    ):
+        account_error = "Mobile PASMO: malformed personal.json accounts.pasmo"
+    else:
+        for key in ("shopping", "source"):
+            path = pasmo_settings.get(key)
+            if not isinstance(path, str) or not path.strip():
+                account_error = f"Mobile PASMO: malformed personal.json accounts.pasmo.{key}"
+                break
+            guid = get_guid(path)
+            if guid is None:
+                account_error = f"Mobile PASMO: malformed personal.json accounts.pasmo.{key}"
+                break
+            resolved_accounts[key] = guid
+
+    return nearest_station, station_error, resolved_accounts, account_error
+
+
+(
+    NEAREST_STATION,
+    PERSONAL_SETTINGS_ERROR,
+    PASMO_ACCOUNTS,
+    PASMO_ACCOUNTS_ERROR,
+) = load_personal_settings()
+PASMO_ACCOUNT = PASMO_ACCOUNTS.get("source")
+SHOPPING_ACCOUNT = PASMO_ACCOUNTS.get("shopping")
+if SHOPPING_ACCOUNT is not None:
+    ACCOUNT_NAMES[SHOPPING_ACCOUNT] = "Configured PASMO shopping account"
 
 # ============================================================
 # EDIT BELOW: Paste raw data from browser snapshot
@@ -107,7 +197,7 @@ def parse_transactions(raw_data):
 def get_railway_company(station1, station2):
     if station1 in ENODEN_STATIONS or station2 in ENODEN_STATIONS:
         return 'Enoshima Electric Railway'
-    if station1 == NEAREST_STATION or station1 in TOKYO_METRO_STATIONS:
+    if station1 in TOKYO_METRO_STATIONS:
         return 'Tokyo Metro'
     if station1 in KEIO_STATIONS:
         return 'Keio'
@@ -119,6 +209,10 @@ def get_railway_company(station1, station2):
         return 'Toei Subway'
     if station1.startswith('ゆ') or station2.startswith('ゆ'):
         return 'Yurikamome'
+    if PERSONAL_SETTINGS_ERROR:
+        raise ValueError(PERSONAL_SETTINGS_ERROR)
+    if station1 == NEAREST_STATION:
+        return 'Tokyo Metro'
     return 'JR'
 
 
@@ -131,7 +225,9 @@ def get_transaction_info(idx, tx):
     if tx['type'] == 'ｵｰﾄ':
         return TOKYU_CARD_ACCOUNT, None
     if tx['type'] == '物販':
-        return REIMBURSEMENT_CHILD, None
+        if PASMO_ACCOUNTS_ERROR:
+            raise ValueError(PASMO_ACCOUNTS_ERROR)
+        return SHOPPING_ACCOUNT, None
     if tx['type'] == 'ﾊﾞｽ等':
         return TRANSIT_ACCOUNT, _auto_description(tx)
     if tx['type'] in ('入', '＊入', '定'):
@@ -227,6 +323,10 @@ def main():
 
     if not RAW_DATA.strip():
         print("Error: RAW_DATA is empty. Paste data from browser snapshot.", file=sys.stderr)
+        sys.exit(1)
+
+    if PASMO_ACCOUNTS_ERROR:
+        print(f"Error: {PASMO_ACCOUNTS_ERROR}", file=sys.stderr)
         sys.exit(1)
 
     transactions = parse_transactions(RAW_DATA)

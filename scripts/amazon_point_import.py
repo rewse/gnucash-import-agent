@@ -8,6 +8,7 @@ Usage:
 3. Run: python3 scripts/amazon_point_import.py sql       # Generate SQL
 """
 import json
+import os
 import uuid
 import sys
 import re
@@ -15,10 +16,42 @@ from datetime import datetime
 from pathlib import Path
 
 # Load accounts from JSON
-ACCOUNTS_FILE = Path(__file__).parent.parent / '.kiro/skills/gnucash-import/references/account-guid-cache.json'
-with open(ACCOUNTS_FILE) as f:
-    _data = json.load(f)
-    ACCOUNTS = {k.replace('Root Account:', ''): v for k, v in _data['accounts'].items()}
+def find_project_root():
+    configured_root = os.environ.get("GNUCASH_IMPORT_ROOT")
+    candidates = [Path(configured_root)] if configured_root else []
+    candidates.extend([Path.cwd(), Path(__file__).resolve().parent.parent])
+    for candidate in candidates:
+        if (candidate / ".kiro/skills/gnucash-import").is_dir():
+            return candidate
+    raise FileNotFoundError(
+        "Cannot find the repository root. Run from the repository root or set GNUCASH_IMPORT_ROOT."
+    )
+
+
+PROJECT_ROOT = find_project_root()
+ACCOUNTS_FILE = PROJECT_ROOT / ".kiro/skills/gnucash-import/references/account-guid-cache.json"
+
+
+def load_accounts():
+    with open(ACCOUNTS_FILE) as account_file:
+        data = json.load(account_file)
+    raw_accounts = data.get("accounts") if isinstance(data, dict) else None
+    if not isinstance(raw_accounts, dict):
+        raise ValueError("Malformed account GUID cache.")
+    accounts = {}
+    for path, value in raw_accounts.items():
+        if (
+            not isinstance(path, str)
+            or not isinstance(value, str)
+            or len(value) != 32
+            or any(character not in "0123456789abcdef" for character in value)
+        ):
+            raise ValueError("Malformed account GUID cache.")
+        accounts[path.replace("Root Account:", "")] = value
+    return accounts
+
+
+ACCOUNTS = load_accounts()
 
 def get_guid(path):
     return ACCOUNTS.get(path) or ACCOUNTS.get('Root Account:' + path)
@@ -39,6 +72,12 @@ RAW_DATA = """
 # ============================================================
 MANUAL_OVERRIDES = {
 }
+
+
+def sql_string(value):
+    if value is None:
+        return "NULL"
+    return "'" + value.replace("'", "''") + "'"
 
 
 def parse_transactions(raw_data):
@@ -110,10 +149,10 @@ def output_sql(transactions):
 
         split = tx['splits'][0]
         desc = tx['desc']
-        desc_sql = f"'{desc}'" if desc else 'NULL'
+        desc_sql = sql_string(desc)
         points = split['points']
 
-        print(f"-- Transaction {idx}: {tx['date'].strftime('%Y-%m-%d')} {desc} {points:+,}")
+        print(f"-- Transaction {idx}: {tx['date'].strftime('%Y-%m-%d')} {points:+,}")
         print(f"INSERT INTO transactions (guid, currency_guid, num, post_date, enter_date, description)")
         print(f"VALUES ('{tx_guid}', '{JPY_CURRENCY}', '', '{date_str}', NOW(), {desc_sql});")
 

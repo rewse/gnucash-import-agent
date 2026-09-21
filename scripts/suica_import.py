@@ -9,16 +9,49 @@ Usage:
 4. Run: python3 scripts/suica_import.py sql       # Generate SQL
 """
 import json
+import os
 import uuid
 import sys
 from datetime import datetime
 from pathlib import Path
 
 # Load accounts from JSON
-ACCOUNTS_FILE = Path(__file__).parent.parent / '.kiro/skills/gnucash-import/references/account-guid-cache.json'
-with open(ACCOUNTS_FILE) as f:
-    _data = json.load(f)
-    ACCOUNTS = {k.replace('Root Account:', ''): v for k, v in _data['accounts'].items()}
+def find_project_root():
+    configured_root = os.environ.get("GNUCASH_IMPORT_ROOT")
+    candidates = [Path(configured_root)] if configured_root else []
+    candidates.extend([Path.cwd(), Path(__file__).resolve().parent.parent])
+    for candidate in candidates:
+        if (candidate / ".kiro/skills/gnucash-import").is_dir():
+            return candidate
+    raise FileNotFoundError(
+        "Cannot find the repository root. Run from the repository root or set GNUCASH_IMPORT_ROOT."
+    )
+
+
+PROJECT_ROOT = find_project_root()
+ACCOUNTS_FILE = PROJECT_ROOT / ".kiro/skills/gnucash-import/references/account-guid-cache.json"
+
+
+def load_accounts():
+    with open(ACCOUNTS_FILE) as account_file:
+        data = json.load(account_file)
+    raw_accounts = data.get("accounts") if isinstance(data, dict) else None
+    if not isinstance(raw_accounts, dict):
+        raise ValueError("Malformed account GUID cache.")
+    accounts = {}
+    for path, value in raw_accounts.items():
+        if (
+            not isinstance(path, str)
+            or not isinstance(value, str)
+            or len(value) != 32
+            or any(character not in "0123456789abcdef" for character in value)
+        ):
+            raise ValueError("Malformed account GUID cache.")
+        accounts[path.replace("Root Account:", "")] = value
+    return accounts
+
+
+ACCOUNTS = load_accounts()
 
 def get_guid(path):
     """Get GUID for account path."""
@@ -46,7 +79,7 @@ ACCOUNT_NAMES = {
 }
 
 # Tokyo Metro stations (no prefix)
-TOKYO_METRO_STATIONS = ['神谷町', '新宿御苑', '溜池山王', '赤坂見附', '六本木一', '後楽園']
+TOKYO_METRO_STATIONS = ['神谷町', '溜池山王', '赤坂見附', '六本木一', '後楽園']
 
 # Toei Subway stations (no prefix)
 TOEI_SUBWAY_STATIONS = ['曙橋']
@@ -58,10 +91,28 @@ KEIO_STATIONS = ['南大沢']
 KEIKYU_STATIONS = ['青物横丁']
 
 # Load personal settings
-PERSONAL_FILE = Path(__file__).parent.parent / '.kiro/skills/gnucash-import/references/personal.json'
-with open(PERSONAL_FILE) as f:
-    _personal = json.load(f)
-NEAREST_STATION = _personal.get('nearest_station', '')
+PERSONAL_FILE = PROJECT_ROOT / ".kiro/skills/gnucash-import/references/personal.json"
+
+
+def load_nearest_station():
+    if not PERSONAL_FILE.exists():
+        return "", None
+    try:
+        with open(PERSONAL_FILE) as personal_file:
+            settings = json.load(personal_file)
+    except (OSError, json.JSONDecodeError):
+        return "", "Mobile Suica: malformed personal.json"
+    if not isinstance(settings, dict):
+        return "", "Mobile Suica: malformed personal.json"
+    nearest_station = settings.get("nearest_station", "")
+    if not isinstance(nearest_station, str) or (
+        "nearest_station" in settings and not nearest_station.strip()
+    ):
+        return "", "Mobile Suica: malformed personal.json nearest_station"
+    return nearest_station, None
+
+
+NEAREST_STATION, PERSONAL_SETTINGS_ERROR = load_nearest_station()
 
 # ============================================================
 # EDIT BELOW: Paste raw data from browser snapshot
@@ -110,7 +161,7 @@ def parse_transactions(raw_data):
 
 
 def get_railway_company(station1, station2):
-    if station1 in TOKYO_METRO_STATIONS:
+    if station1 == NEAREST_STATION or station1 in TOKYO_METRO_STATIONS:
         return 'Tokyo Metro'
     if station1 in TOEI_SUBWAY_STATIONS:
         return 'Toei Subway'
@@ -138,6 +189,8 @@ BUSINESS_PAIRS = set()
 
 def _init_business_pairs():
     """Initialize business expense direct pairs after NEAREST_STATION is loaded."""
+    if PERSONAL_SETTINGS_ERROR:
+        raise ValueError(PERSONAL_SETTINGS_ERROR)
     return {
         (NEAREST_STATION, '神谷町'),
         ('神谷町', NEAREST_STATION),
@@ -256,12 +309,16 @@ def main():
         print("Error: RAW_DATA is empty. Paste data from browser snapshot.", file=sys.stderr)
         sys.exit(1)
 
+    if PERSONAL_SETTINGS_ERROR:
+        print(f"Error: {PERSONAL_SETTINGS_ERROR}", file=sys.stderr)
+        sys.exit(1)
+
     if not NEAREST_STATION:
         print("Error: NEAREST_STATION is empty. Set your nearest station.", file=sys.stderr)
         sys.exit(1)
 
-    global BUSINESS_PAIRS
-    BUSINESS_PAIRS = _init_business_pairs()
+    BUSINESS_PAIRS.clear()
+    BUSINESS_PAIRS.update(_init_business_pairs())
 
     transactions = parse_transactions(RAW_DATA)
 

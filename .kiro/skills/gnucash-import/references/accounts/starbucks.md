@@ -9,8 +9,8 @@ Script: `scripts/starbucks_import.py` (`review`, `sql`)
 
 ## Access
 
-- Open `https://login.starbucks.co.jp/login` with `agent-browser --auto-connect open`; credentials are `op://gnucash/Starbucks/username` and `op://gnucash/Starbucks/password`.
-- Open history with `agent-browser --auto-connect open https://sbcard.starbucks.co.jp/card/history`, then extract with `agent-browser --auto-connect snapshot`.
+- Open `https://login.starbucks.co.jp/login` with `agent-browser --cdp "$CDP" open`; credentials are `op://gnucash/Starbucks/username` and `op://gnucash/Starbucks/password`.
+- Open history with `agent-browser --cdp "$CDP" open https://sbcard.starbucks.co.jp/card/history`, then extract with `agent-browser --cdp "$CDP" snapshot`.
 - The page loads about four months of history without pagination.
 
 ## Statement Data

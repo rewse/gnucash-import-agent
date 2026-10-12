@@ -9,9 +9,9 @@ Script: `scripts/ponta_import.py` (`review`, `sql`)
 
 ## Access
 
-- Open `https://point.recruit.co.jp/point/` with `agent-browser --auto-connect open`; credentials are `op://gnucash/Recruit/username` and `op://gnucash/Recruit/password`.
+- Open `https://point.recruit.co.jp/point/` with `agent-browser --cdp "$CDP" open`; credentials are `op://gnucash/Recruit/username` and `op://gnucash/Recruit/password`.
 - Authenticator-app 2FA is manual. Close popups, then open `ポイント通帳` and `ポイント履歴を見る`.
-- Select a recent-month tab or a month from the dropdown, up to 13 months back, then extract with `agent-browser --auto-connect snapshot`.
+- Select a recent-month tab or a month from the dropdown, up to 13 months back, then extract with `agent-browser --cdp "$CDP" snapshot`.
 
 ## Statement Data
 

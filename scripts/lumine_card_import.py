@@ -90,9 +90,10 @@ def parse_confirmed(raw_data):
             continue
         date = datetime.strptime(row[0], '%Y/%m/%d')
         merchant = row[1].strip()
-        # Use billed amount (index 4), not usage amount (index 2)
+        # Use billed amount (index 4), not usage amount (index 2). Refunded rows
+        # bill 0 and the refund note row has text here; neither is a charge.
         amount_str = row[4].replace(',', '').replace('"', '').strip()
-        if not amount_str:
+        if not re.fullmatch(r'-?\d+', amount_str) or int(amount_str) == 0:
             continue
         amount = -int(amount_str)
         transactions.append({'date': date, 'merchant': merchant, 'amount': amount})

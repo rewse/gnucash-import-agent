@@ -9,9 +9,9 @@ Script: `scripts/jre_point_import.py` (`review`, `sql`)
 
 ## Access
 
-- Open `https://www.jrepoint.jp/` with `agent-browser --auto-connect open`; passkey and SMS authentication are manual.
+- Open `https://www.jrepoint.jp/` with `agent-browser --cdp "$CDP" open`; passkey and SMS authentication are manual.
 - Open `https://www.jrepoint.jp/member/pointlog/`, enter the second password from `op://gnucash/JRE POINT/password`, and select `再認証`.
-- Extract each month with `agent-browser --auto-connect snapshot`. Navigate with `前の月` and `次の月`; URLs use `/member/pointlog/?move=prev&selectMonth=YYYYMM`.
+- Extract each month with `agent-browser --cdp "$CDP" snapshot`. Navigate with `前の月` and `次の月`; URLs use `/member/pointlog/?move=prev&selectMonth=YYYYMM`.
 
 ## Statement Data
 

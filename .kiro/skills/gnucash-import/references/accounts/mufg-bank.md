@@ -8,10 +8,10 @@ Script: [`scripts/mufg_bank_import.py`](../../../../../scripts/mufg_bank_import.
 
 ## Access
 
-Open `https://directg.s.bk.mufg.jp/APL/LGP_P_01/PU/LG_0001/LG_0001_PC01` with `agent-browser --auto-connect`, then ask the user to log in manually. Open `入出金明細`, choose the required period, and extract the page with:
+Open `https://directg.s.bk.mufg.jp/APL/LGP_P_01/PU/LG_0001/LG_0001_PC01` with `agent-browser --cdp "$CDP"`, then ask the user to log in manually. Open `入出金明細`, choose the required period, and extract the page with:
 
 ```bash
-agent-browser --auto-connect eval "document.querySelector('body').innerText"
+agent-browser --cdp "$CDP" eval "document.querySelector('body').innerText"
 ```
 
 The default period is `最近30日間`; use `期間指定` and the `tx-start-date` and `tx-end-date` inputs for a custom range. Extract rows between the table header and footer. Other period options are `本日`, `最近10日間`, `今月`, and `前月`.

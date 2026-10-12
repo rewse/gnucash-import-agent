@@ -12,13 +12,24 @@ Use the shared [credit-card workflow and safety rules](../../SKILL.md#credit-car
 
 ## Access
 
-Open `https://www.viewsnet.jp/default.htm` with `agent-browser --auto-connect --args "--disable-blink-features=AutomationControlled"`. Retrieve credentials from `op://gnucash/VIEWs NET/username` and `op://gnucash/VIEWs NET/password`. After login, hide the popup before interacting with the page:
+Open `https://www.viewsnet.jp/default.htm` with `agent-browser --cdp "$CDP"`. Retrieve credentials from `op://gnucash/VIEWs NET/username` and `op://gnucash/VIEWs NET/password`, fill both fields, and submit with `eval "doSubmit()"`; clicking `ログイン` reloads the empty login form. After login, hide the popup before interacting with the page:
 
 ```javascript
 document.getElementById('rtoaster_popup').style.display='none'; document.getElementById('rt.popup-overlay_rtoaster_popup').style.display='none'
 ```
 
-Open `ご利用明細照会` and select `ルミネカード` when a card selector is shown. Confirmed statements have a `明細CSVダウンロード` button. Convert downloaded Shift-JIS CSV data to UTF-8 before placing it in `RAW_DATA`.
+Open `ご利用明細照会`, select `ルミネカード` when a card selector is shown, and click a billing-month link such as `2099年08月`. The `明細CSVダウンロード` button (`#BtnCsvDownloadTop`) is an image button, and `agent-browser download` times out on it. Fetch the CSV through the page's form instead, which also decodes Shift-JIS:
+
+```javascript
+(async () => {
+  const b = document.getElementById('BtnCsvDownloadTop');
+  const fd = new FormData(b.form);
+  fd.append(b.name + '.x', '10');
+  fd.append(b.name + '.y', '10');
+  const r = await fetch(b.form.action, {method: 'POST', body: new URLSearchParams(fd), credentials: 'include'});
+  return new TextDecoder('shift_jis').decode(await r.arrayBuffer());
+})()
+```
 
 For unconfirmed rows, open `請求予定の明細` and extract:
 
@@ -74,6 +85,6 @@ Resolve every other row from past GnuCash transactions or ask the user, then add
 ## Source-specific Rules
 
 - LUMINE and NEWoMan purchases may receive a 5% discount. Always post the billed amount, not the original usage amount.
-- The confirmed CSV is Shift-JIS and must be converted to UTF-8 before use.
-- The `--disable-blink-features=AutomationControlled` browser flag and popup-hiding JavaScript are required for reliable access.
+- The CSV is Shift-JIS; the fetch above returns it already decoded.
+- Refunded purchases appear as a usage row with the refund in `払戻額`, a negative cancellation row, and a trailing note line; their `billed_amount` is `0` or non-numeric. Skip those rows, because a zero-amount transaction fails SQL validation.
 - Accepted commands are `review` and `sql`.

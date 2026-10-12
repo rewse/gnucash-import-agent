@@ -101,14 +101,18 @@ def parse_transactions(raw_data):
         yy, mm, dd = int(m.group(1)), int(m.group(2)), int(m.group(3))
         year = 2000 + yy
         merchant = parts[1].strip()
-        # Auto-detect format: confirmed has amount at index 2, unconfirmed at index 6
+        # Auto-detect format: confirmed has amount at index 2, unconfirmed at index 6.
+        # Confirmed fee rows (annual fee, ATM fee) leave index 2 empty and bill at index 5.
         if re.match(r'[\d,]+$', parts[2].strip()):
             amount = int(parts[2].replace(',', ''))
             remarks = ''
-            if len(parts) > 7 and parts[7].strip() in ('USD', 'EUR', 'GBP', 'SGD', 'AUD', 'CAD', 'HKD', 'THB', 'TRY'):
+            if len(parts) > 7 and parts[7].strip() in ('USD', 'EUR', 'GBP', 'SGD', 'AUD', 'CAD', 'HKD', 'THB', 'TRY', 'TWD'):
                 remarks = f"{parts[6].strip()} {parts[7].strip()}"
             elif len(parts) > 6 and parts[6].strip() and parts[6].strip() != '◎':
                 remarks = parts[6].strip()
+        elif not parts[2].strip() and len(parts) > 5 and re.match(r'[\d,]+$', parts[5].strip()):
+            amount = int(parts[5].replace(',', ''))
+            remarks = parts[6].strip() if len(parts) > 6 else ''
         else:
             amount = int(parts[6].replace(',', ''))
             remarks = ''

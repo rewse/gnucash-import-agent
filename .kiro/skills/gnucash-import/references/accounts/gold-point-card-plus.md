@@ -7,14 +7,16 @@ Use the shared [credit-card workflow and safety rules](../../SKILL.md#credit-car
 ## Accounts
 
 - Card: `Liabilities:Credit Card:GOLD POINT CARD +`
-- Payment debit: `Assets:JPY - Current Assets:Banks:DOCOMO SMTB Net Bank`
+- Payment debit: `Assets:JPY - Current Assets:Banks:SBI Shinsei Bank`
 - Payment date: 27th, or the next business day when the 27th is a holiday
 
 ## Access
 
-Open `https://secure.goldpoint.co.jp/gpm/authentication/index.html` with `agent-browser --auto-connect --args "--disable-blink-features=AutomationControlled"`. Retrieve credentials from `op://gnucash/Yodobashi Camera/username` and `op://gnucash/Yodobashi Camera/password`; the browser profile may prefill the email address.
+Open `https://secure.goldpoint.co.jp/gpm/authentication/index.html` with `agent-browser --cdp "$CDP"`. Retrieve credentials from `op://gnucash/Yodobashi Camera/username` and `op://gnucash/Yodobashi Camera/password`; the browser profile may prefill the email address.
 
 Open `ご利用明細の照会`, select an `お支払い月`, and click `照会`. Extract `document.querySelector('body').innerText`. The selector provides the past 15 months and future unconfirmed months.
+
+The month selector is `#vp-view-VC0502-003_RS0001_p01`, with option values such as `209906`. Set its value and click `照会` in one `eval`, wrapped in an IIFE because the page keeps top-level `const` bindings between evaluations. A future unconfirmed month renders without the selector; run `history.back()` before choosing another month. Keep only transaction rows, totals, and the payment date from `innerText`. Drop each `○○ 様 ご利用分` section line before printing or saving, because it contains the cardholder name and a masked card number.
 
 ## Statement Data
 

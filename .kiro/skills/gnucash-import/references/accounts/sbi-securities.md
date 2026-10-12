@@ -26,7 +26,7 @@ A buy moves value from the payable account to the fund on the trade date; a sell
 
 ## Access
 
-Open `https://login.sbisec.co.jp/login/entry` with `agent-browser --auto-connect`, then ask the user to complete passkey authentication.
+Open `https://login.sbisec.co.jp/login/entry` with `agent-browser --cdp "$CDP"`, then ask the user to complete passkey authentication.
 
 For JPY mutual funds, open `口座管理 > 取引履歴`, set the date range, click `照会`, and extract `document.querySelector('body').innerText`. Capture every page with `次へ→`.
 

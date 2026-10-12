@@ -9,9 +9,9 @@ Script: `scripts/yodobashi_gold_point_import.py` (`review`, `sql`)
 
 ## Access
 
-- Open `https://order.yodobashi.com/yc/login/index.html?returnUrl=https://www.yodobashi.com/` with `agent-browser --auto-connect --args "--disable-blink-features=AutomationControlled" open`; credentials are `op://gnucash/Yodobashi Camera/username` and `op://gnucash/Yodobashi Camera/password`.
-- Open history with `agent-browser --auto-connect open https://order.yodobashi.com/yc/mypage/pointhistory/index.html`.
-- Extract with `agent-browser --auto-connect snapshot`. Collect every 20-row page through `次のページ`. History covers three months.
+- Open `https://order.yodobashi.com/yc/login/index.html?returnUrl=https://www.yodobashi.com/` with `agent-browser --cdp "$CDP" open`; credentials are `op://gnucash/Yodobashi Camera/username` and `op://gnucash/Yodobashi Camera/password`.
+- Open history with `agent-browser --cdp "$CDP" open https://order.yodobashi.com/yc/mypage/pointhistory/index.html`.
+- Extract with `agent-browser --cdp "$CDP" snapshot`. Collect every 20-row page through `次のページ`. History covers three months.
 
 ## Statement Data
 

@@ -10,9 +10,9 @@ Script: `scripts/v_point_import.py` (`review`, `sql`)
 
 ## Access
 
-- Open `https://tsite.jp/tm/pc/login/STKIp0001001.do` with `agent-browser --auto-connect open`; Yahoo! JAPAN email or SMS authentication is manual.
+- Open `https://tsite.jp/tm/pc/login/STKIp0001001.do` with `agent-browser --cdp "$CDP" open`; Yahoo! JAPAN email or SMS authentication is manual.
 - Complete cookie consent, log in, open `マイページ` then `ポイント履歴`, and select `利用日順`.
-- Extract with `agent-browser --auto-connect snapshot -c`. Click `もっと見る` and repeat for additional rows. History covers up to three years; the alternative sort is `反映日順`.
+- Extract with `agent-browser --cdp "$CDP" snapshot -c`. Click `もっと見る` and repeat for additional rows. History covers up to three years; the alternative sort is `反映日順`.
 
 ## Statement Data
 

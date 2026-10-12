@@ -9,8 +9,8 @@ Script: `scripts/amazon_point_import.py` (`review`, `sql`)
 
 ## Access
 
-- Open `https://www.amazon.co.jp/Amazon%E3%83%9D%E3%82%A4%E3%83%B3%E3%83%88/b/?ie=UTF8&node=2632478051` with `agent-browser --auto-connect open`; passkey authentication is manual.
-- Open `マイポイントページへ`, then extract the table with `agent-browser --auto-connect snapshot`.
+- Open `https://www.amazon.co.jp/Amazon%E3%83%9D%E3%82%A4%E3%83%B3%E3%83%88/b/?ie=UTF8&node=2632478051` with `agent-browser --cdp "$CDP" open`; passkey authentication is manual.
+- Open `マイポイントページへ`, then extract the table with `agent-browser --cdp "$CDP" snapshot`.
 - Use the date filter and click `次のページ` for older rows. Order numbers are embedded in `注文詳細を見る` links.
 
 ## Statement Data

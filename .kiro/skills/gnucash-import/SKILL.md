@@ -22,9 +22,18 @@ Follow this sequence for every import:
 9. Inspect the SQL for mappings, signs, GUIDs, balance, descriptions, and reconciliation states.
 10. Execute the inspected SQL against GnuCash.
 
-Use `agent-browser --auto-connect` for web automation. Run `agent-browser --help` before its first use in each session. If a page never finishes loading or reports an unusual automation error, retry with `--args "--disable-blink-features=AutomationControlled"`.
+Attach `agent-browser` to the user's running Chrome over CDP so saved logins and the 1Password extension are available. Run `agent-browser --help` before its first use in each session. Launch Chrome normally if it is not running, then set one named session and open a dedicated tab before the first navigation:
 
-When attaching to the user's Chrome, keep one named agent-browser session and one dedicated tab for the entire import run. Process sources sequentially; do not start parallel `--auto-connect` sessions. If manual authentication closes the dedicated tab, create a new tab in the same session instead of creating another session.
+```bash
+export AGENT_BROWSER_SESSION=gnucash-import
+CDP=ws://127.0.0.1:9222/devtools/browser
+agent-browser --cdp "$CDP" tab new
+agent-browser --cdp "$CDP" open <url>
+```
+
+Pass `--cdp "$CDP"` on every command. Do not use `--auto-connect`: it depends on Chrome's `DevToolsActivePort` file, which can disappear while Chrome keeps listening on port 9222. Launch flags such as `--args` have no effect on an attached Chrome; when a site ignores an automated click on a login or submit control, call the page's own handler or `element.click()` through `eval` instead.
+
+Keep the named session and the dedicated tab for the entire import run. Process sources sequentially; do not start parallel sessions. If manual authentication closes the dedicated tab, create a new tab in the same session instead of creating another session. Close the dedicated tab when the run ends.
 
 Scope snapshots of authenticated pages to the statement container. Do not save or print populated login forms or full account pages that contain names, addresses, member identifiers, balances, or other unrelated personal data. Delete an accidentally captured artifact immediately.
 
@@ -155,6 +164,17 @@ When strict date-and-amount matching conflicts with a user-confirmed prior impor
 
 Use the latest reconciled transaction as a retrieval cutoff only when the source reference permits it. Cleared rows may belong to a partially imported statement, so include them when checking duplicates. If no reconciled row exists, inspect the latest transaction without relying on it as proof of completeness.
 
+### Existing unverified transactions
+
+The source account may already hold `n` transactions created by GnuCash scheduled transactions or by importing another account (bank, prepaid, points). Match each statement row against them by merchant and amount within a bounded window, then handle the match as follows:
+
+- Same amount: set the transaction's `n` splits to `c` instead of inserting a duplicate.
+- Same merchant with a different amount or date: correct the source split, the counterparty split, and the post date to the statement values, then set the `n` splits to `c`. For a multi-split transaction, adjust only the split that a source reference names as the variable part.
+- Transaction containing a `y` split: change only `n` splits to `c`; do not change its amounts or date.
+- Scheduled `n` transaction with no counterpart on a statement that already covers its date: delete it after the user approves the list. Keep later-dated scheduled transactions, and keep ones whose charge may simply not have posted yet.
+
+List every update and deletion in the review. Put them in a separate SQL file from the inserts, because `validate_sql.py` accepts only inserts. Guard each statement with `reconcile_state = 'n'` and a GUID, require the rollback trial to report no `UPDATE 0` or `DELETE 0`, and after commit confirm that no `n` split remains in the updated transactions and that each still balances.
+
 ```sql
 SELECT t.post_date::date, t.description, s.value_num, s.value_denom, s.reconcile_state
 FROM transactions t
@@ -183,6 +203,8 @@ WHERE a.name = '{account_name}'
   AND to_char(t.post_date, 'YYYY-MM') = '{YYYY-MM}'
   AND s.value_num = {total_amount};
 ```
+
+Post a cash advance (キャッシング) as one transaction per statement row: credit the card, debit the cash account in the withdrawal currency with the local amount as the quantity, and debit `Expenses:Interest` with any interest billed on that row. Confirm that the cash account's commodity matches the withdrawal currency before generating SQL. Cash advances are often repaid early by a separate debit (繰上返済) and then do not count toward the billing total; record that debit as a payment and derive its interest as the debited amount minus the repaid principal.
 
 ## Personal Settings
 

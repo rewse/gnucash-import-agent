@@ -9,8 +9,8 @@ Script: `scripts/amazon_gc_import.py` (`review`, `sql`)
 
 ## Access
 
-- Open `https://www.amazon.co.jp/gp/css/gc/balance` with `agent-browser --auto-connect open`; passkey authentication is manual.
-- Extract the table with `agent-browser --auto-connect snapshot`.
+- Open `https://www.amazon.co.jp/gp/css/gc/balance` with `agent-browser --cdp "$CDP" open`; passkey authentication is manual.
+- Extract the table with `agent-browser --cdp "$CDP" snapshot`.
 - Click `次へ` for older history. Order numbers in descriptions link to order details.
 
 ## Statement Data

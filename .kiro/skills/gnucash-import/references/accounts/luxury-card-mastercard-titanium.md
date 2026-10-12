@@ -7,16 +7,16 @@ Use the shared [credit-card workflow and safety rules](../../SKILL.md#credit-car
 ## Accounts
 
 - Card: `Liabilities:Credit Card:Luxury Card Mastercard Titanium`
-- Payment debit: `Assets:JPY - Current Assets:Banks:DOCOMO SMTB Net Bank`
+- Payment debit: `Assets:JPY - Current Assets:Banks:SBI Shinsei Bank`
 - Payment date: 27th, or the next business day when the 27th is a holiday
 - Points: `Assets:JPY - Current Assets:Reward Programs:Luxury Reward`
 - Points income: `Income:Point Charge`
 
 ## Access
 
-Open `https://www.aplus.co.jp/myaplus/login.html` with `agent-browser --auto-connect`. Retrieve credentials from `op://gnucash/Luxury Card/username` and `op://gnucash/Luxury Card/password`.
+Open `https://www.aplus.co.jp/myaplus/login.html` with `agent-browser --cdp "$CDP"`. Retrieve credentials from `op://gnucash/Luxury Card/username` and `op://gnucash/Luxury Card/password`.
 
-The site invalidates sessions after direct URL navigation. After login, navigate only by clicking links: open `サイトマップ`, then `ご利用明細照会`. Select billing months with the page controls and extract each page with `agent-browser --auto-connect snapshot -c`. Check the page numbers below the transaction list and capture every page for both confirmed and unconfirmed months.
+The site invalidates sessions after direct URL navigation. After login, navigate only by clicking links: open `サイトマップ`, then `ご利用明細照会`. Select billing months with the page controls and extract each page with `agent-browser --cdp "$CDP" snapshot -c`. Check the page numbers below the transaction list and capture every page for both confirmed and unconfirmed months.
 
 Open the unconfirmed view by clicking the `YYYY/MM以降` link inside `.m-navDate__next`:
 
@@ -53,6 +53,16 @@ The header contains `未請求のご利用金額`, `未確定`, and the amount. 
 
 For both forms, paste one button text per `RAW_DATA` line. The parser accepts `merchant YY.MM.DD N回払い [お支払い方法変更可能] amount円`, converts the date to `20YY-MM-DD`, removes amount commas, and negates the amount. Full-width merchant text is normalized for selected matching and review output; `／ＮＦＣ`, `ＳＱ＊`, and `ＰＡＹＰＡＬ ＊` remain meaningful merchant qualifiers.
 
+### Cash advance rows
+
+A cash advance (`売上種別 キャッシング`) button has no amount. Read it from the row's expanded details, together with the foreign amount and a separate `L 初回利息` sub-row:
+
+```text
+ＥＸＡＭＰＬＥ ＢＡＮＫ 99.08.02 1回払い ご利用金額 9,999円 売上種別 キャッシング 摘要 現地通貨額２，０００．０００／換算レート４．９９９９９円 L 初回利息 ご利用金額 25円
+```
+
+The script's parser does not handle these rows. Post each one under the shared cash advance rule: the cash account in the withdrawal currency plus `Expenses:Interest`. The card repays cash advances through a separate `ご入金（M／D）` debit whose remarks give the principal and interest; record that debit as a payment.
+
 ### Points format
 
 Sum `通常ポイント`, `優待ポイント`, `特別ポイント`, `交換ポイント`, and `調整ポイント` for each month. Paste one tab-separated monthly net change per `RAW_DATA_POINTS` line:
@@ -87,7 +97,7 @@ The parser posts each monthly value on the 15th. Positive values debit Luxury Re
 | `ニホンツウシンカブシキガイシヤ` | `Expenses:Utilities:Phone:Mobile` | `Nihon Tsushin` | Automatic |
 | `フルナビマネー` | `Expenses:Tax:Furusato Tax` | `Furunavi` | Automatic |
 | `ミカタシヨウガクタンキホケン` | `Expenses:Insurances` | `MIKATA Small Amount Short Term Insurance` | Automatic |
-| `ＫＤＤＩ` | Fixed split below | `KDDI` | Automatic; `MANUAL_OVERRIDES[id] = 'KDDI'` is also accepted |
+| `ＫＤＤＩ` | Split below | `KDDI` | Automatic; `MANUAL_OVERRIDES[id] = 'KDDI'` is also accepted |
 | `ＡＰＰＬＥ ＣＯＭ ＢＩＬＬ` | Account determined from receipt | `Apple` | Use `MANUAL_OVERRIDES` after [email lookup](../email-lookup.md) |
 | `ビツクカメラドツトコム` | Account determined from order details | `Bic Camera` | Use `MANUAL_OVERRIDES` after [email lookup](../email-lookup.md) |
 | `ムジルシリヨウヒン` | Ask the user | `MUJI` | Use `MANUAL_OVERRIDES` |
@@ -102,7 +112,7 @@ Resolve other rows from past GnuCash transactions or ask the user.
 
 ## Source-specific Rules
 
-- A KDDI transaction is split into `Expenses:Utilities:Internet` ¥4,454, `Expenses:Utilities:Phone:Landline` ¥1,214, and `Expenses:Entertainment:Movies` ¥2,290. Verify that the statement total is ¥7,958 before generating SQL because the script uses these fixed amounts.
+- A KDDI transaction is split into `Expenses:Utilities:Internet` ¥4,454 and `Expenses:Utilities:Phone:Landline` for the remainder. Scheduled KDDI transactions use the same structure; when correcting one to the statement amount, adjust only the landline split.
 - Card pagination applies to confirmed and unconfirmed views; missing a page omits transactions.
 - The card label is `ＬＣチタンカード-****`; the points program is `ラグジュアリー・リワード`.
 - Points are normally awarded on the 15th of each month.

@@ -15,7 +15,7 @@ Script: `scripts/{source_slug}_import.py`
 - Statement navigation: `{STATEMENT_NAVIGATION}`
 - History or paging limit: `{HISTORY_LIMIT}`
 
-Extract statement rows with `agent-browser --auto-connect`:
+Extract statement rows with `agent-browser --cdp "$CDP"`:
 
 ```text
 {BROWSER_EXTRACTION_STEPS}

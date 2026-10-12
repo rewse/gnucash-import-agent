@@ -10,7 +10,7 @@ Script: [`scripts/sbi_shinsei_bank_import.py`](../../../../../scripts/sbi_shinse
 
 ## Access
 
-Open `https://bk.web.sbishinseibank.co.jp/SFC/apps/services/www/SFC/desktopbrowser/default/login?mode=1` with `agent-browser --auto-connect`, then ask the user to log in manually. Navigate from the authenticated top page; opening history URLs directly terminates the session with `CME0042`.
+Open `https://bk.web.sbishinseibank.co.jp/SFC/apps/services/www/SFC/desktopbrowser/default/login?mode=1` with `agent-browser --cdp "$CDP"`, then ask the user to log in manually. Navigate from the authenticated top page; opening history URLs directly terminates the session with `CME0042`.
 
 - JPY savings: use `入出金明細` under `円普通預金`.
 - SBI Hyper Deposit: use `入出金明細` under `SBIハイパー預金`.

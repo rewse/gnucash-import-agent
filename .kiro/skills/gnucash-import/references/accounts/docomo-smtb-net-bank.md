@@ -16,9 +16,9 @@ Script: [`scripts/docomo_smtb_net_bank_import.py`](../../../../../scripts/docomo
 
 ## Access
 
-Open `https://www.netbk.co.jp/contents/pages/wpl010101E/i010101CT/DI01010240` with `agent-browser --auto-connect`, then ask the user to log in manually. Open `入出金明細` from the navigation bar.
+Open `https://www.netbk.co.jp/contents/pages/wpl010101E/i010101CT/DI01010240` with `agent-browser --cdp "$CDP"`, then ask the user to log in manually. Open `入出金明細` from the navigation bar.
 
-For the JPY primary account, select `代表口座` and `円`, choose each required month in the left sidebar, and capture `agent-browser --auto-connect snapshot -c -s "main"`. For USD, change the currency from `円` to `米ドル` and capture each required month the same way. The page shows one month at a time.
+For the JPY primary account, select `代表口座` and `円`, choose each required month in the left sidebar, and capture `agent-browser --cdp "$CDP" snapshot -c -s "main"`. For USD, change the currency from `円` to `米ドル` and capture each required month the same way. The page shows one month at a time.
 
 ## Statement Data
 

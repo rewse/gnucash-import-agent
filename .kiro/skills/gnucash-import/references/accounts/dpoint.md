@@ -9,9 +9,9 @@ Script: `scripts/dpoint_import.py` (`review`, `sql`)
 
 ## Access
 
-- Open `https://dpoint.docomo.ne.jp/` with `agent-browser --auto-connect open`; dAccount passkey authentication is manual.
+- Open `https://dpoint.docomo.ne.jp/` with `agent-browser --cdp "$CDP" open`; dAccount passkey authentication is manual.
 - Open the total-points link, then `ポイント獲得・利用履歴を見る`.
-- Select each required month, up to 13 months back, and extract with `agent-browser --auto-connect snapshot -c -d 3`. Filters are `すべて`, `獲得`, `利用`, and `失効`.
+- Select each required month, up to 13 months back, and extract with `agent-browser --cdp "$CDP" snapshot -c -d 3`. Filters are `すべて`, `獲得`, `利用`, and `失効`.
 
 ## Statement Data
 

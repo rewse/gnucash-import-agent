@@ -9,9 +9,9 @@ Script: `scripts/marriott_rewards_import.py` (`review`, `sql`)
 
 ## Access
 
-- Open `https://www.marriott.com/` with `agent-browser --auto-connect open`; credentials are `op://gnucash/Marriott/username` and `op://gnucash/Marriott/password`.
+- Open `https://www.marriott.com/` with `agent-browser --cdp "$CDP" open`; credentials are `op://gnucash/Marriott/username` and `op://gnucash/Marriott/password`.
 - Open `https://www.marriott.com/loyalty/myAccount/activity.mi` and change the duration to `Last 24 Months` when needed.
-- Extract with `agent-browser --auto-connect snapshot -c`. The default duration is three months and the default page size is 10.
+- Extract with `agent-browser --cdp "$CDP" snapshot -c`. The default duration is three months and the default page size is 10.
 
 ## Statement Data
 

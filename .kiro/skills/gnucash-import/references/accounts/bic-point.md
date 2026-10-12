@@ -9,9 +9,9 @@ Script: `scripts/bic_point_import.py` (`review`, `sql`)
 
 ## Access
 
-- Open `https://www.biccamera.com/bc/member/SfrLogin.jsp` with `agent-browser --auto-connect --args "--disable-blink-features=AutomationControlled" open`; credentials are `op://gnucash/Bic Camera/username` and `op://gnucash/Bic Camera/password`.
-- CAPTCHA completion is manual. Then open the history with `agent-browser --auto-connect open https://www.biccamera.com/bc/member/MemBcPointHistory.jsp`.
-- Select `3ヶ月以内`, `6ヶ月以内`, or `1年以内`, then extract with `agent-browser --auto-connect snapshot`.
+- Open `https://www.biccamera.com/bc/member/SfrLogin.jsp` with `agent-browser --cdp "$CDP" open`; credentials are `op://gnucash/Bic Camera/username` and `op://gnucash/Bic Camera/password`.
+- CAPTCHA completion is manual. Then open the history with `agent-browser --cdp "$CDP" open https://www.biccamera.com/bc/member/MemBcPointHistory.jsp`.
+- Select `3ヶ月以内`, `6ヶ月以内`, or `1年以内`, then extract with `agent-browser --cdp "$CDP" snapshot`.
 
 ## Statement Data
 

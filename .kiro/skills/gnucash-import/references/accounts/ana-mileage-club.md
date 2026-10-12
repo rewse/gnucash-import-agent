@@ -10,9 +10,9 @@ Script: `scripts/ana_mileage_club_import.py` (`review`, `sql`)
 
 ## Access
 
-- Open `https://www.ana.co.jp/ja/jp/amc/` with `agent-browser --auto-connect open`; credentials are `op://gnucash/ANA/username` and `op://gnucash/ANA/password`.
+- Open `https://www.ana.co.jp/ja/jp/amc/` with `agent-browser --cdp "$CDP" open`; credentials are `op://gnucash/ANA/username` and `op://gnucash/ANA/password`.
 - Open `マイレージ情報・事後登録` then `マイル口座残高照会`, switch to the new tab, and use `https://cam.ana.co.jp/psz/amcj/jsp/renew/mile/reference.jsp`. Confirm login again if prompted.
-- Extract with `agent-browser --auto-connect snapshot -c -s "#meisaitable"`. Click month links under `過去分（月別）` for older data.
+- Extract with `agent-browser --cdp "$CDP" snapshot -c -s "#meisaitable"`. Click month links under `過去分（月別）` for older data.
 
 ## Statement Data
 

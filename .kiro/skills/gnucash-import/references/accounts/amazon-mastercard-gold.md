@@ -12,9 +12,11 @@ Use the shared [credit-card workflow and safety rules](../../SKILL.md#credit-car
 
 ## Access
 
-Open `https://www.smbc-card.com/mem/index.jsp` with `agent-browser --auto-connect`. The Vpass password field does not accept automated input, so ask the user to enter the password and complete login.
+Open `https://www.smbc-card.com/mem/index.jsp` with `agent-browser --cdp "$CDP"`. The Vpass password field does not accept automated input, so ask the user to enter the password and complete login.
 
 Select `Ａｍａｚｏｎ旧ゴールド` with `#vp-view-VC0205-001_RS0051_cardIdentifyKey`, then open `ご利用明細`. Select each billing month from `お支払い月` and extract `document.querySelector('body').innerText`. The selector provides the past 15 months. Both `Amazonマスター` and `ApplePay` sections map to the same card account.
+
+The month selector is `#vp-view-VC0502-003_RS0001_p01`, with option values such as `209906`. Set its value and click `照会` in one `eval`, wrapped in an IIFE because the page keeps top-level `const` bindings between evaluations. A future unconfirmed month renders without the selector; run `history.back()` before choosing another month. Keep only transaction rows, totals, and the payment date from `innerText`. Drop each `○○ 様 ご利用分` section line before printing or saving, because it contains the cardholder name and a masked card number.
 
 ## Statement Data
 
@@ -30,7 +32,7 @@ EXAMPLE USER 様 ご利用分 9999-99**-****-**** （Ａｍａｚｏｎマスタ
 ＜お支払金額総合計＞			4,383
 ```
 
-Script input columns are `date, merchant, amount, pay_type, installment, pay_amount, [remarks | local_amount, currency_code, exchange_rate, exchange_date]`. Transaction rows may have a leading tab. The parser skips lines containing `ご利用分` or `お支払金額総合計`, converts `YY/MM/DD` to `20YY-MM-DD`, and negates the comma-stripped amount. For domestic rows, field 7 is retained as remarks. For foreign rows, fields 7 and 8 become `{local_amount} {currency_code}` when the currency is one of `AUD`, `CAD`, `EUR`, `GBP`, `HKD`, `SGD`, `THB`, `TRY`, or `USD`.
+Script input columns are `date, merchant, amount, pay_type, installment, pay_amount, [remarks | local_amount, currency_code, exchange_rate, exchange_date]`. Transaction rows may have a leading tab. The parser skips lines containing `ご利用分` or `お支払金額総合計`, converts `YY/MM/DD` to `20YY-MM-DD`, and negates the comma-stripped amount. For domestic rows, field 7 is retained as remarks. For foreign rows, fields 7 and 8 become `{local_amount} {currency_code}` when the currency is one of `AUD`, `CAD`, `EUR`, `GBP`, `HKD`, `SGD`, `THB`, `TRY`, `TWD`, or `USD`. Fee rows such as an annual fee leave the amount field empty; the parser reads them from `pay_amount`.
 
 ### Unconfirmed format
 
@@ -50,6 +52,7 @@ Script input columns are `date, merchant, card_holder, pay_type, empty, pay_mont
 | `セブン－イレブン` or normalized `SEVEN-ELEVEN` | `Expenses:Foods:Dining` | `SEVEN-ELEVEN` | Automatic |
 | Merchant containing `ファミリーマート` | `Expenses:Foods:Dining` | `Family Mart` | Automatic |
 | Merchant containing `ローソン` | `Expenses:Foods:Dining` | `LAWSON` | Automatic |
+| Masked reference `Ｒ　＊＊９９９９＊` (Apple Pay) | `Assets:JPY - Current Assets:Prepaid:Revolut` | NULL | Automatic; the Revolut import often records the same top-up first, sometimes a day later |
 | `ＡＭＡＺＯＮ．ＣＯ．ＪＰ` | Account determined from order details | `Amazon` | Use `MANUAL_OVERRIDES` after [email lookup](../email-lookup.md) |
 | Other `ＡｍａｚｏｎＰａｙ提携サイト` | Account determined from order details | Description from order details | Use `MANUAL_OVERRIDES` after [email lookup](../email-lookup.md) |
 | `ALIEXPRESS` | Account determined from order details | `AliExpress` | Use `MANUAL_OVERRIDES` after [email lookup](../email-lookup.md) |

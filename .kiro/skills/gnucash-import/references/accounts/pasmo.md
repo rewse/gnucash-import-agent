@@ -11,8 +11,8 @@ Script: `scripts/pasmo_import.py` (`review`, `sql`)
 
 ## Access
 
-- Open `https://www.mobile.pasmo.jp/` with `agent-browser --auto-connect open`; CAPTCHA login is manual.
-- Select `次へ`, then `SF（電子マネー） 利用履歴`, and extract with `agent-browser --auto-connect snapshot`.
+- Open `https://www.mobile.pasmo.jp/` with `agent-browser --cdp "$CDP" open`; CAPTCHA login is manual.
+- Select `次へ`, then `SF（電子マネー） 利用履歴`, and extract with `agent-browser --cdp "$CDP" snapshot`.
 
 ## Statement Data
 

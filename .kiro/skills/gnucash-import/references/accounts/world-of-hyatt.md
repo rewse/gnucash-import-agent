@@ -9,8 +9,8 @@ Script: `scripts/world_of_hyatt_import.py` (`review`, `sql`)
 
 ## Access
 
-- Open `https://www.hyatt.com/ja-JP/member/sign-in?returnUrl=https://www.hyatt.com/loyalty/ja-JP` with `agent-browser --auto-connect --args "--disable-blink-features=AutomationControlled" open`; passkey login is manual.
-- Open activity with `agent-browser --auto-connect open https://www.hyatt.com/profile/ja-JP/account-activity`, then extract with `agent-browser --auto-connect snapshot -c`.
+- Open `https://www.hyatt.com/ja-JP/member/sign-in?returnUrl=https://www.hyatt.com/loyalty/ja-JP` with `agent-browser --cdp "$CDP" open`; passkey login is manual.
+- Open activity with `agent-browser --cdp "$CDP" open https://www.hyatt.com/profile/ja-JP/account-activity`, then extract with `agent-browser --cdp "$CDP" snapshot -c`.
 - Expand entries when the base, bonus, and eligible-spend breakdown is needed. The anti-detection flag is required.
 
 ## Statement Data

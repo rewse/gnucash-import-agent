@@ -154,6 +154,51 @@ class ImportRegressionTest(unittest.TestCase):
                     module.get_transaction_info(1, transaction),
                 )
 
+    def test_lumine_confirmed_csv_skips_refunded_and_note_rows(self):
+        module = self._import_script("lumine_card")
+        raw = "\n".join(
+            [
+                "ご利用年月日,ご利用箇所,ご利用額,払戻額,ご請求額（うち手数料・利息）,支払区分（回数）,今回回数,今回ご請求額・弁済金（うち手数料・利息）,現地通貨額,通貨略称,換算レート",
+                '2099/07/30,えきねっと,"1,111","1,111",0,１回払,,0,,   ,',
+                '2099/07/30,えきねっと,"1,111",,"1,111",１回払,,"1,111",,   ,',
+                '2099/07/30,えきねっと,"-1,111",,0,,,0,,   ,',
+                '2099/07/30,えきねっと,"1,111",2099/07/30,えきねっと,"1,111",0,払戻しの場合は、ご相殺いたします。',
+            ]
+        )
+        transactions = module.parse_transactions(raw)
+        self.assertEqual([tx["amount"] for tx in transactions], [-1111])
+
+    def test_ana_confirmed_fee_rows_use_pay_amount(self):
+        module = self._import_script("ana_super_flyers_gold_card")
+        raw = "\n".join(
+            [
+                "\t99/05/24\tEXAMPLE BANK (BANGKOK )\t11,111\t１\t１\t\t６月　１日繰上返済期間　８日利息　８日分\t",
+                "\t99/05/24\tＡＴＭ利用手数料　海外キャッシング\t\t\t\t220\t\t",
+                "\t99/06/15\tゴールドカード年会費\t\t\t\t3,333\t（うち消費税等３０３円）\t",
+                "#\t99/05/26\tMRT-BEM (BANGKOK )\t172\t１\t１\t172\t34.00\tTHB\t5.0711\t05 27\t◎",
+            ]
+        )
+        transactions = module.parse_transactions(raw)
+        self.assertEqual(
+            [tx["amount"] for tx in transactions], [-11111, -220, -3333, -172]
+        )
+        self.assertEqual(transactions[3]["remarks"], "34.00 THB")
+
+    def test_amazon_mastercard_maps_revolut_top_up(self):
+        module = self._import_script("amazon_mastercard_gold")
+        raw = "\t99/08/03\tＲ　　　　　　＊＊９９９９＊\t1,234\t１\t１\t1,234\t\t"
+        transactions = module.parse_transactions(raw)
+        self.assertEqual(
+            module.get_transaction_info(1, transactions[0]), (module.REVOLUT, None)
+        )
+
+    def test_luxury_kddi_landline_absorbs_variable_amount(self):
+        module = self._import_script("luxury_card_mastercard_titanium")
+        splits = module.kddi_splits(5846)
+        self.assertEqual([amount for _, amount, _ in splits], [4454, 1392])
+        with self.assertRaises(ValueError):
+            module.kddi_splits(4000)
+
     def test_suica_parses_bus_rows(self):
         module = self._import_script("suica", self._personal_settings())
         transaction = module.parse_transactions("08/26 ﾊﾞｽ等 都電都Ｂ -210")[0]

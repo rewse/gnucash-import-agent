@@ -78,7 +78,6 @@ INSURANCES = get_guid('Expenses:Insurances')
 SUPPLIES = get_guid('Expenses:Supplies')
 INTERNET = get_guid('Expenses:Utilities:Internet')
 PHONE_LANDLINE = get_guid('Expenses:Utilities:Phone:Landline')
-MOVIES = get_guid('Expenses:Entertainment:Movies')
 INSURANCES_HEALTH = get_guid('Expenses:Insurances:Health Insurances')
 
 ACCOUNT_NAMES = {
@@ -95,7 +94,6 @@ ACCOUNT_NAMES = {
     SUPPLIES: 'Expenses:Supplies',
     INTERNET: 'Expenses:Utilities:Internet',
     PHONE_LANDLINE: 'Expenses:Utilities:Phone:Landline',
-    MOVIES: 'Expenses:Entertainment:Movies',
     INSURANCES_HEALTH: 'Expenses:Insurances:Health Insurances',
     POINTS_ACCOUNT: 'Luxury Reward',
     POINT_INCOME: 'Income:Point Charge',
@@ -215,12 +213,18 @@ def get_transaction_info(idx, tx):
     raise ValueError(f"Unknown transaction at ID {idx}: {tx['merchant']}")
 
 
-# KDDI fixed split amounts
-KDDI_SPLITS = [
-    (INTERNET, 4454, 'KDDI Internet'),
-    (PHONE_LANDLINE, 1214, 'KDDI Phone'),
-    (MOVIES, 2290, 'KDDI Streaming'),
-]
+# KDDI bills a fixed internet fee; the landline split absorbs the variable remainder.
+KDDI_INTERNET_AMOUNT = 4454
+
+
+def kddi_splits(charge):
+    landline = charge - KDDI_INTERNET_AMOUNT
+    if landline <= 0:
+        raise ValueError(f"KDDI charge {charge} does not exceed the fixed internet fee")
+    return [
+        (INTERNET, KDDI_INTERNET_AMOUNT, 'KDDI Internet'),
+        (PHONE_LANDLINE, landline, 'KDDI Phone'),
+    ]
 
 
 def output_review(transactions):
@@ -235,7 +239,7 @@ def output_review(transactions):
         weekday = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
         date_str = f"{tx['date']} {weekday[tx['date'].weekday()]}"
         if account == 'KDDI':
-            for acct, amt, desc in KDDI_SPLITS:
+            for acct, amt, desc in kddi_splits(abs(tx['amount'])):
                 transfer = ACCOUNT_NAMES.get(acct, acct or '')
                 print(f"{idx:<4} {date_str:<14} {'KDDI':<30} {desc:<25} {transfer:<40} {f'¥{amt:,}':>10}")
         else:
@@ -265,7 +269,7 @@ def output_sql(transactions):
             print(f"VALUES ('{tx_guid}', '{JPY_CURRENCY}', '', '{date_str}', NOW(), {desc_sql});")
             print(f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)")
             print(f"VALUES ('{s_source_guid}', '{tx_guid}', '{SOURCE_ACCOUNT}', '', '', 'c', NULL, {tx['amount']}, 1, {tx['amount']}, 1, NULL);")
-            for acct, amt, _ in KDDI_SPLITS:
+            for acct, amt, _ in kddi_splits(abs(tx['amount'])):
                 s_guid = uuid.uuid4().hex
                 print(f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)")
                 print(f"VALUES ('{s_guid}', '{tx_guid}', '{acct}', '', '', 'c', NULL, {amt}, 1, {amt}, 1, NULL);")

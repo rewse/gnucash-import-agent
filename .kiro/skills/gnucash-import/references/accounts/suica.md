@@ -9,8 +9,8 @@ Script: `scripts/suica_import.py` (`review`, `sql`)
 
 ## Access
 
-- Open `https://www.mobilesuica.com/` with `agent-browser --auto-connect open`; CAPTCHA login is manual.
-- Open `SF（電子マネー） 利用履歴` and extract with `agent-browser --auto-connect snapshot`.
+- Open `https://www.mobilesuica.com/` with `agent-browser --cdp "$CDP" open`; CAPTCHA login is manual.
+- Open `SF（電子マネー） 利用履歴` and extract with `agent-browser --cdp "$CDP" snapshot`.
 
 ## Statement Data
 

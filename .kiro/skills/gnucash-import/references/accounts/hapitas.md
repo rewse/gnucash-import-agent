@@ -10,8 +10,8 @@ Script: `scripts/hapitas_import.py` (`review`, `sql`)
 
 ## Access
 
-- Open `https://hapitas.jp/` with `agent-browser --auto-connect open`; CAPTCHA login is manual.
-- Remove obstructing popups with `agent-browser --auto-connect eval "document.querySelectorAll('[class*=modal], [class*=popup], [class*=overlay]').forEach(el => el.remove())"`.
+- Open `https://hapitas.jp/` with `agent-browser --cdp "$CDP" open`; CAPTCHA login is manual.
+- Remove obstructing popups with `agent-browser --cdp "$CDP" eval "document.querySelectorAll('[class*=modal], [class*=popup], [class*=overlay]').forEach(el => el.remove())"`.
 - Open `https://hapitas.jp/bankbook/`; it redirects to the v2 passbook at `https://hapitas.jp/v2/bankbook?tab=pending`.
 - Select the `有効` tab with `.filter_tab_valid`, choose `全期間`, and load additional rows with `.advertisement_use_load_more_button` while the visible row count increases.
 - Extract each `.advertisement_use_content .advertisement_use_list_row`. If `もっと見る` remains visible but a click no longer increases the row count, keep the rows already returned and report the retrieval limit instead of repeatedly clicking it.

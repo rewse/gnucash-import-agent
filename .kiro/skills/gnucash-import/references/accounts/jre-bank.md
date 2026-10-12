@@ -8,10 +8,10 @@ Script: [`scripts/jre_bank_import.py`](../../../../../scripts/jre_bank_import.py
 
 ## Access
 
-Open `https://sfes.rakuten-bank.co.jp/MS/main/RbS?CID=M_START&CMD=LOGIN&BAAS_CODE=JRE` with `agent-browser --auto-connect`, then ask the user to complete the manual login and secret-question (`合言葉`) authentication. Open `入出金明細`, select `以前のお取引`, and extract the page with:
+Open `https://sfes.rakuten-bank.co.jp/MS/main/RbS?CID=M_START&CMD=LOGIN&BAAS_CODE=JRE` with `agent-browser --cdp "$CDP"`, then ask the user to complete the manual login and secret-question (`合言葉`) authentication. Open `入出金明細`, select `以前のお取引`, and extract the page with:
 
 ```bash
-agent-browser --auto-connect eval "document.querySelector('body').innerText"
+agent-browser --cdp "$CDP" eval "document.querySelector('body').innerText"
 ```
 
 Use the transaction section between the table header and the CSV download section. The page exposes all transactions without pagination; CSV and PDF downloads are also available.

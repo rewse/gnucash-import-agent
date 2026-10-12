@@ -9,9 +9,9 @@ Script: `scripts/ihg_rewards_club_import.py` (`review`, `sql`)
 
 ## Access
 
-- Open `https://www.ihg.com/hotels/jp/ja/reservation` with `agent-browser --auto-connect open`; credentials are `op://gnucash/IHG/username` and `op://gnucash/IHG/password`.
+- Open `https://www.ihg.com/hotels/jp/ja/reservation` with `agent-browser --cdp "$CDP" open`; credentials are `op://gnucash/IHG/username` and `op://gnucash/IHG/password`.
 - Open `Account Home`, then `アカウントアクティビティ`, or `https://www.ihg.com/rewardsclub/jp/ja/account-mgmt/activity`.
-- Extract with `agent-browser --auto-connect snapshot -c`. Activity covers the past 365 days.
+- Extract with `agent-browser --cdp "$CDP" snapshot -c`. Activity covers the past 365 days.
 
 ## Statement Data
 

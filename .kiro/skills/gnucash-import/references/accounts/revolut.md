@@ -9,8 +9,8 @@ Script: `scripts/revolut_import.py` (`review`, `sql`)
 
 ## Access
 
-- Open `https://app.revolut.com/start` with `agent-browser --auto-connect open`; CAPTCHA login is manual.
-- Select `すべて表示`, expand each month, and collect the full list with `agent-browser --auto-connect snapshot -i`, scrolling and repeating as needed.
+- Open `https://app.revolut.com/start` with `agent-browser --cdp "$CDP" open`; CAPTCHA login is manual.
+- Select `すべて表示`, expand each month, and collect the full list with `agent-browser --cdp "$CDP" snapshot -i`, scrolling and repeating as needed.
 
 ## Statement Data
 

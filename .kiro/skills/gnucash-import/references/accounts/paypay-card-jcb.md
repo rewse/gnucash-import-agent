@@ -12,9 +12,9 @@ Use the shared [credit-card workflow and safety rules](../../SKILL.md#credit-car
 
 ## Access
 
-Open `https://www.paypay-card.co.jp/member-login?promptParam=3` with `agent-browser --auto-connect`. Login uses a Yahoo! JAPAN ID passkey, so ask the user to complete authentication. Dismiss the post-login tutorial by clicking each `次へ` control and its final `閉じる` or `完了` control. Additional popups may appear when the statement page first opens.
+Open `https://www.paypay-card.co.jp/member-login?promptParam=3` with `agent-browser --cdp "$CDP"`. Login uses a Yahoo! JAPAN ID passkey, so ask the user to complete authentication. Dismiss the post-login tutorial by clicking each `次へ` control and its final `閉じる` or `完了` control. Additional popups may appear when the statement page first opens.
 
-Open `請求明細`, then the monthly statement at `https://www.paypay-card.co.jp/member/statement/monthly?dispmode=latest`. Transactions appear as menuitem elements in `agent-browser --auto-connect snapshot` output. Use `前月` and `翌月` to change months. Confirmed statements may also offer `明細出力` and `CSVダウンロード`.
+Open `請求明細`, then the monthly statement at `https://www.paypay-card.co.jp/member/statement/monthly?dispmode=latest`. Transactions appear as menuitem elements in `agent-browser --cdp "$CDP" snapshot` output. Use `前月` and `翌月` to change months with `agent-browser --cdp "$CDP" find role button click --name 前月`; a JavaScript `click()` through `eval` does not change the month. The page heading shows the billing month (`YYYY年M月の支払い額` or `…の支払い予定`) and its payment date. Confirmed statements may also offer `明細出力` and `CSVダウンロード`.
 
 ## Statement Data
 

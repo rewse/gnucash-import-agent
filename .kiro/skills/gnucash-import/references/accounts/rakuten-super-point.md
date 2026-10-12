@@ -10,8 +10,8 @@ Script: `scripts/rakuten_super_point_import.py` (`review`, `sql`)
 
 ## Access
 
-- Open the Rakuten sign-in URL with `agent-browser --auto-connect open 'https://login.account.rakuten.com/sso/authorize?client_id=rakuten_ichiba_top_web&service_id=s245&response_type=code&scope=openid&redirect_uri=https://www.rakuten.co.jp/#/sign_in'`; credentials are under `op://gnucash/Rakuten`.
-- Open history with `agent-browser --auto-connect open 'https://point.rakuten.co.jp/history/'`, then extract with `agent-browser --auto-connect snapshot`.
+- Open the Rakuten sign-in URL with `agent-browser --cdp "$CDP" open 'https://login.account.rakuten.com/sso/authorize?client_id=rakuten_ichiba_top_web&service_id=s245&response_type=code&scope=openid&redirect_uri=https://www.rakuten.co.jp/#/sign_in'`; credentials are under `op://gnucash/Rakuten`.
+- Open history with `agent-browser --cdp "$CDP" open 'https://point.rakuten.co.jp/history/'`, then extract with `agent-browser --cdp "$CDP" snapshot`.
 - The default view covers seven months. Use `さらに絞り込む` for older dates; rows in the selected range load without monthly pagination.
 
 ## Statement Data

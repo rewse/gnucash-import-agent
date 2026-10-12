@@ -12,7 +12,7 @@ A `掛金` buy moves value from the transfer account to the fund on the settleme
 
 ## Access
 
-Open `https://www.rk.sjdc.co.jp/RKWEB/RkDCMember/Common/JP_D_BFKLogin.aspx` with `agent-browser --auto-connect`. Retrieve the username and password from `op://gnucash/Sompo Japan DC Securities/username` and `op://gnucash/Sompo Japan DC Securities/password`. If prompted, select `今はパスワードを変更しない`.
+Open `https://www.rk.sjdc.co.jp/RKWEB/RkDCMember/Common/JP_D_BFKLogin.aspx` with `agent-browser --cdp "$CDP"`. Retrieve the username and password from `op://gnucash/Sompo Japan DC Securities/username` and `op://gnucash/Sompo Japan DC Securities/password`. If prompted, select `今はパスワードを変更しない`.
 
 Open `取引履歴等の確認 > 取引履歴`, select `当月を含む12ヶ月`, and click `実行`. Extract `document.querySelector('body').innerText`; capture each 10-row page with `次へ >>`. No CSV download is available.
 

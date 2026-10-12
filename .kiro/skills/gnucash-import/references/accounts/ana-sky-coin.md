@@ -10,9 +10,9 @@ Script: `scripts/ana_sky_coin_import.py` (`review`, `sql`)
 
 ## Access
 
-- Open `https://www.ana.co.jp/ja/jp/amc/` with `agent-browser --auto-connect open`; credentials are `op://gnucash/ANA/username` and `op://gnucash/ANA/password`.
+- Open `https://www.ana.co.jp/ja/jp/amc/` with `agent-browser --cdp "$CDP" open`; credentials are `op://gnucash/ANA/username` and `op://gnucash/ANA/password`.
 - After login, open `https://cam.ana.co.jp/psz/amcj/jsp/renew/ecoupon/ecouponReference.jsp` and authenticate again if prompted.
-- Extract with `agent-browser --auto-connect snapshot -c -s "#meisaitable"`. Click month links under `過去分（月別）` for older data.
+- Extract with `agent-browser --cdp "$CDP" snapshot -c -s "#meisaitable"`. Click month links under `過去分（月別）` for older data.
 
 ## Statement Data
 

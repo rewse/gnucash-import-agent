@@ -22,9 +22,7 @@ This repository provides a Kiro skill and source-specific Python scripts for imp
 - Keep one import script in `scripts/` and one account reference in `.kiro/skills/gnucash-import/references/accounts/` for each supported source.
 - Name scripts with snake_case and references with kebab-case, for example `scripts/amazon_gc_import.py` and `references/accounts/amazon-gc.md`.
 - Support `review` and `sql` commands in every import script.
-- Create a unique workspace for each import run with `work_dir=$(mktemp -d "/tmp/gnucash-import.XXXXXX")`.
-- Store all generated SQL, downloaded statements, temporary scripts, and intermediate data in the exact directory returned by `mktemp`.
-- Keep import scripts runnable after copying them to the per-run workspace; resolve repository resources through the `GNUCASH_IMPORT_ROOT` and `PROJECT_ROOT` pattern used by the script template.
+- Keep import scripts runnable after copying them to the run's temporary directory; resolve repository resources through the `GNUCASH_IMPORT_ROOT` and `PROJECT_ROOT` pattern used by the script template.
 - Follow `.kiro/skills/gnucash-import/SKILL.md` for transaction review, duplicate detection, account mapping, and database operations.
 
 ## Documentation

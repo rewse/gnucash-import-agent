@@ -12,15 +12,14 @@ Import online financial statements into a GnuCash PostgreSQL database.
 Follow this sequence for every import:
 
 1. Select the matching source reference from [`references/accounts/`](references/accounts/).
-2. Create a unique `work_dir`.
-3. Refresh the account GUID cache if needed.
-4. Retrieve the statement as described by the source reference.
-5. Compare statement rows with existing GnuCash transactions.
-6. Copy the source script into `$work_dir` and prepare its statement data there.
-7. Run the script's `review` command and review every proposed transaction with the user.
-8. Run the script's `sql` command and save the generated SQL in `$work_dir`.
-9. Inspect the SQL for mappings, signs, GUIDs, balance, descriptions, and reconciliation states.
-10. Execute the inspected SQL against GnuCash.
+2. Refresh the account GUID cache if needed.
+3. Retrieve the statement as described by the source reference.
+4. Compare statement rows with existing GnuCash transactions.
+5. Copy the source script into `$work_dir` and prepare its statement data there.
+6. Run the script's `review` command and review every proposed transaction with the user.
+7. Run the script's `sql` command and save the generated SQL in `$work_dir`.
+8. Inspect the SQL for mappings, signs, GUIDs, balance, descriptions, and reconciliation states.
+9. Execute the inspected SQL against GnuCash.
 
 Attach `agent-browser` to the user's running Chrome over CDP so saved logins and the 1Password extension are available. Run `agent-browser --help` before its first use in each session. Launch Chrome normally if it is not running, then set one named session and open a dedicated tab before the first navigation:
 
@@ -58,15 +57,9 @@ Use these shared mappings unless a source reference defines a more specific rule
 
 ## Workspace
 
-From the repository root, create one OS-managed workspace per run:
+`$work_dir` is the import run's temporary directory. Keep downloaded statements, statement data, temporary scripts, intermediate data, and generated SQL there, never in the repository.
 
-```bash
-work_dir=$(mktemp -d "/tmp/gnucash-import.XXXXXX")
-```
-
-Store downloaded statements, statement data, temporary scripts, intermediate data, and generated SQL only in the exact directory returned by `mktemp`. Do not create import artifacts in the repository or a shared `tmp` directory.
-
-Copy the selected script into the workspace, then run the copy from the repository root so it can resolve the account cache and personal settings:
+Copy the selected script into `$work_dir`, then run the copy from the repository root so it can resolve the account cache and personal settings:
 
 ```bash
 cp scripts/{source_slug}_import.py "$work_dir/import.py"

@@ -11,7 +11,7 @@ Script: [`scripts/sony_bank_import.py`](../../../../../scripts/sony_bank_import.
 
 Open `https://sonybank.jp/pages/da/daya010a/?lang=ja` with `agent-browser --cdp "$CDP"`, then ask the user to log in manually. Open `通帳 > 普通預金取引履歴`, select a currency (`円`, `米ドル`, `ユーロ`, or `豪ドル`), set the display period, and download the CSV.
 
-The downloaded name is always `FutsuRireki.csv`, regardless of currency. Keep each currency's file distinct in the run workspace and convert it from Shift-JIS to UTF-8 before copying rows into the script:
+The downloaded name is always `FutsuRireki.csv`, regardless of currency. Keep each currency's file distinct in `$work_dir` and convert it from Shift-JIS to UTF-8 before copying rows into the script:
 
 ```bash
 iconv -f SHIFT_JIS -t UTF-8 "$work_dir/FutsuRireki.csv" > "$work_dir/statement-utf8.csv"

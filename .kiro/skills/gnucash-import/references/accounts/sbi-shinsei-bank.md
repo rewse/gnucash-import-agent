@@ -75,6 +75,8 @@ USD	2025/11/04	被仕向事務手数料	15.00	0
 
 The signed amount is deposit minus withdrawal. `JPY` and `HYPER` use JPY denominator 1; `USD` uses denominator 100.
 
+A USD row whose counter account is JPY-denominated (interest, tax, fees, or `円普通預金`) needs the counter split's yen quantity in `JPY_QUANTITIES`. For a `円普通預金` conversion, use the JPY amount of the same-day `ＮＥＴ 資金振替-{account_no}` row on the JPY savings history and leave that JPY row out of the script data, so the conversion is posted once. For interest, tax, and fees, convert at the posting day's MUFG TTM, the midpoint of TTS and TTB on `https://www.murc-kawasesouba.jp/fx/past_3month.php`, rounded to the nearest yen.
+
 ## Mapping
 
 ### JPY savings

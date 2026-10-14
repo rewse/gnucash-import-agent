@@ -123,6 +123,21 @@ RULES = {
 #   3: [(SHINSEI_TIME_DEPOSIT, 1000000), (INTEREST_INCOME, 3162)]
 SPLIT_OVERRIDES = {}
 
+# JPY-denominated counter accounts. A USD row posted against one of these
+# needs the JPY quantity of the counter split, because GnuCash stores each
+# split's quantity in its account's commodity.
+JPY_COUNTER_ACCOUNTS = {
+    CASH, CASH_BACK, DOCOMO_SMTB, FEES, INCOME_TAX, INTEREST_INCOME,
+    LUXURY_CARD, SBI_SEC, SHINSEI_JPY, SHINSEI_TIME_DEPOSIT,
+}
+
+# USD row ID -> JPY quantity (integer yen) of its JPY counter split.
+# For `円普通預金` conversions, use the JPY amount of the matching
+# `ＮＥＴ 資金振替-...` row and leave that JPY row out of RAW_DATA.
+# For interest, tax, and fees, convert at the day's MUFG TTM, e.g.
+#   12: 765,
+JPY_QUANTITIES = {}
+
 # ============================================================
 # EDIT BELOW: Paste raw data
 # ============================================================
@@ -182,6 +197,21 @@ def get_counter_splits(idx, tx):
     return [(account, tx['amount'])]
 
 
+def get_counter_quantity(idx, tx, account, amount):
+    """Return (quantity_num, quantity_denom) for a counter split worth `amount`."""
+    denom = CURRENCY_DENOM[tx['currency']]
+    if tx['currency'] != 'USD' or account not in JPY_COUNTER_ACCOUNTS:
+        return -round(amount * denom), denom
+    if idx not in JPY_QUANTITIES:
+        raise ValueError(f"ID {idx}: USD row with a JPY counter account needs JPY_QUANTITIES")
+    if amount != tx['amount']:
+        raise ValueError(f"ID {idx}: JPY_QUANTITIES supports only a single counter split")
+    jpy = JPY_QUANTITIES[idx]
+    if not isinstance(jpy, int) or isinstance(jpy, bool) or jpy <= 0:
+        raise ValueError(f"ID {idx}: JPY_QUANTITIES must be a positive integer")
+    return (-jpy if amount > 0 else jpy), 1
+
+
 def output_review(transactions):
     print(f"{'ID':<4} {'Date':<14} {'Type':<6} {'Statement':<30} {'Desc':<20} {'Transfer':<40} {'Increase':>12} {'Decrease':>12}")
     print('-' * 140)
@@ -203,6 +233,10 @@ def output_review(transactions):
             inc = f"¥{int(tx['amount']):,}" if tx['amount'] > 0 else ''
             dec = f"¥{int(abs(tx['amount'])):,}" if tx['amount'] < 0 else ''
         print(f"{idx:<4} {date_str:<14} {tx['acct_type']:<6} {tx['desc']:<30} {desc_str:<20} {transfer:<40} {inc:>12} {dec:>12}")
+        if len(splits) == 1:
+            qn, qd = get_counter_quantity(idx, tx, splits[0][0], splits[0][1])
+            if tx['currency'] == 'USD' and qd == 1:
+                print(f"{'':<4} {'':<14} {'':<6} {'  (JPY quantity)':<30} {'':<20} {transfer:<40} {'¥' + format(abs(qn), ','):>12}")
         if len(splits) > 1:
             for sub, (acct, amt) in enumerate(splits, 1):
                 sub_transfer = ACCOUNT_NAMES.get(acct, acct or '')
@@ -237,9 +271,10 @@ def output_sql(transactions):
         print(f"VALUES ('{s1_guid}', '{tx_guid}', '{source}', '', '', 'c', NULL, {value_num}, {denom}, {value_num}, {denom}, NULL);")
         for acct, amt in counter_splits:
             sn = round(amt * denom)
+            qn, qd = get_counter_quantity(idx, tx, acct, amt)
             sg = uuid.uuid4().hex
             print(f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)")
-            print(f"VALUES ('{sg}', '{tx_guid}', '{acct}', '', '', 'c', NULL, {-sn}, {denom}, {-sn}, {denom}, NULL);")
+            print(f"VALUES ('{sg}', '{tx_guid}', '{acct}', '', '', 'c', NULL, {-sn}, {denom}, {qn}, {qd}, NULL);")
         print()
     print('COMMIT;')
 

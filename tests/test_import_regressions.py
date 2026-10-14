@@ -192,6 +192,21 @@ class ImportRegressionTest(unittest.TestCase):
             module.get_transaction_info(1, transactions[0]), (module.REVOLUT, None)
         )
 
+    def test_sbi_shinsei_usd_rows_use_jpy_quantity_for_jpy_accounts(self):
+        module = self._import_script("sbi_shinsei_bank")
+        raw = "USD\t2099/09/01\t税引前利息\t\t4.79\nUSD\t2099/09/18\t円普通預金\t100.00\t"
+        transactions = module.parse_transactions(raw)
+        module.JPY_QUANTITIES = {1: 765, 2: 15692}
+        output = StringIO()
+        with redirect_stdout(output):
+            module.output_sql(transactions)
+        sql = output.getvalue()
+        self.assertIn(", 'c', NULL, -479, 100, -765, 1, NULL);", sql)
+        self.assertIn(", 'c', NULL, 10000, 100, 15692, 1, NULL);", sql)
+        module.JPY_QUANTITIES = {}
+        with self.assertRaises(ValueError), redirect_stdout(StringIO()):
+            module.output_sql(transactions)
+
     def test_luxury_kddi_landline_absorbs_variable_amount(self):
         module = self._import_script("luxury_card_mastercard_titanium")
         splits = module.kddi_splits(5846)

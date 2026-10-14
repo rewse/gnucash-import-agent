@@ -116,7 +116,7 @@ Personal transfer classification comes from `transfer_rules.docomo_smtb_net_bank
 
 - Match JPY `普通 米ドル 代表口座` and USD `普通 円 代表口座` entries by date. Do not emit the USD statement row separately. The transaction currency is JPY: the JPY split uses its signed amount for `value_num` and `quantity_num` with denominator 1; the USD-account split uses the balancing JPY value with `value_denom = 1` and the matched signed USD cents for `quantity_num` with `quantity_denom = 100`.
 - Do not import purpose-account views separately. Their entries in the primary-account view are the authoritative side of the mirror transfer.
-- Skip `口座振替 ＤＦ エムアイカード*` and `約定返済 円 住宅*`.
+- Skip `口座振替 ＤＦ エムアイカード*`. Do not insert `約定返済 円 住宅*` rows; correct the matching scheduled mortgage transaction instead. Read each payment's principal (`元金分`) and interest (`利息分`) from `住宅ローン > 返済履歴`, set the bank, principal, and interest splits to those amounts, remove any `Imbalance-JPY` split, and mark the splits `c`.
 - Treat cancellation rows according to the sign shown by the statement balance change.
 - Search the preceding two months for duplicates. Transfers to another imported bank may already exist from that bank's import, so compare date, amount, and description row by row rather than relying on the latest imported date.
 - Account selectors include `代表口座`, `予備費`, `長期貯蓄`, `老後資金`, `生活費`, and `娯楽費`; currency selectors include `円`, `米ドル`, `ユーロ`, `英ポンド`, `豪ドル`, `NZドル`, `カナダドル`, `スイスフラン`, `香港ドル`, and `南アランド`. Transaction history extends back several years.

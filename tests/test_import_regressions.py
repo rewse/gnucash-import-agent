@@ -281,6 +281,41 @@ class ImportRegressionTest(unittest.TestCase):
                     module.output_review(transactions)
                 self.assertNotIn("Example Unresolved", stderr.getvalue())
 
+    def test_docomo_purpose_rows_use_purpose_source_and_skip_mirrors(self):
+        module = self._import_script("docomo_smtb_net_bank")
+        transactions = module.parse_transactions(
+            "JPY-RESERVED\t2030/01/20\t利息\t\t100\n"
+            "JPY-RESERVED\t2030/01/20\t国税\t15\t\n"
+            "JPY-RESERVED\t2030/01/05\t普通　円　代表口座\t\t1000\n"
+            "JPY-RESERVED\t2030/01/06\t普通　円　代表口座\t500\t\n"
+            "JPY-LONGTERM\t2030/01/07\t普通　円　予備費\t300\t\n"
+            "JPY-RESERVED\t2030/01/07\t普通　円　長期貯蓄\t\t300\n"
+        )
+        imported = [tx for tx in transactions if not module.is_skip(tx)]
+        self.assertEqual(
+            [
+                ("JPY-RESERVED", "利息"),
+                ("JPY-RESERVED", "国税"),
+                ("JPY-LONGTERM", "普通 円 予備費"),
+            ],
+            [(tx["source"], tx["desc"]) for tx in imported],
+        )
+        sql = StringIO()
+        with redirect_stdout(sql):
+            module.output_sql(imported)
+        reserved = module.SOURCE_ACCOUNTS["JPY-RESERVED"]
+        longterm = module.SOURCE_ACCOUNTS["JPY-LONGTERM"]
+        self.assertIn(
+            f"'{reserved}', '', '', 'c', NULL, 100, 1, 100, 1", sql.getvalue()
+        )
+        self.assertIn(
+            f"'{longterm}', '', '', 'c', NULL, -300, 1, -300, 1", sql.getvalue()
+        )
+        self.assertIn(
+            f"'{reserved}', '', '', 'c', NULL, 300, 1, 300, 1", sql.getvalue()
+        )
+        self.assertNotIn(module.SOURCE_ACCOUNTS["JPY"], sql.getvalue())
+
 
 if __name__ == "__main__":
     unittest.main()

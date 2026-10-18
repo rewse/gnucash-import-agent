@@ -2,7 +2,8 @@
 """DOCOMO SMTB Net Bank Statement Importer
 
 Usage:
-1. Paste tab-separated data into raw.txt (CURRENCY, DATE, DESC, WITHDRAWAL, DEPOSIT)
+1. Paste tab-separated data into raw.txt (SOURCE, DATE, DESC, WITHDRAWAL, DEPOSIT)
+   SOURCE is JPY, USD, JPY-LONGTERM, JPY-RESERVED, or JPY-RETIREMENT
 2. Set MANUAL_OVERRIDES for any transactions that need custom accounts/descriptions
 3. Run: python3 scripts/docomo_smtb_net_bank_import.py review
 4. Run: python3 scripts/docomo_smtb_net_bank_import.py sql
@@ -194,11 +195,21 @@ def load_personal_rules(source_name):
 PERSONAL_RULES, PERSONAL_RULE_ERROR = load_personal_rules("docomo_smtb_net_bank")
 
 
-# Source accounts
+# Source accounts keyed by the first statement field
 SOURCE_ACCOUNTS = {
     "JPY": get_guid("Assets:JPY - Current Assets:Banks:DOCOMO SMTB Net Bank"),
+    "JPY-LONGTERM": get_guid(
+        "Assets:JPY - Current Assets:Banks:DOCOMO SMTB Net Bank:Longterm Account"
+    ),
+    "JPY-RESERVED": get_guid(
+        "Assets:JPY - Current Assets:Banks:DOCOMO SMTB Net Bank:Reserved Account"
+    ),
+    "JPY-RETIREMENT": get_guid(
+        "Assets:JPY - Current Assets:Banks:DOCOMO SMTB Net Bank:Retirement Account"
+    ),
     "USD": get_guid("Assets:USD - Current Assets:Banks:DOCOMO SMTB Net Bank"),
 }
+PURPOSE_SOURCES = {"JPY-LONGTERM", "JPY-RESERVED", "JPY-RETIREMENT"}
 
 # Transfer accounts
 
@@ -343,7 +354,9 @@ def parse_transactions(raw_data):
         if not line.strip():
             continue
         parts = line.split("\t")
-        currency = parts[0].strip()
+        source = parts[0].strip()
+        if source not in SOURCE_ACCOUNTS:
+            raise ValueError(f"Unknown source [{source}]")
         y, m, d = parts[1].strip().split("/")
         # Normalize full-width space to half-width for pattern matching
         desc = parts[2].strip().replace("\u3000", " ")
@@ -353,7 +366,8 @@ def parse_transactions(raw_data):
             {
                 "date": date(int(y), int(m), int(d)),
                 "desc": desc,
-                "currency": currency,
+                "source": source,
+                "currency": source.split("-")[0],
                 "amount": deposit - withdrawal,
             }
         )
@@ -361,7 +375,14 @@ def parse_transactions(raw_data):
 
 
 def is_skip(tx):
-    return any(tx["desc"].startswith(p) for p in SKIP_PATTERNS)
+    if any(tx["desc"].startswith(p) for p in SKIP_PATTERNS):
+        return True
+    # A transfer between DOCOMO JPY accounts is imported once: from the primary
+    # view when the primary account is involved, otherwise from the purpose
+    # view that withdraws it.
+    if tx.get("source") in PURPOSE_SOURCES and tx["desc"].startswith("普通 円 "):
+        return tx["desc"] == "普通 円 代表口座" or tx["amount"] > 0
+    return False
 
 
 def get_transaction_info(idx, tx):
@@ -474,9 +495,9 @@ def build_currency_transfer_map(transactions):
 
 def output_review(transactions):
     print(
-        f"{'ID':<4} {'Date':<14} {'Ccy':<4} {'Statement':<35} {'Desc':<15} {'Transfer':<40} {'Increase':>12} {'Decrease':>12}"
+        f"{'ID':<4} {'Date':<14} {'Source':<14} {'Statement':<35} {'Desc':<15} {'Transfer':<40} {'Increase':>12} {'Decrease':>12}"
     )
-    print("-" * 140)
+    print("-" * 150)
     prev_date = None
     for idx, tx in enumerate(transactions, 1):
         if is_skip(tx):
@@ -486,7 +507,7 @@ def output_review(transactions):
             continue  # USD side shown with JPY side
 
         if prev_date and prev_date != tx["date"]:
-            print("-" * 140)
+            print("-" * 150)
         prev_date = tx["date"]
 
         weekday = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
@@ -505,9 +526,9 @@ def output_review(transactions):
                     inc = f"{sym}{amt:,.2f}" if amt > 0 else ""
                     dec = f"{sym}{abs(amt):,.2f}" if amt < 0 else ""
                 prefix = (
-                    f"{idx:<4} {date_str:<14} {tx['currency']:<4} {tx['desc']:<35}"
+                    f"{idx:<4} {date_str:<14} {tx.get('source', tx['currency']):<14} {tx['desc']:<35}"
                     if i == 0
-                    else f"{'':4} {'':14} {'':4} {'  (split)':35}"
+                    else f"{'':4} {'':14} {'':14} {'  (split)':35}"
                 )
                 print(f"{prefix} {desc or '':15} {transfer:<40} {inc:>12} {dec:>12}")
         else:
@@ -520,7 +541,7 @@ def output_review(transactions):
                 inc = f"{sym}{tx['amount']:,.2f}" if tx["amount"] > 0 else ""
                 dec = f"{sym}{abs(tx['amount']):,.2f}" if tx["amount"] < 0 else ""
             print(
-                f"{idx:<4} {date_str:<14} {tx['currency']:<4} {tx['desc']:<35} {description or '':15} {transfer:<40} {inc:>12} {dec:>12}"
+                f"{idx:<4} {date_str:<14} {tx.get('source', tx['currency']):<14} {tx['desc']:<35} {description or '':15} {transfer:<40} {inc:>12} {dec:>12}"
             )
 
 
@@ -548,7 +569,7 @@ def output_sql(transactions):
         currency = tx["currency"]
         currency_guid = CURRENCIES[currency]
         denom = CURRENCY_DENOM[currency]
-        source = SOURCE_ACCOUNTS[currency]
+        source = SOURCE_ACCOUNTS[tx.get("source", currency)]
         reverse_idx = total - seq + 1
         minutes, seconds = divmod(reverse_idx, 60)
         date_str = f"{tx['date']} 00:{minutes:02d}:{seconds:02d}"

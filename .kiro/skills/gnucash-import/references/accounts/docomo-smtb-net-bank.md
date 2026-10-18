@@ -18,7 +18,7 @@ Script: [`scripts/docomo_smtb_net_bank_import.py`](../../../../../scripts/docomo
 
 Open `https://www.netbk.co.jp/contents/pages/wpl010101E/i010101CT/DI01010240` with `agent-browser --cdp "$CDP"`, then ask the user to log in manually. Open `入出金明細` from the navigation bar.
 
-For the JPY primary account, select `代表口座` and `円`, choose each required month in the left sidebar, and capture `agent-browser --cdp "$CDP" snapshot -c -s "main"`. For USD, change the currency from `円` to `米ドル` and capture each required month the same way. The page shows one month at a time.
+For the JPY primary account, select `代表口座` and `円`, choose each required month in the left sidebar, and capture `agent-browser --cdp "$CDP" snapshot -c -s "main"`. For USD, change the currency from `円` to `米ドル` and capture each required month the same way. For a JPY purpose account, change the account selector from `代表口座` to `予備費`, `長期貯蓄`, or `老後資金` and capture each required month the same way. The page shows one month at a time.
 
 ## Statement Data
 
@@ -56,7 +56,7 @@ term: 利息
 
 Combine the day with the heading year and month. Infer deposit versus withdrawal from balance changes. JPY values use commas and an `円` suffix; USD values use decimals and a `USD` suffix.
 
-Enter script data as tab-separated `CURRENCY\tDATE\tDESCRIPTION\tWITHDRAWAL\tDEPOSIT`. Preserve empty amount fields and remove commas and currency suffixes:
+Enter script data as tab-separated `SOURCE\tDATE\tDESCRIPTION\tWITHDRAWAL\tDEPOSIT`. Preserve empty amount fields and remove commas and currency suffixes:
 
 ```text
 JPY	2026/02/14	振込＊ＥＸＡＭＰＬＥ	10000	0
@@ -67,9 +67,12 @@ JPY	2025/12/19	普通 米ドル 代表口座	250000	0
 USD	2025/12/19	普通 円 代表口座		1789.10
 USD	2025/12/21	国税	0.02	0
 USD	2025/12/21	利息		0.16
+JPY-RESERVED	2026/02/15	国税	10	0
+JPY-RESERVED	2026/02/15	利息		50
+JPY-RESERVED	2026/02/05	普通 円 代表口座		150000
 ```
 
-Fields are currency (`JPY` or `USD`), date (`YYYY/MM/DD`), statement description, withdrawal, and deposit. Empty amounts are zero; the signed amount is deposit minus withdrawal. The parser normalizes full-width spaces in descriptions.
+Fields are source (`JPY`, `USD`, `JPY-LONGTERM`, `JPY-RESERVED`, or `JPY-RETIREMENT`), date (`YYYY/MM/DD`), statement description, withdrawal, and deposit. Empty amounts are zero; the signed amount is deposit minus withdrawal. The parser normalizes full-width spaces in descriptions.
 
 ## Mapping
 
@@ -115,7 +118,7 @@ Personal transfer classification comes from `transfer_rules.docomo_smtb_net_bank
 ## Source-specific Rules
 
 - Match JPY `普通 米ドル 代表口座` and USD `普通 円 代表口座` entries by date. Do not emit the USD statement row separately. The transaction currency is JPY: the JPY split uses its signed amount for `value_num` and `quantity_num` with denominator 1; the USD-account split uses the balancing JPY value with `value_denom = 1` and the matched signed USD cents for `quantity_num` with `quantity_denom = 100`.
-- Do not import purpose-account views separately. Their entries in the primary-account view are the authoritative side of the mirror transfer.
+- Import purpose-account views for rows that occur only in the purpose account, such as `利息`, `国税`, `地方税`, and transfers to other banks; those rows use the purpose account as the source. Transfers between DOCOMO JPY accounts are imported once: the script skips `普通 円 代表口座` rows in purpose views because the primary view is authoritative, and skips purpose-view deposits from another purpose account because the sending purpose view's withdrawal is imported.
 - Skip `口座振替 ＤＦ エムアイカード*`. Do not insert `約定返済 円 住宅*` rows; correct the matching scheduled mortgage transaction instead. Read each payment's principal (`元金分`) and interest (`利息分`) from `住宅ローン > 返済履歴`, set the bank, principal, and interest splits to those amounts, remove any `Imbalance-JPY` split, and mark the splits `c`.
 - Treat cancellation rows according to the sign shown by the statement balance change.
 - Search the preceding two months for duplicates. Transfers to another imported bank may already exist from that bank's import, so compare date, amount, and description row by row rather than relying on the latest imported date.

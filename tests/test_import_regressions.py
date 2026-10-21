@@ -6,7 +6,8 @@ import json
 import os
 import tempfile
 import unittest
-from contextlib import redirect_stderr, redirect_stdout
+from contextlib import redirect_stderr
+from contextlib import redirect_stdout
 from datetime import datetime
 from io import StringIO
 from pathlib import Path
@@ -23,7 +24,7 @@ class ImportRegressionTest(unittest.TestCase):
         source_slug: str,
         personal: dict[str, Any] | None = None,
         extra_accounts: set[str] | None = None,
-    ):
+    ) -> Any:
         script_path = SCRIPTS / f"{source_slug}_import.py"
         tree = ast.parse(script_path.read_text())
         paths = {
@@ -53,9 +54,9 @@ class ImportRegressionTest(unittest.TestCase):
         spec = importlib.util.spec_from_file_location(
             f"regression_{source_slug}_{id(temporary)}", script_path
         )
-        self.assertIsNotNone(spec)
+        assert spec is not None
         module = importlib.util.module_from_spec(spec)
-        self.assertIsNotNone(spec.loader)
+        assert spec.loader is not None
         with patch.dict(os.environ, {"GNUCASH_IMPORT_ROOT": str(project_root)}):
             spec.loader.exec_module(module)
         return module
@@ -151,27 +152,23 @@ class ImportRegressionTest(unittest.TestCase):
 
     def test_lumine_confirmed_csv_skips_refunded_and_note_rows(self):
         module = self._import_script("lumine_card")
-        raw = "\n".join(
-            [
-                "ご利用年月日,ご利用箇所,ご利用額,払戻額,ご請求額（うち手数料・利息）,支払区分（回数）,今回回数,今回ご請求額・弁済金（うち手数料・利息）,現地通貨額,通貨略称,換算レート",
-                '2099/07/30,えきねっと,"1,111","1,111",0,１回払,,0,,   ,',
-                '2099/07/30,えきねっと,"1,111",,"1,111",１回払,,"1,111",,   ,',
-                '2099/07/30,えきねっと,"-1,111",,0,,,0,,   ,',
-                '2099/07/30,えきねっと,"1,111",2099/07/30,えきねっと,"1,111",0,払戻しの場合は、ご相殺いたします。',
-            ]
+        raw = (
+            "ご利用年月日,ご利用箇所,ご利用額,払戻額,ご請求額（うち手数料・利息）,支払区分（回数）,今回回数,今回ご請求額・弁済金（うち手数料・利息）,現地通貨額,通貨略称,換算レート\n"
+            '2099/07/30,えきねっと,"1,111","1,111",0,１回払,,0,,   ,\n'
+            '2099/07/30,えきねっと,"1,111",,"1,111",１回払,,"1,111",,   ,\n'
+            '2099/07/30,えきねっと,"-1,111",,0,,,0,,   ,\n'
+            '2099/07/30,えきねっと,"1,111",2099/07/30,えきねっと,"1,111",0,払戻しの場合は、ご相殺いたします。'
         )
         transactions = module.parse_transactions(raw)
         self.assertEqual([tx["amount"] for tx in transactions], [-1111])
 
     def test_ana_confirmed_fee_rows_use_pay_amount(self):
         module = self._import_script("ana_super_flyers_gold_card")
-        raw = "\n".join(
-            [
-                "\t99/05/24\tEXAMPLE BANK (BANGKOK )\t11,111\t１\t１\t\t６月　１日繰上返済期間　８日利息　８日分\t",
-                "\t99/05/24\tＡＴＭ利用手数料　海外キャッシング\t\t\t\t220\t\t",
-                "\t99/06/15\tゴールドカード年会費\t\t\t\t3,333\t（うち消費税等３０３円）\t",
-                "#\t99/05/26\tMRT-BEM (BANGKOK )\t172\t１\t１\t172\t34.00\tTHB\t5.0711\t05 27\t◎",
-            ]
+        raw = (
+            "\t99/05/24\tEXAMPLE BANK (BANGKOK )\t11,111\t１\t１\t\t６月　１日繰上返済期間　８日利息　８日分\t\n"
+            "\t99/05/24\tＡＴＭ利用手数料　海外キャッシング\t\t\t\t220\t\t\n"
+            "\t99/06/15\tゴールドカード年会費\t\t\t\t3,333\t（うち消費税等３０３円）\t\n"
+            "#\t99/05/26\tMRT-BEM (BANGKOK )\t172\t１\t１\t172\t34.00\tTHB\t5.0711\t05 27\t◎"
         )
         transactions = module.parse_transactions(raw)
         self.assertEqual(
@@ -276,9 +273,12 @@ class ImportRegressionTest(unittest.TestCase):
             with self.subTest(source_slug=source_slug):
                 module = self._import_script(source_slug)
                 transactions = module.parse_transactions(raw)
-                with redirect_stdout(StringIO()), redirect_stderr(StringIO()) as stderr:
-                    with self.assertRaises(SystemExit):
-                        module.output_review(transactions)
+                with (
+                    redirect_stdout(StringIO()),
+                    redirect_stderr(StringIO()) as stderr,
+                    self.assertRaises(SystemExit),
+                ):
+                    module.output_review(transactions)
                 self.assertNotIn("Example Unresolved", stderr.getvalue())
 
 

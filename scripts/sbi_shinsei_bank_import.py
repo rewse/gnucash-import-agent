@@ -11,8 +11,8 @@ Usage:
 import json
 import os
 import sys
-import uuid
 import unicodedata
+import uuid
 from datetime import date
 from pathlib import Path
 
@@ -40,7 +40,7 @@ def load_accounts():
         data = json.load(account_file)
     raw_accounts = data.get("accounts") if isinstance(data, dict) else None
     if not isinstance(raw_accounts, dict):
-        raise ValueError("Malformed account GUID cache.")
+        raise ValueError("Malformed account GUID cache.")  # noqa: TRY004 a malformed cache file is bad data, and tests expect ValueError
     accounts = {}
     for path, value in raw_accounts.items():
         if (
@@ -333,7 +333,7 @@ def output_sql(transactions):
     print()
     total = len(transactions)
     for idx, tx in enumerate(transactions, 1):
-        account, description = get_transaction_info(idx, tx)
+        _, description = get_transaction_info(idx, tx)
         counter_splits = get_counter_splits(idx, tx)
         currency = tx["currency"]
         currency_guid = CURRENCIES[currency]
@@ -351,13 +351,13 @@ def output_sql(transactions):
         )
 
         print(
-            f"INSERT INTO transactions (guid, currency_guid, num, post_date, enter_date, description)"
+            "INSERT INTO transactions (guid, currency_guid, num, post_date, enter_date, description)"
         )
         print(
             f"VALUES ('{tx_guid}', '{currency_guid}', '', '{date_str}', NOW(), {desc_sql});"
         )
         print(
-            f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)"
+            "INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)"
         )
         print(
             f"VALUES ('{s1_guid}', '{tx_guid}', '{source}', '', '', 'c', NULL, {value_num}, {denom}, {value_num}, {denom}, NULL);"
@@ -367,7 +367,7 @@ def output_sql(transactions):
             qn, qd = get_counter_quantity(idx, tx, acct, amt)
             sg = uuid.uuid4().hex
             print(
-                f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)"
+                "INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)"
             )
             print(
                 f"VALUES ('{sg}', '{tx_guid}', '{acct}', '', '', 'c', NULL, {-sn}, {denom}, {qn}, {qd}, NULL);"

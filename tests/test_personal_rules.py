@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 import ast
 import importlib.util
 import json
@@ -9,14 +10,14 @@ from contextlib import redirect_stderr
 from datetime import datetime
 from io import StringIO
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS = ROOT / "scripts"
 
 
 class PersonalRulesTest(unittest.TestCase):
-    _old_root: Optional[str] = None
+    _old_root: str | None = None
     _temporary_directory: Any = None
     project_root = Path()
 

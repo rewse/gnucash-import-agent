@@ -7,7 +7,8 @@ import os
 import tempfile
 import unittest
 from contextlib import redirect_stdout
-from datetime import date, datetime
+from datetime import date
+from datetime import datetime
 from io import StringIO
 from pathlib import Path
 from typing import Any

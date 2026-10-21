@@ -10,9 +10,9 @@ Usage:
 
 import json
 import os
-import uuid
 import sys
 import unicodedata
+import uuid
 from datetime import datetime
 from pathlib import Path
 
@@ -40,7 +40,7 @@ def load_accounts():
         data = json.load(account_file)
     raw_accounts = data.get("accounts") if isinstance(data, dict) else None
     if not isinstance(raw_accounts, dict):
-        raise ValueError("Malformed account GUID cache.")
+        raise ValueError("Malformed account GUID cache.")  # noqa: TRY004 a malformed cache file is bad data, and tests expect ValueError
     accounts = {}
     for path, value in raw_accounts.items():
         if (
@@ -222,7 +222,7 @@ def output_review(transactions):
         decrease = f"{abs(tx['points']):,}" if tx["points"] < 0 else ""
 
         print(
-            f"{idx:<4} {date_display:<14} {tx['location']:<30} {tx['detail']:<40} {str(description or ''):<20} {transfer:<45} {increase:>10} {decrease:>10}"
+            f"{idx:<4} {date_display:<14} {tx['location']:<30} {tx['detail']:<40} {description or ''!s:<20} {transfer:<45} {increase:>10} {decrease:>10}"
         )
 
 
@@ -248,19 +248,19 @@ def output_sql(transactions):
             f"-- Transaction {idx}: {tx['date'].strftime('%Y-%m-%d')} {description} {tx['points']:+,}"
         )
         print(
-            f"INSERT INTO transactions (guid, currency_guid, num, post_date, enter_date, description)"
+            "INSERT INTO transactions (guid, currency_guid, num, post_date, enter_date, description)"
         )
         print(
             f"VALUES ('{tx_guid}', '{JPY_CURRENCY}', '', '{date_str}', NOW(), {desc_sql});"
         )
         print(
-            f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)"
+            "INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)"
         )
         print(
             f"VALUES ('{split1_guid}', '{tx_guid}', '{SOURCE_ACCOUNT}', '', '', 'c', NULL, {tx['points']}, 1, {tx['points']}, 1, NULL);"
         )
         print(
-            f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)"
+            "INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)"
         )
         print(
             f"VALUES ('{split2_guid}', '{tx_guid}', '{account_guid}', '', '', 'c', NULL, {-tx['points']}, 1, {-tx['points']}, 1, NULL);"

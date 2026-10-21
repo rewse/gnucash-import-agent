@@ -12,8 +12,8 @@ import json
 import os
 import re
 import sys
-import uuid
 import unicodedata
+import uuid
 from datetime import date
 from pathlib import Path
 
@@ -41,7 +41,7 @@ def load_accounts():
         data = json.load(account_file)
     raw_accounts = data.get("accounts") if isinstance(data, dict) else None
     if not isinstance(raw_accounts, dict):
-        raise ValueError("Malformed account GUID cache.")
+        raise ValueError("Malformed account GUID cache.")  # noqa: TRY004 a malformed cache file is bad data, and tests expect ValueError
     accounts = {}
     for path, value in raw_accounts.items():
         if (
@@ -110,7 +110,7 @@ def load_personal_rules(source_name):
         return {}, _personal_error(key_prefix)
     unexpected_fields = set(rule) - {"account", "contains"}
     if unexpected_fields:
-        field = sorted(unexpected_fields)[0]
+        field = min(unexpected_fields)
         return {}, _personal_error(f"{key_prefix}.{field}")
     for field in ("account", "contains"):
         if field not in rule or not _is_nonempty_string(rule[field]):
@@ -269,7 +269,7 @@ def output_review(transactions):
         if prev_date and prev_date != tx["date"]:
             print("-" * 136)
         prev_date = tx["date"]
-        account, description = get_transaction_info(idx, tx)
+        account, _ = get_transaction_info(idx, tx)
         weekday = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
         date_str = f"{tx['date']} {weekday[tx['date'].weekday()]}"
         transfer = ACCOUNT_NAMES.get(account, account or "")
@@ -296,19 +296,19 @@ def output_sql(transactions):
             f"'{description.replace(chr(39), chr(39) * 2)}'" if description else "NULL"
         )
         print(
-            f"INSERT INTO transactions (guid, currency_guid, num, post_date, enter_date, description)"
+            "INSERT INTO transactions (guid, currency_guid, num, post_date, enter_date, description)"
         )
         print(
             f"VALUES ('{tx_guid}', '{JPY_CURRENCY}', '', '{date_str}', NOW(), {desc_sql});"
         )
         print(
-            f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)"
+            "INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)"
         )
         print(
             f"VALUES ('{s1_guid}', '{tx_guid}', '{SOURCE_ACCOUNT}', '', '', 'c', NULL, {tx['amount']}, 1, {tx['amount']}, 1, NULL);"
         )
         print(
-            f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)"
+            "INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)"
         )
         print(
             f"VALUES ('{s2_guid}', '{tx_guid}', '{account}', '', '', 'c', NULL, {-tx['amount']}, 1, {-tx['amount']}, 1, NULL);"

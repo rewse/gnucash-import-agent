@@ -14,8 +14,8 @@ import json
 import os
 import re
 import sys
-import uuid
 import unicodedata
+import uuid
 from datetime import date
 from pathlib import Path
 
@@ -43,7 +43,7 @@ def load_accounts():
         data = json.load(account_file)
     raw_accounts = data.get("accounts") if isinstance(data, dict) else None
     if not isinstance(raw_accounts, dict):
-        raise ValueError("Malformed account GUID cache.")
+        raise ValueError("Malformed account GUID cache.")  # noqa: TRY004 a malformed cache file is bad data, and tests expect ValueError
     accounts = {}
     for path, value in raw_accounts.items():
         if (
@@ -293,21 +293,21 @@ def sql_jpy(transactions):
         amount = tx["amount"]
         qty_num = tx["quantity"] * FUND_QTY_DENOM
         print(
-            f"INSERT INTO transactions (guid, currency_guid, num, post_date, enter_date, description)"
+            "INSERT INTO transactions (guid, currency_guid, num, post_date, enter_date, description)"
         )
         print(
             f"VALUES ('{tx_guid}', '{JPY_CURRENCY}', '', '{date_str}', NOW(), {desc_sql});"
         )
         # Fund split: value=amount (denom=1), quantity=口*10000 (denom=10000)
         print(
-            f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)"
+            "INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)"
         )
         print(
             f"VALUES ('{s1_guid}', '{tx_guid}', '{fund_account}', '', '', 'c', NULL, {amount}, 1, {qty_num}, {FUND_QTY_DENOM}, NULL);"
         )
         # A/Payable split: 1:1 (cash-equivalent)
         print(
-            f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)"
+            "INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)"
         )
         print(
             f"VALUES ('{s2_guid}', '{tx_guid}', '{TRANSFER_JPY}', '', '', 'c', NULL, {-amount}, 1, {-amount}, 1, NULL);"
@@ -402,21 +402,21 @@ def sql_usd_stock(transactions):
         qty_num = sign * tx["quantity"] * FUND_QTY_DENOM
 
         print(
-            f"INSERT INTO transactions (guid, currency_guid, num, post_date, enter_date, description)"
+            "INSERT INTO transactions (guid, currency_guid, num, post_date, enter_date, description)"
         )
         print(
             f"VALUES ('{tx_guid}', '{USD_CURRENCY}', '', '{date_str}', NOW(), {desc_sql});"
         )
         # Fund account: value=cents (denom=100), quantity=shares*10000 (denom=10000)
         print(
-            f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)"
+            "INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)"
         )
         print(
             f"VALUES ('{s_fund}', '{tx_guid}', '{fund_account}', '', '', 'c', NULL, {sign * exec_cents}, 100, {qty_num}, {FUND_QTY_DENOM}, NULL);"
         )
         # Cash account
         print(
-            f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)"
+            "INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)"
         )
         print(
             f"VALUES ('{s_cash}', '{tx_guid}', '{USD_CASH}', '', '', 'c', NULL, {-sign * settle_cents}, 100, {-sign * settle_cents}, 100, NULL);"
@@ -424,7 +424,7 @@ def sql_usd_stock(transactions):
         # Fees
         if fees_cents:
             print(
-                f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)"
+                "INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)"
             )
             print(
                 f"VALUES ('{s_fees}', '{tx_guid}', '{FEES}', '', '', 'c', NULL, {fees_cents}, 100, {fees_cents}, 100, NULL);"
@@ -432,7 +432,7 @@ def sql_usd_stock(transactions):
         # Tax
         if tax_cents:
             print(
-                f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)"
+                "INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)"
             )
             print(
                 f"VALUES ('{s_tax}', '{tx_guid}', '{TAX}', '', '', 'c', NULL, {tax_cents}, 100, {tax_cents}, 100, NULL);"
@@ -530,19 +530,19 @@ def sql_usd_cash(transactions):
         )
         cents = round(tx["amount"] * 100)
         print(
-            f"INSERT INTO transactions (guid, currency_guid, num, post_date, enter_date, description)"
+            "INSERT INTO transactions (guid, currency_guid, num, post_date, enter_date, description)"
         )
         print(
             f"VALUES ('{tx_guid}', '{USD_CURRENCY}', '', '{date_str}', NOW(), {desc_sql});"
         )
         print(
-            f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)"
+            "INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)"
         )
         print(
             f"VALUES ('{s1_guid}', '{tx_guid}', '{USD_CASH}', '', '', 'c', NULL, {cents}, 100, {cents}, 100, NULL);"
         )
         print(
-            f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)"
+            "INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)"
         )
         print(
             f"VALUES ('{s2_guid}', '{tx_guid}', '{account}', '', '', 'c', NULL, {-cents}, 100, {-cents}, 100, NULL);"
@@ -571,16 +571,6 @@ def main():
         )
         sys.exit(1)
     raw_ref, parse_fn, output_fn = COMMANDS[sys.argv[1]]
-    # Resolve RAW_DATA from global name
-    raw = (
-        globals()[
-            {v[0]: k for k, v in globals().items() if isinstance(v, str)}.get(
-                id(raw_ref), ""
-            )
-        ]
-        if False
-        else raw_ref
-    )
     if not raw_ref.strip():
         print(
             f"Error: statement data is empty for {sys.argv[1]}. Write its raw-*.txt file next to this script.",

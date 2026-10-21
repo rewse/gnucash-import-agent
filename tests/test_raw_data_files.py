@@ -8,10 +8,11 @@ import shutil
 import tempfile
 import unicodedata
 import unittest
+from collections.abc import Callable
 from contextlib import redirect_stdout
 from io import StringIO
 from pathlib import Path
-from typing import Any, Callable, cast
+from typing import Any, cast
 from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -70,7 +71,7 @@ class RawDataFileTest(unittest.TestCase):
             "os": os,
             "unicodedata": unicodedata,
         }
-        exec(
+        exec(  # noqa: S102 runs a function extracted from a repository script, not untrusted input
             compile(ast.Module(body=body, type_ignores=[]), str(path), "exec"),
             namespace,
         )

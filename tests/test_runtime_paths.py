@@ -2,9 +2,10 @@ import ast
 import os
 import tempfile
 import unittest
+from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Callable, Iterator, cast
+from typing import Any, cast
 from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -42,7 +43,7 @@ class RuntimePathTest(unittest.TestCase):
             "__file__": str(source_file),
             "os": os,
         }
-        exec(
+        exec(  # noqa: S102 runs a function extracted from a repository script, not untrusted input
             compile(ast.Module(body=[function], type_ignores=[]), str(path), "exec"),
             namespace,
         )
@@ -82,9 +83,12 @@ class RuntimePathTest(unittest.TestCase):
 
                 missing_source = base / "missing" / "scripts" / target.name
                 missing_resolver = self._resolver(target, missing_source)
-                with patch.dict(os.environ, {}, clear=True), working_directory(base):
-                    with self.assertRaises(FileNotFoundError):
-                        missing_resolver()
+                with (
+                    patch.dict(os.environ, {}, clear=True),
+                    working_directory(base),
+                    self.assertRaises(FileNotFoundError),
+                ):
+                    missing_resolver()
 
 
 if __name__ == "__main__":

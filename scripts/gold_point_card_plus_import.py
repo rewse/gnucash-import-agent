@@ -11,10 +11,10 @@ Usage:
 
 import json
 import os
-import uuid
-import sys
 import re
+import sys
 import unicodedata
+import uuid
 from datetime import datetime
 from pathlib import Path
 
@@ -42,7 +42,7 @@ def load_accounts():
         data = json.load(account_file)
     raw_accounts = data.get("accounts") if isinstance(data, dict) else None
     if not isinstance(raw_accounts, dict):
-        raise ValueError("Malformed account GUID cache.")
+        raise ValueError("Malformed account GUID cache.")  # noqa: TRY004 a malformed cache file is bad data, and tests expect ValueError
     accounts = {}
     for path, value in raw_accounts.items():
         if (
@@ -226,19 +226,19 @@ def output_sql(transactions):
         )
 
         print(
-            f"INSERT INTO transactions (guid, currency_guid, num, post_date, enter_date, description)"
+            "INSERT INTO transactions (guid, currency_guid, num, post_date, enter_date, description)"
         )
         print(
             f"VALUES ('{tx_guid}', '{currency_guid}', '', '{date_str}', NOW(), {desc_sql});"
         )
         print(
-            f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)"
+            "INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)"
         )
         print(
             f"VALUES ('{split1_guid}', '{tx_guid}', '{SOURCE_ACCOUNT}', '', '', 'c', NULL, {value_num}, 1, {value_num}, 1, NULL);"
         )
         print(
-            f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)"
+            "INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)"
         )
         print(
             f"VALUES ('{split2_guid}', '{tx_guid}', '{expense_account}', '', '', 'c', NULL, {-value_num}, 1, {-value_num}, 1, NULL);"

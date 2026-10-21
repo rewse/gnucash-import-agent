@@ -12,8 +12,8 @@ import json
 import math
 import os
 import sys
-import uuid
 import unicodedata
+import uuid
 from datetime import date
 from pathlib import Path
 
@@ -41,7 +41,7 @@ def load_accounts():
         data = json.load(account_file)
     raw_accounts = data.get("accounts") if isinstance(data, dict) else None
     if not isinstance(raw_accounts, dict):
-        raise ValueError("Malformed account GUID cache.")
+        raise ValueError("Malformed account GUID cache.")  # noqa: TRY004 a malformed cache file is bad data, and tests expect ValueError
     accounts = {}
     for path, value in raw_accounts.items():
         if (
@@ -135,11 +135,11 @@ def load_personal_rules(source_name):
         expected_fields = schemas[rule_name]
         unexpected_fields = set(configured_rule) - expected_fields
         if unexpected_fields:
-            field = sorted(unexpected_fields)[0]
+            field = min(unexpected_fields)
             return {}, _personal_error(f"{key_prefix}.{field}")
         missing_fields = expected_fields - set(configured_rule)
         if missing_fields:
-            field = sorted(missing_fields)[0]
+            field = min(missing_fields)
             return {}, _personal_error(f"{key_prefix}.{field}")
         if not _is_safe_personal_pattern(configured_rule["pattern"]):
             return {}, _personal_error(f"{key_prefix}.pattern")
@@ -171,7 +171,7 @@ def load_personal_rules(source_name):
                     return {}, _personal_error(split_key)
                 unexpected_fields = set(split) - {"account", "amount"}
                 if unexpected_fields:
-                    field = sorted(unexpected_fields)[0]
+                    field = min(unexpected_fields)
                     return {}, _personal_error(f"{split_key}.{field}")
                 for field in ("account", "amount"):
                     if field not in split:
@@ -560,14 +560,14 @@ def output_sql(transactions):
             total_amount = sum(a for _, a, _ in info)
             value_num = round(total_amount * denom)
             print(
-                f"INSERT INTO transactions (guid, currency_guid, num, post_date, enter_date, description)"
+                "INSERT INTO transactions (guid, currency_guid, num, post_date, enter_date, description)"
             )
             print(
                 f"VALUES ('{tx_guid}', '{currency_guid}', '', '{date_str}', NOW(), {desc_sql});"
             )
             s_guid = uuid.uuid4().hex
             print(
-                f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)"
+                "INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)"
             )
             print(
                 f"VALUES ('{s_guid}', '{tx_guid}', '{source}', '', '', 'c', NULL, {value_num}, {denom}, {value_num}, {denom}, NULL);"
@@ -576,7 +576,7 @@ def output_sql(transactions):
                 s_guid = uuid.uuid4().hex
                 v = round(amt * denom)
                 print(
-                    f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)"
+                    "INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)"
                 )
                 print(
                     f"VALUES ('{s_guid}', '{tx_guid}', '{acct}', '', '', 'c', NULL, {-v}, {denom}, {-v}, {denom}, NULL);"
@@ -606,7 +606,7 @@ def output_sql(transactions):
                 # Selling USD: JPY increases, USD decreases
                 jpy_sign, usd_sign = 1, -1
             print(
-                f"INSERT INTO transactions (guid, currency_guid, num, post_date, enter_date, description)"
+                "INSERT INTO transactions (guid, currency_guid, num, post_date, enter_date, description)"
             )
             print(
                 f"VALUES ('{tx_guid}', '{CURRENCIES['JPY']}', '', '{date_str}', NOW(), {desc_sql});"
@@ -614,13 +614,13 @@ def output_sql(transactions):
             s1 = uuid.uuid4().hex
             s2 = uuid.uuid4().hex
             print(
-                f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)"
+                "INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)"
             )
             print(
                 f"VALUES ('{s1}', '{tx_guid}', '{source}', '', '', 'c', NULL, {jpy_sign * jpy_value}, 1, {jpy_sign * jpy_value}, 1, NULL);"
             )
             print(
-                f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)"
+                "INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)"
             )
             print(
                 f"VALUES ('{s2}', '{tx_guid}', '{USD_ACCT}', '', '', 'c', NULL, {-jpy_sign * jpy_value}, 1, {usd_sign * usd_value}, 100, NULL);"
@@ -631,19 +631,19 @@ def output_sql(transactions):
         s1_guid = uuid.uuid4().hex
         s2_guid = uuid.uuid4().hex
         print(
-            f"INSERT INTO transactions (guid, currency_guid, num, post_date, enter_date, description)"
+            "INSERT INTO transactions (guid, currency_guid, num, post_date, enter_date, description)"
         )
         print(
             f"VALUES ('{tx_guid}', '{currency_guid}', '', '{date_str}', NOW(), {desc_sql});"
         )
         print(
-            f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)"
+            "INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)"
         )
         print(
             f"VALUES ('{s1_guid}', '{tx_guid}', '{source}', '', '', 'c', NULL, {value_num}, {denom}, {value_num}, {denom}, NULL);"
         )
         print(
-            f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)"
+            "INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)"
         )
         print(
             f"VALUES ('{s2_guid}', '{tx_guid}', '{account}', '', '', 'c', NULL, {-value_num}, {denom}, {-value_num}, {denom}, NULL);"

@@ -14,8 +14,8 @@ import json
 import os
 import re
 import sys
-import uuid
 import unicodedata
+import uuid
 from datetime import date
 from pathlib import Path
 
@@ -43,7 +43,7 @@ def load_accounts():
         data = json.load(account_file)
     raw_accounts = data.get("accounts") if isinstance(data, dict) else None
     if not isinstance(raw_accounts, dict):
-        raise ValueError("Malformed account GUID cache.")
+        raise ValueError("Malformed account GUID cache.")  # noqa: TRY004 a malformed cache file is bad data, and tests expect ValueError
     accounts = {}
     for path, value in raw_accounts.items():
         if (
@@ -335,13 +335,13 @@ def output_sql(transactions):
             s_source_guid = uuid.uuid4().hex
             desc_sql = "'KDDI'"
             print(
-                f"INSERT INTO transactions (guid, currency_guid, num, post_date, enter_date, description)"
+                "INSERT INTO transactions (guid, currency_guid, num, post_date, enter_date, description)"
             )
             print(
                 f"VALUES ('{tx_guid}', '{JPY_CURRENCY}', '', '{date_str}', NOW(), {desc_sql});"
             )
             print(
-                f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)"
+                "INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)"
             )
             print(
                 f"VALUES ('{s_source_guid}', '{tx_guid}', '{SOURCE_ACCOUNT}', '', '', 'c', NULL, {tx['amount']}, 1, {tx['amount']}, 1, NULL);"
@@ -349,7 +349,7 @@ def output_sql(transactions):
             for acct, amt, _ in kddi_splits(abs(tx["amount"])):
                 s_guid = uuid.uuid4().hex
                 print(
-                    f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)"
+                    "INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)"
                 )
                 print(
                     f"VALUES ('{s_guid}', '{tx_guid}', '{acct}', '', '', 'c', NULL, {amt}, 1, {amt}, 1, NULL);"
@@ -365,19 +365,19 @@ def output_sql(transactions):
                 else "NULL"
             )
             print(
-                f"INSERT INTO transactions (guid, currency_guid, num, post_date, enter_date, description)"
+                "INSERT INTO transactions (guid, currency_guid, num, post_date, enter_date, description)"
             )
             print(
                 f"VALUES ('{tx_guid}', '{JPY_CURRENCY}', '', '{date_str}', NOW(), {desc_sql});"
             )
             print(
-                f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)"
+                "INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)"
             )
             print(
                 f"VALUES ('{s1_guid}', '{tx_guid}', '{SOURCE_ACCOUNT}', '', '', 'c', NULL, {tx['amount']}, 1, {tx['amount']}, 1, NULL);"
             )
             print(
-                f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)"
+                "INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)"
             )
             print(
                 f"VALUES ('{s2_guid}', '{tx_guid}', '{account}', '', '', 'c', NULL, {-tx['amount']}, 1, {-tx['amount']}, 1, NULL);"
@@ -408,19 +408,19 @@ def output_points_sql(transactions):
         minutes, seconds = divmod(reverse_idx, 60)
         date_str = f"{tx['date']} 00:{minutes:02d}:{seconds:02d}"
         print(
-            f"INSERT INTO transactions (guid, currency_guid, num, post_date, enter_date, description)"
+            "INSERT INTO transactions (guid, currency_guid, num, post_date, enter_date, description)"
         )
         print(
             f"VALUES ('{tx_guid}', '{JPY_CURRENCY}', '', '{date_str}', NOW(), 'Luxury Reward');"
         )
         print(
-            f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)"
+            "INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)"
         )
         print(
             f"VALUES ('{s1_guid}', '{tx_guid}', '{POINTS_ACCOUNT}', '', '', 'c', NULL, {tx['amount']}, 1, {tx['amount']}, 1, NULL);"
         )
         print(
-            f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)"
+            "INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)"
         )
         print(
             f"VALUES ('{s2_guid}', '{tx_guid}', '{POINT_INCOME}', '', '', 'c', NULL, {-tx['amount']}, 1, {-tx['amount']}, 1, NULL);"

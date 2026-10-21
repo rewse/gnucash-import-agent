@@ -2,10 +2,11 @@ import ast
 import importlib.util
 import json
 import os
+import sys
 import tempfile
 import unittest
-import sys
-from contextlib import redirect_stderr, redirect_stdout
+from contextlib import redirect_stderr
+from contextlib import redirect_stdout
 from io import StringIO
 from pathlib import Path
 from unittest.mock import patch
@@ -77,9 +78,9 @@ class AccountCacheTest(unittest.TestCase):
                 with (
                     patch.dict(os.environ, {"GNUCASH_IMPORT_ROOT": str(project_root)}),
                     redirect_stdout(output),
+                    self.assertRaises(ValueError) as caught,
                 ):
-                    with self.assertRaises(ValueError) as caught:
-                        spec.loader.exec_module(module)
+                    spec.loader.exec_module(module)
                 self.assertNotIn(INJECTED_VALUE, str(caught.exception))
                 self.assertNotIn("SELECT 1", output.getvalue())
                 self.assertFalse(hasattr(module, "ACCOUNTS"))
@@ -115,7 +116,7 @@ class AccountCacheTest(unittest.TestCase):
                     if isinstance(node, ast.FunctionDef) and node.name == "get_guid"
                 )
                 namespace = {"ACCOUNTS": {"Assets:Known": "a" * 32}, "sys": sys}
-                exec(
+                exec(  # noqa: S102 runs a function extracted from a repository script, not untrusted input
                     compile(
                         ast.Module(body=[function], type_ignores=[]),
                         str(target),

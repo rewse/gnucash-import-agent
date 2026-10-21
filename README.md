@@ -9,6 +9,7 @@ The skill guides Kiro through statement retrieval, transaction parsing, account 
 - [Kiro CLI](https://kiro.dev/cli/)
 - Python 3
 - PostgreSQL with a GnuCash database
+- The [Amazon RDS global CA bundle](https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem) at `~/.postgresql/rds-global-bundle.pem`, or at the path in `GNUCASH_DB_SSLROOTCERT`, for verified TLS to Aurora PostgreSQL (see the `Database connection` section of the skill)
 - [1Password CLI](https://developer.1password.com/docs/cli/) for database credentials
 - [agent-browser](https://github.com/vercel-labs/agent-browser) for statement retrieval
 

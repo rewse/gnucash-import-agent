@@ -79,6 +79,33 @@ When running from another directory, set the repository root explicitly:
 GNUCASH_IMPORT_ROOT=/path/to/gnucash-import-agent python3 "$work_dir/import.py" review
 ```
 
+### Database connection
+
+The GnuCash database is Amazon Aurora PostgreSQL, reached over a VPN from home and over the internet from the office. Every `psql` connection must use TLS with certificate and host name verification (`sslmode=verify-full`) against the Amazon RDS global CA bundle. libpq's default `prefer` mode silently falls back to plaintext and never verifies the server.
+
+Download the bundle once, outside the repository. It is public CA material, not a secret; download it again when AWS announces an RDS CA rotation:
+
+```bash
+install -d -m 700 "$HOME/.postgresql"
+curl --fail --silent --show-error --proto '=https' --tlsv1.2 \
+  -o "$HOME/.postgresql/rds-global-bundle.pem" \
+  https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem
+```
+
+Set `GNUCASH_DB_SSLROOTCERT` to use a bundle stored elsewhere. Before any `psql` command, set the connection variables in the same shell:
+
+```bash
+DB_HOST=$(op read "op://gnucash/gnucash-db/server")
+DB_PORT=$(op read "op://gnucash/gnucash-db/port")
+DB_NAME=$(op read "op://gnucash/gnucash-db/database")
+DB_USER=$(op read "op://gnucash/gnucash-db/username")
+export PGSSLMODE=verify-full
+export PGSSLROOTCERT="${GNUCASH_DB_SSLROOTCERT:-$HOME/.postgresql/rds-global-bundle.pem}"
+test -s "$PGSSLROOTCERT" || { echo "Missing RDS CA bundle: $PGSSLROOTCERT" >&2; false; }
+```
+
+`verify-full` checks that the host name matches the server certificate, so `op://gnucash/gnucash-db/server` must hold the Aurora endpoint DNS name ending in `.rds.amazonaws.com`, not an IP address or a private alias. When verification fails, stop and report the error. Never lower `sslmode` or unset `PGSSLROOTCERT` to work around it.
+
 ### SQL validation and execution
 
 Run the shared static validator after generating and manually inspecting SQL. Pass the exact source account path from the selected source reference and the expected currency GUID verified against the live database:
@@ -96,7 +123,7 @@ When a source reference explicitly requires verified counterparty splits to rema
 
 Immediately before execution, rerun row-level duplicate detection against the live database. Confirm that every referenced account exists and that the expected currency GUID has the source reference's namespace and mnemonic. Query both `transactions` and `splits` to confirm that every generated GUID has zero matches. A prior check or a matching statement total is not sufficient.
 
-Test the exact inspected SQL against the target database with only its terminal `COMMIT;` changed to `ROLLBACK;`. Create the rollback copy inside `work_dir` and require psql to stop on the first error. The helper refuses a file unless it is exactly one `BEGIN;` ... `COMMIT;` block with no other transaction control (`ABORT`, `BEGIN`, `COMMIT`, `END`, `PREPARE`, `RELEASE`, `ROLLBACK`, `SAVEPOINT`, `START`) at the start of any statement, because an inner `COMMIT` would make the trial permanent. It also refuses backslashes, which psql runs as meta-commands such as `\!`, block comments, and dollar quoting, which would hide statements from the check. Use the same helper for the separate UPDATE/DELETE correction file:
+Use the connection settings from [Database connection](#database-connection) for every command below. Test the exact inspected SQL against the target database with only its terminal `COMMIT;` changed to `ROLLBACK;`. Create the rollback copy inside `work_dir` and require psql to stop on the first error. The helper refuses a file unless it is exactly one `BEGIN;` ... `COMMIT;` block with no other transaction control (`ABORT`, `BEGIN`, `COMMIT`, `END`, `PREPARE`, `RELEASE`, `ROLLBACK`, `SAVEPOINT`, `START`) at the start of any statement, because an inner `COMMIT` would make the trial permanent. It also refuses backslashes, which psql runs as meta-commands such as `\!`, block comments, and dollar quoting, which would hide statements from the check. Use the same helper for the separate UPDATE/DELETE correction file:
 
 ```bash
 python3 -I - "$work_dir/import.sql" "$work_dir/rollback.sql" <<'PY'
@@ -166,6 +193,9 @@ DB_HOST=$(op read "op://gnucash/gnucash-db/server")
 DB_PORT=$(op read "op://gnucash/gnucash-db/port")
 DB_NAME=$(op read "op://gnucash/gnucash-db/database")
 DB_USER=$(op read "op://gnucash/gnucash-db/username")
+export PGSSLMODE=verify-full
+export PGSSLROOTCERT="${GNUCASH_DB_SSLROOTCERT:-$HOME/.postgresql/rds-global-bundle.pem}"
+test -s "$PGSSLROOTCERT"
 PGPASSWORD=$(op read "op://gnucash/gnucash-db/password") psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -t -A -c "
 WITH RECURSIVE path_list AS (
    SELECT guid, parent_guid, name, name::text AS path, hidden, placeholder FROM accounts WHERE parent_guid IS NULL
@@ -204,7 +234,7 @@ The source account may already hold `n` transactions created by GnuCash schedule
 
 List every update and deletion in the review. Put them in a separate SQL file from the inserts, because `validate_sql.py` accepts only inserts. Guard each statement with `reconcile_state = 'n'` and a GUID, require the rollback trial to report no `UPDATE 0` or `DELETE 0`, and after commit confirm that no `n` split remains in the updated transactions and that each still balances.
 
-Pass query values as psql variables and feed the SQL through a quoted heredoc, so psql quotes each value with `:'name'` and the shell does not expand anything inside the query. Never paste statement text or account names into the SQL itself. Set `DB_HOST`, `DB_PORT`, `DB_USER`, and `DB_NAME` as in the account GUID cache recipe:
+Pass query values as psql variables and feed the SQL through a quoted heredoc, so psql quotes each value with `:'name'` and the shell does not expand anything inside the query. Never paste statement text or account names into the SQL itself. Use the connection settings from [Database connection](#database-connection):
 
 ```bash
 PGPASSWORD="$(op read "op://gnucash/gnucash-db/password")" psql -X -v ON_ERROR_STOP=1 \

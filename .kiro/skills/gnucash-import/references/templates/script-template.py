@@ -56,7 +56,20 @@ def load_accounts():
 ACCOUNTS = load_accounts()
 
 def get_guid(path):
-    return ACCOUNTS.get(path) or ACCOUNTS.get('Root Account:' + path)
+    """Return the cached GUID for an account path, or exit when it is missing.
+
+    An unresolved path would otherwise be written as account_guid 'None'.
+    The error omits the path because it can come from statement data.
+    """
+    guid = ACCOUNTS.get(path) or ACCOUNTS.get('Root Account:' + path)
+    if guid is None:
+        print(
+            "Error: an account path is missing from account-guid-cache.json. "
+            "Refresh the cache or correct the mapping.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    return guid
 
 # TODO: Define account GUIDs for this source
 SOURCE_ACCOUNT = get_guid('{ACCOUNT_PATH}')

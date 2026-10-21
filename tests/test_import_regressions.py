@@ -6,7 +6,7 @@ import json
 import os
 import tempfile
 import unittest
-from contextlib import redirect_stdout
+from contextlib import redirect_stderr, redirect_stdout
 from datetime import datetime
 from io import StringIO
 from pathlib import Path
@@ -262,6 +262,20 @@ class ImportRegressionTest(unittest.TestCase):
         self.assertIn(f"'{override_guid}'", sql.getvalue())
         self.assertIn("NOW(), 'Example override');", sql.getvalue())
         self.assertNotIn("'None'", sql.getvalue())
+
+    def test_review_rejects_unresolved_statement_account_paths(self):
+        cases = (
+            ("amazon_gc", "2030年1月2日\tExample order\t-￥100\t￥900\tExpenses:Example Unresolved\tItem\n"),
+            ("amazon_point", "2030/01/02\tExample purchase\t利用\t-10\tExpenses:Example Unresolved\n"),
+        )
+        for source_slug, raw in cases:
+            with self.subTest(source_slug=source_slug):
+                module = self._import_script(source_slug)
+                transactions = module.parse_transactions(raw)
+                with redirect_stdout(StringIO()), redirect_stderr(StringIO()) as stderr:
+                    with self.assertRaises(SystemExit):
+                        module.output_review(transactions)
+                self.assertNotIn("Example Unresolved", stderr.getvalue())
 
 if __name__ == "__main__":
     unittest.main()

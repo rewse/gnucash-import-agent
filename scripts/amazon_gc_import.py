@@ -55,8 +55,20 @@ def load_accounts():
 ACCOUNTS = load_accounts()
 
 def get_guid(path):
-    """Get GUID for account path."""
-    return ACCOUNTS.get(path) or ACCOUNTS.get('Root Account:' + path)
+    """Return the cached GUID for an account path, or exit when it is missing.
+
+    An unresolved path would otherwise be written as account_guid 'None'.
+    The error omits the path because it can come from statement data.
+    """
+    guid = ACCOUNTS.get(path) or ACCOUNTS.get('Root Account:' + path)
+    if guid is None:
+        print(
+            "Error: an account path is missing from account-guid-cache.json. "
+            "Refresh the cache or correct the mapping.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    return guid
 
 AMAZON_GC_ACCOUNT = get_guid('Assets:JPY - Current Assets:Prepaid:Amazon Gift Certificate')
 JPY_CURRENCY = 'a77d4ee821e04f02bb7429e437c645e4'
@@ -186,6 +198,11 @@ def get_description(tx):
 
 def output_review(transactions):
     """Output review table."""
+    # Resolve every account before printing so an unmapped row cannot look approved.
+    for tx in transactions:
+        for split in tx['splits']:
+            get_guid(split['account'])
+
     print(f"{'ID':<6} {'Date':<14} {'Type':<8} {'Item':<25} {'Desc':<20} {'Transfer':<45} {'Increase':>10} {'Decrease':>10}")
     print("-" * 145)
 

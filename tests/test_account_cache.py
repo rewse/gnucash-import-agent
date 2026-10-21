@@ -4,7 +4,8 @@ import json
 import os
 import tempfile
 import unittest
-from contextlib import redirect_stdout
+import sys
+from contextlib import redirect_stderr, redirect_stdout
 from io import StringIO
 from pathlib import Path
 from unittest.mock import patch
@@ -12,6 +13,19 @@ from unittest.mock import patch
 ROOT = Path(__file__).resolve().parents[1]
 TEMPLATE = ROOT / ".kiro/skills/gnucash-import/references/templates/script-template.py"
 INJECTED_VALUE = "x'); SELECT 1; --"
+UNRESOLVED_PATH = "Expenses:Example Unresolved"
+FAIL_FAST_SCRIPTS = (
+    "amazon_gc",
+    "amazon_point",
+    "ana_mileage_club",
+    "ana_sky_coin",
+    "bic_point",
+    "ihg_rewards_club",
+    "jre_point",
+    "marriott_rewards",
+    "world_of_hyatt",
+    "yodobashi_gold_point",
+)
 
 
 class AccountCacheTest(unittest.TestCase):
@@ -73,6 +87,26 @@ class AccountCacheTest(unittest.TestCase):
                 spec.loader.exec_module(module)
             self.assertEqual(set(accounts.values()), set(module.ACCOUNTS.values()))
 
+
+    def test_unresolved_account_paths_fail_fast_without_echoing_the_path(self):
+        targets = [ROOT / f"scripts/{slug}_import.py" for slug in FAIL_FAST_SCRIPTS] + [TEMPLATE]
+        for target in targets:
+            with self.subTest(target=target.name):
+                tree = ast.parse(target.read_text())
+                function = next(
+                    node
+                    for node in tree.body
+                    if isinstance(node, ast.FunctionDef) and node.name == "get_guid"
+                )
+                namespace = {"ACCOUNTS": {"Assets:Known": "a" * 32}, "sys": sys}
+                exec(compile(ast.Module(body=[function], type_ignores=[]), str(target), "exec"), namespace)
+                get_guid = namespace["get_guid"]
+                self.assertEqual("a" * 32, get_guid("Assets:Known"))
+                stderr = StringIO()
+                with redirect_stderr(stderr), self.assertRaises(SystemExit) as caught:
+                    get_guid(UNRESOLVED_PATH)
+                self.assertNotEqual(0, caught.exception.code)
+                self.assertNotIn(UNRESOLVED_PATH, stderr.getvalue() + str(caught.exception.code))
 
 if __name__ == "__main__":
     unittest.main()

@@ -51,7 +51,7 @@ Unconfirmed buttons include an extra status phrase:
 
 The header contains `未請求のご利用金額`, `未確定`, and the amount. Expanded details may contain the card's last four digits, `売上種別`, and `初回年月`.
 
-For both forms, paste one button text per `RAW_DATA` line. The parser accepts `merchant YY.MM.DD N回払い [お支払い方法変更可能] amount円`, converts the date to `20YY-MM-DD`, removes amount commas, and negates the amount. Full-width merchant text is normalized for selected matching and review output; `／ＮＦＣ`, `ＳＱ＊`, and `ＰＡＹＰＡＬ ＊` remain meaningful merchant qualifiers.
+For both forms, write one button text per `raw.txt` line. The parser accepts `merchant YY.MM.DD N回払い [お支払い方法変更可能] amount円`, converts the date to `20YY-MM-DD`, removes amount commas, and negates the amount. Full-width merchant text is normalized for selected matching and review output; `／ＮＦＣ`, `ＳＱ＊`, and `ＰＡＹＰＡＬ ＊` remain meaningful merchant qualifiers.
 
 ### Cash advance rows
 
@@ -65,7 +65,7 @@ The script's parser does not handle these rows. Post each one under the shared c
 
 ### Points format
 
-Sum `通常ポイント`, `優待ポイント`, `特別ポイント`, `交換ポイント`, and `調整ポイント` for each month. Paste one tab-separated monthly net change per `RAW_DATA_POINTS` line:
+Sum `通常ポイント`, `優待ポイント`, `特別ポイント`, `交換ポイント`, and `調整ポイント` for each month. Write one tab-separated monthly net change per `raw-points.txt` line:
 
 ```text
 2099-09	417

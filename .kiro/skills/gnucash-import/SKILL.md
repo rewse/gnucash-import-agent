@@ -15,7 +15,7 @@ Follow this sequence for every import:
 2. Refresh the account GUID cache if needed.
 3. Retrieve the statement as described by the source reference.
 4. Compare statement rows with existing GnuCash transactions.
-5. Copy the source script into `$work_dir` and prepare its statement data there.
+5. Copy the source script into `$work_dir` and write its statement data to `$work_dir/raw.txt`.
 6. Run the script's `review` command and review every proposed transaction with the user.
 7. Run the script's `sql` command and save the generated SQL in `$work_dir`.
 8. Inspect the SQL for mappings, signs, GUIDs, balance, descriptions, and reconciliation states.
@@ -63,9 +63,12 @@ Copy the selected script into `$work_dir`, then run the copy from the repository
 
 ```bash
 cp scripts/{source_slug}_import.py "$work_dir/import.py"
+# Write the statement rows to "$work_dir/raw.txt" with a file-writing tool.
 python3 "$work_dir/import.py" review
 python3 "$work_dir/import.py" sql > "$work_dir/import.sql"
 ```
+
+Each script reads its statement data from a UTF-8 file next to the copied script: `raw.txt` by default, or the file named by `GNUCASH_RAW_DATA`. Sources with several statement forms document their additional file names, such as `raw-points.txt`, in the source reference and the script header. Never paste statement text into a script or a shell command line. Write the rows to the file with a file-writing tool, not with `echo`, `printf`, or a heredoc, because statement text can contain quotes, `$(`, or other shell syntax.
 
 When running from another directory, set the repository root explicitly:
 

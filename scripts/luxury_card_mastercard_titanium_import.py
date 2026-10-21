@@ -2,7 +2,7 @@
 """Luxury Card Mastercard Titanium Statement Importer
 
 Usage:
-1. Copy raw data from browser snapshot into RAW_DATA (card) or RAW_DATA_POINTS (points)
+1. Copy raw data from browser snapshot into raw.txt (card) or raw-points.txt (points)
 2. Set MANUAL_OVERRIDES for any transactions that need custom accounts/descriptions
 3. Run: python3 scripts/luxury_card_mastercard_titanium_import.py review
 4. Run: python3 scripts/luxury_card_mastercard_titanium_import.py sql
@@ -100,13 +100,37 @@ ACCOUNT_NAMES = {
 }
 
 # ============================================================
-# EDIT BELOW: Paste raw data from browser snapshot
+# Statement data loading
 # ============================================================
-RAW_DATA = """
-"""
+RAW_DATA_FILE = "raw.txt"
 
-RAW_DATA_POINTS = """
-"""
+
+def load_raw_data(file_name=RAW_DATA_FILE, environment_variable="GNUCASH_RAW_DATA"):
+    """Read statement data from a UTF-8 file next to this script.
+
+    Keep statement text out of Python source: a triple quote or escape
+    sequence in a merchant name would otherwise run as code or change bytes.
+    The environment variable, when set, names the file to read instead.
+    """
+    configured = os.environ.get(environment_variable)
+    path = Path(configured) if configured else Path(__file__).resolve().with_name(file_name)
+    try:
+        # newline="" keeps a carriage return inside a field from splitting a row.
+        with open(path, encoding="utf-8-sig", newline="") as raw_file:
+            text = raw_file.read()
+    except FileNotFoundError:
+        return ""
+    return text.replace("\r\n", "\n")
+
+
+# ============================================================
+# Statement data: write card rows to raw.txt and point rows to raw-points.txt
+# next to this script, or set GNUCASH_RAW_DATA and GNUCASH_RAW_DATA_POINTS to
+# the file paths. Never paste statement text here.
+# ============================================================
+RAW_DATA = load_raw_data()
+
+RAW_DATA_POINTS = load_raw_data("raw-points.txt", "GNUCASH_RAW_DATA_POINTS")
 
 # ============================================================
 # EDIT BELOW: Manual overrides by ID (1-based)
@@ -328,7 +352,7 @@ def main():
 
     if cmd.startswith('points'):
         if not RAW_DATA_POINTS.strip():
-            print('Error: RAW_DATA_POINTS is empty.', file=sys.stderr)
+            print('Error: statement data is empty. Write it to raw-points.txt next to this script or set GNUCASH_RAW_DATA_POINTS.', file=sys.stderr)
             sys.exit(1)
         transactions = parse_points(RAW_DATA_POINTS)
         if cmd == 'points-review':
@@ -337,7 +361,7 @@ def main():
             output_points_sql(transactions)
     else:
         if not RAW_DATA.strip():
-            print('Error: RAW_DATA is empty.', file=sys.stderr)
+            print('Error: statement data is empty. Write it to raw.txt next to this script or set GNUCASH_RAW_DATA.', file=sys.stderr)
             sys.exit(1)
         transactions = parse_transactions(RAW_DATA)
         if cmd == 'review':

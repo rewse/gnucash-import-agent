@@ -56,6 +56,6 @@ The script has no automatic merchant mappings. Resolve every row and add it to `
 
 ## Source-specific Rules
 
-- Keep the leading-tab distinction between confirmed and unconfirmed rows when preparing `RAW_DATA`.
+- Keep the leading-tab distinction between confirmed and unconfirmed rows when preparing `raw.txt`.
 - Online purchases usually require item-level order details to select an expense account.
 - Accepted commands are `review` and `sql`.

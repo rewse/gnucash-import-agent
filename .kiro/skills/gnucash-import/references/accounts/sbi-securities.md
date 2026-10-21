@@ -51,7 +51,7 @@ NISA(つ)/ --	12,345
 
 The lines are: `TRADE_DATE\tSECURITY_NAME\tTRANSACTION_TYPE`; `ACCOUNT_TYPE\tQUANTITY`; `UNIT_PRICE\tFEES`; `TAX\t`; settlement date; `SETTLEMENT_AMOUNT\t`. Dates use `YY/MM/DD`; amounts may contain commas. Transaction types are `投信金額買付` and `投信金額解約`. Account types include `NISA(つ)/ --`, `NISA(成)/ --`, `特定/一般/ --`, and `特定/ --`.
 
-Paste all six lines per row into `RAW_DATA_JPY`. The parser uses the trade date for posting, derives buy/sell signs from the transaction type, reads quantity from line 2 and settlement amount from line 6, and normalizes non-NISA account types to `特定`.
+Write all six lines per row to `raw-jpy.txt`. The parser uses the trade date for posting, derives buy/sell signs from the transaction type, reads quantity from line 2 and settlement amount from line 6, and normalizes non-NISA account types to `特定`.
 
 ### USD stocks
 
@@ -69,7 +69,7 @@ Each detail page includes domestic trade and settlement dates, quantity, executi
 受渡金額 (外貨)	497.25 USD
 ```
 
-Compile the required fields into `RAW_DATA_USD_STOCK` as tab-separated rows. `DATE` is the domestic trade date:
+Compile the required fields into `raw-usd-stock.txt` as tab-separated rows. `DATE` is the domestic trade date:
 
 ```text
 DATE	TICKER	TYPE	QUANTITY	EXEC_AMOUNT	FEES	TAX	SETTLEMENT
@@ -98,7 +98,7 @@ QQQ 銘柄名:インベ QQQ ETF
 100.00
 ```
 
-Paste this shape into `RAW_DATA_USD_CASH`. Dates use `YYYY/MM/DD`; type is `入金` or `出金`; category is `分配金` or `-`; an absent amount is `-`. The parser accepts only groups whose currency field is exactly `米ドル` and ignores all other currency values.
+Write this shape to `raw-usd-cash.txt`. Dates use `YYYY/MM/DD`; type is `入金` or `出金`; category is `分配金` or `-`; an absent amount is `-`. The parser accepts only groups whose currency field is exactly `米ドル` and ignores all other currency values.
 
 ## Mapping
 

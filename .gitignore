@@ -7,4 +7,5 @@
 .kiro/skills/gnucash-import/references/personal.json
 
 __pycache__/
+scripts/raw*.txt
 tmp/

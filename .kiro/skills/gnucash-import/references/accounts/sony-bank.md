@@ -36,7 +36,7 @@ The JPY CSV has seven columns; USD adds an eighth exchange-rate column:
 "2025年8月19日","Visaデビット 01　313056　ＥＸＡＭＰＬＥ　ＭＥＲＣＨＡＮＴ","","USD","","120.000000","286.860000",""
 ```
 
-Paste UTF-8 CSV rows into `RAW_DATA`; the header may be present. Parse CSV quoting rather than splitting literal commas. Fields are date (`YYYY年M月D日`), description, reference, currency, deposit, withdrawal, balance, and optional exchange rate. Empty amounts are zero; signed amount is deposit minus withdrawal. JPY values are converted to denominator 1 and USD values to cents with denominator 100.
+Write UTF-8 CSV rows to `raw.txt`; the header may be present. Parse CSV quoting rather than splitting literal commas. Fields are date (`YYYY年M月D日`), description, reference, currency, deposit, withdrawal, balance, and optional exchange rate. Empty amounts are zero; signed amount is deposit minus withdrawal. JPY values are converted to denominator 1 and USD values to cents with denominator 100.
 
 ## Mapping
 

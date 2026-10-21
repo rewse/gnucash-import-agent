@@ -24,11 +24,11 @@ kiro-cli chat
 
 Ask Kiro to import a statement or add support for a financial source. The bundled `gnucash-import` skill provides the review and duplicate-detection workflow used before writing to the database.
 
-Source scripts can also be run directly after supplying statement data in the format documented by the matching account reference:
+Source scripts can also be run directly. Write the statement data to `raw.txt` next to the script, or point `GNUCASH_RAW_DATA` at the file, in the format documented by the matching account reference:
 
 ```bash
-python3 scripts/<source>_import.py review
-python3 scripts/<source>_import.py sql
+GNUCASH_RAW_DATA=/path/to/raw.txt python3 scripts/<source>_import.py review
+GNUCASH_RAW_DATA=/path/to/raw.txt python3 scripts/<source>_import.py sql
 ```
 
 Some scripts provide additional source-specific commands. Run a script without arguments to see its accepted commands.

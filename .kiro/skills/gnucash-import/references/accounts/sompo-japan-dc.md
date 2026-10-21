@@ -25,7 +25,7 @@ Each transaction is one tab-separated row:
 2026/01/28	2026/01/30	インデックス海外株式ヘッジなし	4,599	11.1212	40,000	買 掛金
 ```
 
-Columns are trade date, settlement date, fund name, quantity in units (`口`), unit price (`円/口`), settlement amount in JPY, and transaction type. Dates use `YYYY/MM/DD`; numeric fields may contain commas. Paste these rows directly into `RAW_DATA`. The parser retains both dates and posts on the settlement date.
+Columns are trade date, settlement date, fund name, quantity in units (`口`), unit price (`円/口`), settlement amount in JPY, and transaction type. Dates use `YYYY/MM/DD`; numeric fields may contain commas. Write these rows directly to `raw.txt`. The parser retains both dates and posts on the settlement date.
 
 ## Mapping
 

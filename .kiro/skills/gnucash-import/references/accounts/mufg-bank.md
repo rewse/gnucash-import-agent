@@ -35,7 +35,7 @@ The extracted table has `YYYY年` headers. Each transaction is a tab-separated l
 メモ内容
 ```
 
-Paste this shape directly into `RAW_DATA`. A `YYYY年` line sets the year. A transaction starts with `M/D` or `MM/DD`; preserve empty tab fields. Strip commas, spaces, and `円`; withdrawal is negative and deposit is positive. Skip blank and `メモ内容` lines.
+Write this shape directly to `raw.txt`. A `YYYY年` line sets the year. A transaction starts with `M/D` or `MM/DD`; preserve empty tab fields. Strip commas, spaces, and `円`; withdrawal is negative and deposit is positive. Skip blank and `メモ内容` lines.
 
 ## Mapping
 

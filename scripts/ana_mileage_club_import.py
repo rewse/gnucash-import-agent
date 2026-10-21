@@ -3,7 +3,7 @@
 ANA Mileage Club Statement Importer
 
 Usage:
-1. Copy raw data into RAW_DATA (tab-separated: date, description, amount, account)
+1. Copy raw data into raw.txt (tab-separated: date, description, amount, account)
 2. Run: python3 scripts/ana_mileage_club_import.py review    # Review transactions
 3. Run: python3 scripts/ana_mileage_club_import.py sql       # Generate SQL
 """
@@ -59,11 +59,35 @@ SOURCE_ACCOUNT = get_guid('Assets:JPY - Current Assets:Reward Programs:ANA Milea
 JPY_CURRENCY = 'a77d4ee821e04f02bb7429e437c645e4'
 
 # ============================================================
-# EDIT BELOW: Paste raw data (tab-separated)
+# Statement data loading
+# ============================================================
+RAW_DATA_FILE = "raw.txt"
+
+
+def load_raw_data(file_name=RAW_DATA_FILE, environment_variable="GNUCASH_RAW_DATA"):
+    """Read statement data from a UTF-8 file next to this script.
+
+    Keep statement text out of Python source: a triple quote or escape
+    sequence in a merchant name would otherwise run as code or change bytes.
+    The environment variable, when set, names the file to read instead.
+    """
+    configured = os.environ.get(environment_variable)
+    path = Path(configured) if configured else Path(__file__).resolve().with_name(file_name)
+    try:
+        # newline="" keeps a carriage return inside a field from splitting a row.
+        with open(path, encoding="utf-8-sig", newline="") as raw_file:
+            text = raw_file.read()
+    except FileNotFoundError:
+        return ""
+    return text.replace("\r\n", "\n")
+
+
+# ============================================================
+# Statement data: write it to raw.txt next to this script, or set
+# GNUCASH_RAW_DATA to the file path. Never paste statement text here.
 # Format: date\tdescription\tamount\taccount
 # ============================================================
-RAW_DATA = """
-"""
+RAW_DATA = load_raw_data()
 
 # ============================================================
 # EDIT BELOW: Manual overrides by ID (1-based)
@@ -155,7 +179,7 @@ def main():
         sys.exit(1)
 
     if not RAW_DATA.strip():
-        print("Error: RAW_DATA is empty.", file=sys.stderr)
+        print("Error: statement data is empty. Write it to raw.txt next to this script or set GNUCASH_RAW_DATA.", file=sys.stderr)
         sys.exit(1)
 
     transactions = parse_transactions(RAW_DATA)

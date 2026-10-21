@@ -41,7 +41,7 @@ Transactions are grouped by `YYYY年MM月`. Each row occupies four lines in this
 預金利息
 ```
 
-Paste this shape directly into `RAW_DATA`. A `YYYY年MM月` line sets the year; an `MM/DD` line starts a row; remove commas from the next line's amount, skip the following balance, and take the fourth line as the description.
+Write this shape directly to `raw.txt`. A `YYYY年MM月` line sets the year; an `MM/DD` line starts a row; remove commas from the next line's amount, skip the following balance, and take the fourth line as the description.
 
 ## Mapping
 

@@ -102,16 +102,42 @@ ACCOUNT_NAMES[DIVIDEND] = 'Income:Dividend'
 ACCOUNT_NAMES[DOCOMO_SMTB_USD] = 'DOCOMO SMTB Net Bank (USD)'
 
 # ============================================================
-# EDIT BELOW: Paste raw data
+# Statement data loading
 # ============================================================
-RAW_DATA_JPY = """
-"""
+RAW_DATA_FILE = "raw.txt"
 
-RAW_DATA_USD_STOCK = """
-"""
 
-RAW_DATA_USD_CASH = """
-"""
+def load_raw_data(file_name=RAW_DATA_FILE, environment_variable="GNUCASH_RAW_DATA"):
+    """Read statement data from a UTF-8 file next to this script.
+
+    Keep statement text out of Python source: a triple quote or escape
+    sequence in a merchant name would otherwise run as code or change bytes.
+    The environment variable, when set, names the file to read instead.
+    """
+    configured = os.environ.get(environment_variable)
+    path = Path(configured) if configured else Path(__file__).resolve().with_name(file_name)
+    try:
+        # newline="" keeps a carriage return inside a field from splitting a row.
+        with open(path, encoding="utf-8-sig", newline="") as raw_file:
+            text = raw_file.read()
+    except FileNotFoundError:
+        return ""
+    return text.replace("\r\n", "\n")
+
+
+# ============================================================
+# Statement data: write each form to its file next to this script, or set
+# the matching environment variable to the file path. Never paste
+# statement text here.
+#   raw-jpy.txt        GNUCASH_RAW_DATA_JPY        (review, sql)
+#   raw-usd-stock.txt  GNUCASH_RAW_DATA_USD_STOCK  (review-usd-stock, sql-usd-stock)
+#   raw-usd-cash.txt   GNUCASH_RAW_DATA_USD_CASH   (review-usd-cash, sql-usd-cash)
+# ============================================================
+RAW_DATA_JPY = load_raw_data("raw-jpy.txt", "GNUCASH_RAW_DATA_JPY")
+
+RAW_DATA_USD_STOCK = load_raw_data("raw-usd-stock.txt", "GNUCASH_RAW_DATA_USD_STOCK")
+
+RAW_DATA_USD_CASH = load_raw_data("raw-usd-cash.txt", "GNUCASH_RAW_DATA_USD_CASH")
 
 # ============================================================
 # EDIT BELOW: Manual overrides by ID (1-based)
@@ -410,7 +436,7 @@ def main():
     # Resolve RAW_DATA from global name
     raw = globals()[{v[0]: k for k, v in globals().items() if isinstance(v, str)}.get(id(raw_ref), '')]  if False else raw_ref
     if not raw_ref.strip():
-        print(f"Error: RAW_DATA is empty for {sys.argv[1]}.", file=sys.stderr)
+        print(f"Error: statement data is empty for {sys.argv[1]}. Write its raw-*.txt file next to this script.", file=sys.stderr)
         sys.exit(1)
     transactions = parse_fn(raw_ref)
     output_fn(transactions)

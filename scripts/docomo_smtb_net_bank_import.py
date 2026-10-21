@@ -2,7 +2,7 @@
 """DOCOMO SMTB Net Bank Statement Importer
 
 Usage:
-1. Paste tab-separated data into RAW_DATA (CURRENCY, DATE, DESC, WITHDRAWAL, DEPOSIT)
+1. Paste tab-separated data into raw.txt (CURRENCY, DATE, DESC, WITHDRAWAL, DEPOSIT)
 2. Set MANUAL_OVERRIDES for any transactions that need custom accounts/descriptions
 3. Run: python3 scripts/docomo_smtb_net_bank_import.py review
 4. Run: python3 scripts/docomo_smtb_net_bank_import.py sql
@@ -264,10 +264,34 @@ SIMPLE_RULES = {
 }
 
 # ============================================================
-# EDIT BELOW: Paste raw data
+# Statement data loading
 # ============================================================
-RAW_DATA = """
-"""
+RAW_DATA_FILE = "raw.txt"
+
+
+def load_raw_data(file_name=RAW_DATA_FILE, environment_variable="GNUCASH_RAW_DATA"):
+    """Read statement data from a UTF-8 file next to this script.
+
+    Keep statement text out of Python source: a triple quote or escape
+    sequence in a merchant name would otherwise run as code or change bytes.
+    The environment variable, when set, names the file to read instead.
+    """
+    configured = os.environ.get(environment_variable)
+    path = Path(configured) if configured else Path(__file__).resolve().with_name(file_name)
+    try:
+        # newline="" keeps a carriage return inside a field from splitting a row.
+        with open(path, encoding="utf-8-sig", newline="") as raw_file:
+            text = raw_file.read()
+    except FileNotFoundError:
+        return ""
+    return text.replace("\r\n", "\n")
+
+
+# ============================================================
+# Statement data: write it to raw.txt next to this script, or set
+# GNUCASH_RAW_DATA to the file path. Never paste statement text here.
+# ============================================================
+RAW_DATA = load_raw_data()
 
 # ============================================================
 # EDIT BELOW: Manual overrides by ID (1-based)
@@ -532,7 +556,7 @@ def main():
         print('Usage: python3 docomo_smtb_net_bank_import.py [review|sql]', file=sys.stderr)
         sys.exit(1)
     if not RAW_DATA.strip():
-        print('Error: RAW_DATA is empty.', file=sys.stderr)
+        print('Error: statement data is empty. Write it to raw.txt next to this script or set GNUCASH_RAW_DATA.', file=sys.stderr)
         sys.exit(1)
     transactions = parse_transactions(RAW_DATA)
     if sys.argv[1] == 'review':

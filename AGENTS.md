@@ -40,6 +40,7 @@ This repository provides a Kiro skill and source-specific Python scripts for imp
 
 ## Validation
 
+- Before pushing, run `uvx --with pre-commit-uv==4.3.0 pre-commit@4.6.2 run --all-files` and `python3 -m unittest discover -s tests`, and commit any files the hooks reformat. Stage new files first, because `--all-files` skips untracked files. CI runs the same hooks and tests, and `core.hooksPath` points at git-defender, so `pre-commit install` cannot run them at commit time.
 - Run `python3 -m unittest discover -s tests -v` after changing import behavior.
 - Run `python3 -m compileall -q scripts .kiro/skills/gnucash-import/scripts` after changing Python files.
 - Run `basedpyright scripts .kiro/skills/gnucash-import/scripts` and require zero errors. Existing warnings need not be resolved unless they relate to the change.

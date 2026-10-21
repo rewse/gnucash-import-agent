@@ -121,9 +121,7 @@ class ImportRegressionTest(unittest.TestCase):
 
         for newline in ("\n", "\r\n"):
             with self.subTest(newline=repr(newline)):
-                transactions = module.parse_usd_cash(
-                    (newline * 2).join(fields)
-                )
+                transactions = module.parse_usd_cash((newline * 2).join(fields))
 
                 self.assertEqual(1, len(transactions))
                 self.assertEqual(12.34, transactions[0]["amount"])
@@ -134,9 +132,7 @@ class ImportRegressionTest(unittest.TestCase):
             "Assets:JPY - Current Assets:Securities:Sompo Japan DC Securities:"
             "One Japan Stock Index Fund <DC Pension>"
         )
-        module = self._import_script(
-            "sompo_japan_dc", extra_accounts={expected}
-        )
+        module = self._import_script("sompo_japan_dc", extra_accounts={expected})
         expected_guid = module.get_guid(expected)
         self.assertIsNotNone(expected_guid)
 
@@ -146,8 +142,7 @@ class ImportRegressionTest(unittest.TestCase):
         ):
             with self.subTest(fund_name=fund_name):
                 transaction = module.parse_transactions(
-                    "2026/09/01\t2026/09/02\t"
-                    f"{fund_name}\t500\t7.7000\t3,850\t買 掛金"
+                    f"2026/09/01\t2026/09/02\t{fund_name}\t500\t7.7000\t3,850\t買 掛金"
                 )[0]
                 self.assertEqual(
                     (expected_guid, None),
@@ -194,7 +189,9 @@ class ImportRegressionTest(unittest.TestCase):
 
     def test_sbi_shinsei_usd_rows_use_jpy_quantity_for_jpy_accounts(self):
         module = self._import_script("sbi_shinsei_bank")
-        raw = "USD\t2099/09/01\t税引前利息\t\t4.79\nUSD\t2099/09/18\t円普通預金\t100.00\t"
+        raw = (
+            "USD\t2099/09/01\t税引前利息\t\t4.79\nUSD\t2099/09/18\t円普通預金\t100.00\t"
+        )
         transactions = module.parse_transactions(raw)
         module.JPY_QUANTITIES = {1: 765, 2: 15692}
         output = StringIO()
@@ -243,9 +240,10 @@ class ImportRegressionTest(unittest.TestCase):
                         module.get_railway_company(station1, station2),
                     )
 
-
     def test_amazon_point_manual_overrides_apply_to_review_and_sql(self):
-        module = self._import_script("amazon_point", extra_accounts={"Expenses:Example Override"})
+        module = self._import_script(
+            "amazon_point", extra_accounts={"Expenses:Example Override"}
+        )
         override_guid = module.ACCOUNTS["Expenses:Example Override"]
         raw = "2030/01/02\tExample purchase\t利用\t-10\tExpenses:Supplies\n"
         module.MANUAL_OVERRIDES[1] = ("Expenses:Example Override", "Example override")
@@ -265,8 +263,14 @@ class ImportRegressionTest(unittest.TestCase):
 
     def test_review_rejects_unresolved_statement_account_paths(self):
         cases = (
-            ("amazon_gc", "2030年1月2日\tExample order\t-￥100\t￥900\tExpenses:Example Unresolved\tItem\n"),
-            ("amazon_point", "2030/01/02\tExample purchase\t利用\t-10\tExpenses:Example Unresolved\n"),
+            (
+                "amazon_gc",
+                "2030年1月2日\tExample order\t-￥100\t￥900\tExpenses:Example Unresolved\tItem\n",
+            ),
+            (
+                "amazon_point",
+                "2030/01/02\tExample purchase\t利用\t-10\tExpenses:Example Unresolved\n",
+            ),
         )
         for source_slug, raw in cases:
             with self.subTest(source_slug=source_slug):
@@ -276,6 +280,7 @@ class ImportRegressionTest(unittest.TestCase):
                     with self.assertRaises(SystemExit):
                         module.output_review(transactions)
                 self.assertNotIn("Example Unresolved", stderr.getvalue())
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -39,7 +39,11 @@ def executable_sql(sql: str) -> str:
             continue
         if sql.startswith("--", index):
             # PostgreSQL ends a line comment at either a newline or a carriage return.
-            ends = [end for end in (sql.find("\n", index), sql.find("\r", index)) if end != -1]
+            ends = [
+                end
+                for end in (sql.find("\n", index), sql.find("\r", index))
+                if end != -1
+            ]
             index = min(ends) if ends else len(sql)
             continue
         result.append(character)
@@ -179,7 +183,9 @@ class SqlDescriptionEscapingTest(unittest.TestCase):
         self.assertIn("x''); SELECT ''SYNTHETIC_SQL_MARKER''; --", sql)
         self.assertNotIn(description, sql.splitlines()[2])
         self.assertNotIn(SQL_MARKER, executable_sql(sql))
-        self.assertEqual(1, sum(line.startswith("-- Transaction ") for line in sql.splitlines()))
+        self.assertEqual(
+            1, sum(line.startswith("-- Transaction ") for line in sql.splitlines())
+        )
 
 
 if __name__ == "__main__":

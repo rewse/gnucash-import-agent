@@ -8,6 +8,7 @@ Usage:
 3. Run: python3 scripts/suica_import.py review    # Review transactions
 4. Run: python3 scripts/suica_import.py sql       # Generate SQL
 """
+
 import json
 import os
 import uuid
@@ -15,6 +16,7 @@ import sys
 import unicodedata
 from datetime import datetime
 from pathlib import Path
+
 
 # Load accounts from JSON
 def find_project_root():
@@ -30,7 +32,9 @@ def find_project_root():
 
 
 PROJECT_ROOT = find_project_root()
-ACCOUNTS_FILE = PROJECT_ROOT / ".kiro/skills/gnucash-import/references/account-guid-cache.json"
+ACCOUNTS_FILE = (
+    PROJECT_ROOT / ".kiro/skills/gnucash-import/references/account-guid-cache.json"
+)
 
 
 def load_accounts():
@@ -54,55 +58,59 @@ def load_accounts():
 
 ACCOUNTS = load_accounts()
 
+
 def get_guid(path):
     """Get GUID for account path."""
-    return ACCOUNTS.get(path) or ACCOUNTS.get('Root Account:' + path)
+    return ACCOUNTS.get(path) or ACCOUNTS.get("Root Account:" + path)
+
 
 # Account GUIDs
-SUICA_ACCOUNT = get_guid('Assets:JPY - Current Assets:Prepaid:Suica iPhone')
-TRANSIT_ACCOUNT = get_guid('Expenses:Transit')
-BUSINESS_ACCOUNT = get_guid('Expenses:Business Expenses')
-DINING_ACCOUNT = get_guid('Expenses:Foods:Dining')
-LUMINE_CARD_ACCOUNT = get_guid('Liabilities:Credit Card:LUMINE CARD')
-MEDICAL_TRANSIT_ACCOUNT = get_guid('Expenses:Medical Expenses:Transit')
-AWS_REIMBURSEMENT_ACCOUNT = get_guid('Assets:JPY - Current Assets:Reimbursement:AWS Japan')
-GROCERIES_ACCOUNT = get_guid('Expenses:Groceries')
-JPY_CURRENCY = 'a77d4ee821e04f02bb7429e437c645e4'
+SUICA_ACCOUNT = get_guid("Assets:JPY - Current Assets:Prepaid:Suica iPhone")
+TRANSIT_ACCOUNT = get_guid("Expenses:Transit")
+BUSINESS_ACCOUNT = get_guid("Expenses:Business Expenses")
+DINING_ACCOUNT = get_guid("Expenses:Foods:Dining")
+LUMINE_CARD_ACCOUNT = get_guid("Liabilities:Credit Card:LUMINE CARD")
+MEDICAL_TRANSIT_ACCOUNT = get_guid("Expenses:Medical Expenses:Transit")
+AWS_REIMBURSEMENT_ACCOUNT = get_guid(
+    "Assets:JPY - Current Assets:Reimbursement:AWS Japan"
+)
+GROCERIES_ACCOUNT = get_guid("Expenses:Groceries")
+JPY_CURRENCY = "a77d4ee821e04f02bb7429e437c645e4"
 
 ACCOUNT_NAMES = {
-    TRANSIT_ACCOUNT: 'Expenses:Transit',
-    BUSINESS_ACCOUNT: 'Expenses:Business Expenses',
-    DINING_ACCOUNT: 'Expenses:Foods:Dining',
-    GROCERIES_ACCOUNT: 'Expenses:Groceries',
-    LUMINE_CARD_ACCOUNT: 'Liabilities:Credit Card:LUMINE CARD',
-    MEDICAL_TRANSIT_ACCOUNT: 'Expenses:Medical Expenses:Transit',
-    AWS_REIMBURSEMENT_ACCOUNT: 'Assets:Reimbursement:AWS Japan',
+    TRANSIT_ACCOUNT: "Expenses:Transit",
+    BUSINESS_ACCOUNT: "Expenses:Business Expenses",
+    DINING_ACCOUNT: "Expenses:Foods:Dining",
+    GROCERIES_ACCOUNT: "Expenses:Groceries",
+    LUMINE_CARD_ACCOUNT: "Liabilities:Credit Card:LUMINE CARD",
+    MEDICAL_TRANSIT_ACCOUNT: "Expenses:Medical Expenses:Transit",
+    AWS_REIMBURSEMENT_ACCOUNT: "Assets:Reimbursement:AWS Japan",
 }
 
 # Tokyo Metro stations (no prefix)
 TOKYO_METRO_STATIONS = [
-    '神谷町',
-    '溜池山王',
-    '赤坂見附',
-    '六本木一',
-    '後楽園',
-    '西新宿',
-    '外苑前',
-    '表参道',
+    "神谷町",
+    "溜池山王",
+    "赤坂見附",
+    "六本木一",
+    "後楽園",
+    "西新宿",
+    "外苑前",
+    "表参道",
 ]
 
 # Toei Subway stations (no prefix)
-TOEI_SUBWAY_STATIONS = ['曙橋']
+TOEI_SUBWAY_STATIONS = ["曙橋"]
 
 # Keio stations
-KEIO_STATIONS = ['南大沢']
+KEIO_STATIONS = ["南大沢"]
 
 # Keikyu stations (no prefix)
-KEIKYU_STATIONS = ['青物横丁']
+KEIKYU_STATIONS = ["青物横丁"]
 
 # Bus location name -> company
 BUS_COMPANIES = {
-    '都電都Ｂ': 'Toei Bus',
+    "都電都Ｂ": "Toei Bus",
 }
 
 # Load personal settings
@@ -164,7 +172,11 @@ def load_raw_data(file_name=RAW_DATA_FILE, environment_variable="GNUCASH_RAW_DAT
     The environment variable, when set, names the file to read instead.
     """
     configured = os.environ.get(environment_variable)
-    path = Path(configured) if configured else Path(__file__).resolve().with_name(file_name)
+    path = (
+        Path(configured)
+        if configured
+        else Path(__file__).resolve().with_name(file_name)
+    )
     try:
         # newline="" keeps a carriage return inside a field from splitting a row.
         with open(path, encoding="utf-8-sig", newline="") as raw_file:
@@ -193,31 +205,55 @@ MANUAL_OVERRIDES = {
 
 def parse_transactions(raw_data):
     transactions = []
-    for line in raw_data.strip().split('\n'):
+    for line in raw_data.strip().split("\n"):
         if not line.strip():
             continue
         parts = line.split()
         date_str = parts[0]
         type1 = parts[1]
-        if type1 == '物販':
-            transactions.append({'date_str': date_str, 'type': type1, 'station1': '', 'station2': '', 'amount': int(parts[2])})
-        elif type1 in ('ｵｰﾄ', 'ﾊﾞｽ等'):
-            station = ' '.join(parts[2:-1])
-            transactions.append({'date_str': date_str, 'type': type1, 'station1': station, 'station2': '', 'amount': int(parts[-1])})
-        elif type1 == '繰':
+        if type1 == "物販":
+            transactions.append(
+                {
+                    "date_str": date_str,
+                    "type": type1,
+                    "station1": "",
+                    "station2": "",
+                    "amount": int(parts[2]),
+                }
+            )
+        elif type1 in ("ｵｰﾄ", "ﾊﾞｽ等"):
+            station = " ".join(parts[2:-1])
+            transactions.append(
+                {
+                    "date_str": date_str,
+                    "type": type1,
+                    "station1": station,
+                    "station2": "",
+                    "amount": int(parts[-1]),
+                }
+            )
+        elif type1 == "繰":
             continue
         else:
             station1 = parts[2]
-            if parts[3] != '出':
-                station1 += ' ' + parts[3]
+            if parts[3] != "出":
+                station1 += " " + parts[3]
                 idx = 4
             else:
                 idx = 3
             idx += 1
             station2 = parts[idx]
-            if idx + 1 < len(parts) and not parts[idx + 1].lstrip('-+').isdigit():
-                station2 += ' ' + parts[idx + 1]
-            transactions.append({'date_str': date_str, 'type': type1, 'station1': station1, 'station2': station2, 'amount': int(parts[-1])})
+            if idx + 1 < len(parts) and not parts[idx + 1].lstrip("-+").isdigit():
+                station2 += " " + parts[idx + 1]
+            transactions.append(
+                {
+                    "date_str": date_str,
+                    "type": type1,
+                    "station1": station1,
+                    "station2": station2,
+                    "amount": int(parts[-1]),
+                }
+            )
     return transactions
 
 
@@ -226,22 +262,22 @@ def get_railway_company(station1, station2):
     if NEAREST_STATION in stations or any(
         station in TOKYO_METRO_STATIONS for station in stations
     ):
-        return 'Tokyo Metro'
+        return "Tokyo Metro"
     if any(station in TOEI_SUBWAY_STATIONS for station in stations):
-        return 'Toei Subway'
+        return "Toei Subway"
     if any(station in KEIO_STATIONS for station in stations):
-        return 'Keio'
+        return "Keio"
     if any(station in KEIKYU_STATIONS for station in stations):
-        return 'Keikyu'
-    if any(station.startswith('KS') for station in stations):
-        return 'Keisei'
-    if any(station.startswith('臨') for station in stations):
-        return 'TWR'
-    if any(station.startswith('地') for station in stations):
-        return 'Tokyo Metro'
-    if any(station.startswith('都') for station in stations):
-        return 'Toei Subway'
-    return 'JR'
+        return "Keikyu"
+    if any(station.startswith("KS") for station in stations):
+        return "Keisei"
+    if any(station.startswith("臨") for station in stations):
+        return "TWR"
+    if any(station.startswith("地") for station in stations):
+        return "Tokyo Metro"
+    if any(station.startswith("都") for station in stations):
+        return "Toei Subway"
+    return "JR"
 
 
 def is_weekday(date):
@@ -256,20 +292,20 @@ def _init_business_pairs():
     if PERSONAL_SETTINGS_ERROR:
         raise ValueError(PERSONAL_SETTINGS_ERROR)
     return {
-        (NEAREST_STATION, '神谷町'),
-        ('神谷町', NEAREST_STATION),
-        (NEAREST_STATION, '六本木一'),
-        ('六本木一', NEAREST_STATION),
+        (NEAREST_STATION, "神谷町"),
+        ("神谷町", NEAREST_STATION),
+        (NEAREST_STATION, "六本木一"),
+        ("六本木一", NEAREST_STATION),
     }
 
 
 def is_business_trip(tx):
     """Check if a transit transaction is a direct commute pair."""
-    if tx['type'] not in ['入', '＊入', '定']:
+    if tx["type"] not in ["入", "＊入", "定"]:
         return False
-    if not is_weekday(tx['date']):
+    if not is_weekday(tx["date"]):
         return False
-    return (tx['station1'], tx['station2']) in BUSINESS_PAIRS
+    return (tx["station1"], tx["station2"]) in BUSINESS_PAIRS
 
 
 def get_transaction_info(transactions, idx, tx):
@@ -278,24 +314,24 @@ def get_transaction_info(transactions, idx, tx):
         expense_account, override_desc = MANUAL_OVERRIDES[idx]
         if override_desc is not None:
             description = override_desc
-        elif tx['type'] in ['入', '＊入']:
-            description = get_railway_company(tx['station1'], tx['station2'])
-        elif tx['type'] == 'ﾊﾞｽ等':
-            description = BUS_COMPANIES.get(tx['station1'])
+        elif tx["type"] in ["入", "＊入"]:
+            description = get_railway_company(tx["station1"], tx["station2"])
+        elif tx["type"] == "ﾊﾞｽ等":
+            description = BUS_COMPANIES.get(tx["station1"])
         else:
             description = None
-    elif tx['type'] == 'ｵｰﾄ':
+    elif tx["type"] == "ｵｰﾄ":
         expense_account = LUMINE_CARD_ACCOUNT
         description = None
-    elif tx['type'] == '物販':
+    elif tx["type"] == "物販":
         expense_account = DINING_ACCOUNT
         description = None
-    elif tx['type'] in ['入', '＊入']:
+    elif tx["type"] in ["入", "＊入"]:
         expense_account = BUSINESS_ACCOUNT if is_business_trip(tx) else TRANSIT_ACCOUNT
-        description = get_railway_company(tx['station1'], tx['station2'])
-    elif tx['type'] == 'ﾊﾞｽ等':
+        description = get_railway_company(tx["station1"], tx["station2"])
+    elif tx["type"] == "ﾊﾞｽ等":
         expense_account = TRANSIT_ACCOUNT
-        description = BUS_COMPANIES.get(tx['station1'])
+        description = BUS_COMPANIES.get(tx["station1"])
     else:
         return None, None
     return expense_account, description
@@ -303,25 +339,29 @@ def get_transaction_info(transactions, idx, tx):
 
 def get_purpose(tx):
     """Get purpose string for display."""
-    if tx['type'] in ['入', '＊入']:
+    if tx["type"] in ["入", "＊入"]:
         return f"{tx['station1']} → {tx['station2']}"
-    elif tx['type'] == 'ｵｰﾄ':
-        return 'オート'
-    elif tx['type'] == '物販':
-        return '物販'
-    elif tx['type'] == 'ﾊﾞｽ等':
+    elif tx["type"] == "ｵｰﾄ":
+        return "オート"
+    elif tx["type"] == "物販":
+        return "物販"
+    elif tx["type"] == "ﾊﾞｽ等":
         return f"バス {tx['station1']}"
-    return ''
+    return ""
 
 
 def output_review(transactions):
     """Output review table."""
-    print(f"{'ID':<4} {'Date':<17} {'Purpose':<25} {'Desc':<15} {'Transfer':<40} {'Increase':>10} {'Decrease':>10}")
+    print(
+        f"{'ID':<4} {'Date':<17} {'Purpose':<25} {'Desc':<15} {'Transfer':<40} {'Increase':>10} {'Decrease':>10}"
+    )
     print("-" * 124)
 
     prev_date = None
     for idx, tx in enumerate(transactions, 1):
-        weekday = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][tx['date'].weekday()]
+        weekday = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][
+            tx["date"].weekday()
+        ]
         date_str = f"{tx['date'].strftime('%Y-%m-%d')} {weekday}"
 
         if prev_date and prev_date != date_str:
@@ -334,10 +374,12 @@ def output_review(transactions):
 
         purpose = get_purpose(tx)
         transfer = ACCOUNT_NAMES.get(expense_account, expense_account)
-        increase = f"¥{tx['amount']:,}" if tx['amount'] > 0 else ""
-        decrease = f"¥{abs(tx['amount']):,}" if tx['amount'] < 0 else ""
+        increase = f"¥{tx['amount']:,}" if tx["amount"] > 0 else ""
+        decrease = f"¥{abs(tx['amount']):,}" if tx["amount"] < 0 else ""
 
-        print(f"{idx:<4} {date_str:<17} {purpose:<25} {description or '':<15} {transfer:<40} {increase:>10} {decrease:>10}")
+        print(
+            f"{idx:<4} {date_str:<17} {purpose:<25} {description or '':<15} {transfer:<40} {increase:>10} {decrease:>10}"
+        )
 
 
 def output_sql(transactions):
@@ -351,33 +393,50 @@ def output_sql(transactions):
         if expense_account is None:
             continue
 
-        tx_guid = str(uuid.uuid4()).replace('-', '')
-        split1_guid = str(uuid.uuid4()).replace('-', '')
-        split2_guid = str(uuid.uuid4()).replace('-', '')
+        tx_guid = str(uuid.uuid4()).replace("-", "")
+        split1_guid = str(uuid.uuid4()).replace("-", "")
+        split2_guid = str(uuid.uuid4()).replace("-", "")
         # Reverse order: ID 1 (newest) gets highest time, ID N (oldest) gets 00:00:01
         reverse_idx = total - idx + 1
         minutes, seconds = divmod(reverse_idx, 60)
-        date_str = tx['date'].strftime(f'%Y-%m-%d 00:{minutes:02d}:{seconds:02d}')
-        desc_sql = f"'{description.replace(chr(39), chr(39)*2)}'" if description else 'NULL'
+        date_str = tx["date"].strftime(f"%Y-%m-%d 00:{minutes:02d}:{seconds:02d}")
+        desc_sql = (
+            f"'{description.replace(chr(39), chr(39) * 2)}'" if description else "NULL"
+        )
 
-        print(f"INSERT INTO transactions (guid, currency_guid, num, post_date, enter_date, description)")
-        print(f"VALUES ('{tx_guid}', '{JPY_CURRENCY}', '', '{date_str}', NOW(), {desc_sql});")
-        print(f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)")
-        print(f"VALUES ('{split1_guid}', '{tx_guid}', '{SUICA_ACCOUNT}', '', '', 'c', NULL, {tx['amount']}, 1, {tx['amount']}, 1, NULL);")
-        print(f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)")
-        print(f"VALUES ('{split2_guid}', '{tx_guid}', '{expense_account}', '', '', 'c', NULL, {-tx['amount']}, 1, {-tx['amount']}, 1, NULL);")
+        print(
+            f"INSERT INTO transactions (guid, currency_guid, num, post_date, enter_date, description)"
+        )
+        print(
+            f"VALUES ('{tx_guid}', '{JPY_CURRENCY}', '', '{date_str}', NOW(), {desc_sql});"
+        )
+        print(
+            f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)"
+        )
+        print(
+            f"VALUES ('{split1_guid}', '{tx_guid}', '{SUICA_ACCOUNT}', '', '', 'c', NULL, {tx['amount']}, 1, {tx['amount']}, 1, NULL);"
+        )
+        print(
+            f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)"
+        )
+        print(
+            f"VALUES ('{split2_guid}', '{tx_guid}', '{expense_account}', '', '', 'c', NULL, {-tx['amount']}, 1, {-tx['amount']}, 1, NULL);"
+        )
         print()
 
     print("COMMIT;")
 
 
 def main():
-    if len(sys.argv) < 2 or sys.argv[1] not in ['review', 'sql']:
+    if len(sys.argv) < 2 or sys.argv[1] not in ["review", "sql"]:
         print("Usage: python3 suica_import.py [review|sql]", file=sys.stderr)
         sys.exit(1)
 
     if not RAW_DATA.strip():
-        print("Error: statement data is empty. Write it to raw.txt next to this script or set GNUCASH_RAW_DATA.", file=sys.stderr)
+        print(
+            "Error: statement data is empty. Write it to raw.txt next to this script or set GNUCASH_RAW_DATA.",
+            file=sys.stderr,
+        )
         sys.exit(1)
 
     if PERSONAL_SETTINGS_ERROR:
@@ -385,7 +444,10 @@ def main():
         sys.exit(1)
 
     if not NEAREST_STATION:
-        print("Error: NEAREST_STATION is empty. Set your nearest station.", file=sys.stderr)
+        print(
+            "Error: NEAREST_STATION is empty. Set your nearest station.",
+            file=sys.stderr,
+        )
         sys.exit(1)
 
     BUSINESS_PAIRS.clear()
@@ -395,15 +457,15 @@ def main():
 
     now = datetime.now()
     for tx in transactions:
-        month, day = map(int, tx['date_str'].split('/'))
+        month, day = map(int, tx["date_str"].split("/"))
         year = now.year if month <= now.month else now.year - 1
-        tx['date'] = datetime(year, month, day)
+        tx["date"] = datetime(year, month, day)
 
-    if sys.argv[1] == 'review':
+    if sys.argv[1] == "review":
         output_review(transactions)
     else:
         output_sql(transactions)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

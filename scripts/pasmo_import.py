@@ -11,6 +11,7 @@ Usage:
 PASMO never uses Expenses:Business Expenses. Transit defaults to
 Expenses:Transit; override leisure trips to Expenses:Entertainment:Travel by ID.
 """
+
 import json
 import os
 import uuid
@@ -18,6 +19,7 @@ import sys
 import unicodedata
 from datetime import datetime
 from pathlib import Path
+
 
 def find_project_root():
     configured_root = os.environ.get("GNUCASH_IMPORT_ROOT")
@@ -32,7 +34,9 @@ def find_project_root():
 
 
 PROJECT_ROOT = find_project_root()
-ACCOUNTS_FILE = PROJECT_ROOT / ".kiro/skills/gnucash-import/references/account-guid-cache.json"
+ACCOUNTS_FILE = (
+    PROJECT_ROOT / ".kiro/skills/gnucash-import/references/account-guid-cache.json"
+)
 
 
 def load_accounts():
@@ -56,37 +60,39 @@ def load_accounts():
 
 ACCOUNTS = load_accounts()
 
-def get_guid(path):
-    return ACCOUNTS.get(path) or ACCOUNTS.get('Root Account:' + path)
 
-TRANSIT_ACCOUNT = get_guid('Expenses:Transit')
-DINING_ACCOUNT = get_guid('Expenses:Foods:Dining')
-TOKYU_CARD_ACCOUNT = get_guid('Liabilities:Credit Card:TOKYU CARD ClubQ JMB')
-TRAVEL_ACCOUNT = get_guid('Expenses:Entertainment:Travel')
-JPY_CURRENCY = 'a77d4ee821e04f02bb7429e437c645e4'
+def get_guid(path):
+    return ACCOUNTS.get(path) or ACCOUNTS.get("Root Account:" + path)
+
+
+TRANSIT_ACCOUNT = get_guid("Expenses:Transit")
+DINING_ACCOUNT = get_guid("Expenses:Foods:Dining")
+TOKYU_CARD_ACCOUNT = get_guid("Liabilities:Credit Card:TOKYU CARD ClubQ JMB")
+TRAVEL_ACCOUNT = get_guid("Expenses:Entertainment:Travel")
+JPY_CURRENCY = "a77d4ee821e04f02bb7429e437c645e4"
 
 ACCOUNT_NAMES = {
-    TRANSIT_ACCOUNT: 'Expenses:Transit',
-    DINING_ACCOUNT: 'Expenses:Foods:Dining',
-    TOKYU_CARD_ACCOUNT: 'Liabilities:Credit Card:TOKYU CARD ClubQ JMB',
-    TRAVEL_ACCOUNT: 'Expenses:Entertainment:Travel',
+    TRANSIT_ACCOUNT: "Expenses:Transit",
+    DINING_ACCOUNT: "Expenses:Foods:Dining",
+    TOKYU_CARD_ACCOUNT: "Liabilities:Credit Card:TOKYU CARD ClubQ JMB",
+    TRAVEL_ACCOUNT: "Expenses:Entertainment:Travel",
 }
 
 # Stations without a prefix that are NOT JR
 TOKYO_METRO_STATIONS = [
-    '溜池山王',
-    '赤坂見附',
-    '後楽園',
-    '西新宿',
-    '外苑前',
-    '表参道',
+    "溜池山王",
+    "赤坂見附",
+    "後楽園",
+    "西新宿",
+    "外苑前",
+    "表参道",
 ]
-KEIO_STATIONS = ['南大沢']
-ENODEN_STATIONS = ['江電鎌倉', '長谷', '稲村ケ崎', '江ノ島']
+KEIO_STATIONS = ["南大沢"]
+ENODEN_STATIONS = ["江電鎌倉", "長谷", "稲村ケ崎", "江ノ島"]
 
 # Bus location name -> company
 BUS_COMPANIES = {
-    '江ノ電Ｂ': 'Enoden Bus',
+    "江ノ電Ｂ": "Enoden Bus",
 }
 
 PERSONAL_FILE = PROJECT_ROOT / ".kiro/skills/gnucash-import/references/personal.json"
@@ -123,20 +129,24 @@ def load_personal_settings():
     )
     account_error = None
     resolved_accounts = {}
-    if (
-        not isinstance(pasmo_settings, dict)
-        or set(pasmo_settings) != {"shopping", "source"}
-    ):
+    if not isinstance(pasmo_settings, dict) or set(pasmo_settings) != {
+        "shopping",
+        "source",
+    }:
         account_error = "Mobile PASMO: malformed personal.json accounts.pasmo"
     else:
         for key in ("shopping", "source"):
             path = pasmo_settings.get(key)
             if not isinstance(path, str) or not path.strip():
-                account_error = f"Mobile PASMO: malformed personal.json accounts.pasmo.{key}"
+                account_error = (
+                    f"Mobile PASMO: malformed personal.json accounts.pasmo.{key}"
+                )
                 break
             guid = get_guid(path)
             if guid is None:
-                account_error = f"Mobile PASMO: malformed personal.json accounts.pasmo.{key}"
+                account_error = (
+                    f"Mobile PASMO: malformed personal.json accounts.pasmo.{key}"
+                )
                 break
             resolved_accounts[key] = guid
 
@@ -189,7 +199,11 @@ def load_raw_data(file_name=RAW_DATA_FILE, environment_variable="GNUCASH_RAW_DAT
     The environment variable, when set, names the file to read instead.
     """
     configured = os.environ.get(environment_variable)
-    path = Path(configured) if configured else Path(__file__).resolve().with_name(file_name)
+    path = (
+        Path(configured)
+        if configured
+        else Path(__file__).resolve().with_name(file_name)
+    )
     try:
         # newline="" keeps a carriage return inside a field from splitting a row.
         with open(path, encoding="utf-8-sig", newline="") as raw_file:
@@ -218,56 +232,83 @@ MANUAL_OVERRIDES = {
 
 def parse_transactions(raw_data):
     transactions = []
-    for line in raw_data.strip().split('\n'):
+    for line in raw_data.strip().split("\n"):
         if not line.strip():
             continue
         parts = line.split()
         date_str = parts[0]
         type1 = parts[1]
-        if type1 == '繰':
+        if type1 == "繰":
             continue
-        if type1 == '物販':
-            transactions.append({'date_str': date_str, 'type': type1, 'station1': '', 'station2': '', 'amount': int(parts[2])})
-        elif type1 in ('ｵｰﾄ', 'ﾊﾞｽ等'):
+        if type1 == "物販":
+            transactions.append(
+                {
+                    "date_str": date_str,
+                    "type": type1,
+                    "station1": "",
+                    "station2": "",
+                    "amount": int(parts[2]),
+                }
+            )
+        elif type1 in ("ｵｰﾄ", "ﾊﾞｽ等"):
             # Amount is always last; location is everything between type and amount
-            station = ' '.join(parts[2:-1])
-            transactions.append({'date_str': date_str, 'type': type1, 'station1': station, 'station2': '', 'amount': int(parts[-1])})
+            station = " ".join(parts[2:-1])
+            transactions.append(
+                {
+                    "date_str": date_str,
+                    "type": type1,
+                    "station1": station,
+                    "station2": "",
+                    "amount": int(parts[-1]),
+                }
+            )
         else:
             # 入/出, ＊入, or 定 (commuter pass): type station1 出 station2 amount
             station1 = parts[2]
             idx = 3
-            if parts[idx] != '出':
-                station1 += ' ' + parts[idx]
+            if parts[idx] != "出":
+                station1 += " " + parts[idx]
                 idx += 1
             idx += 1  # skip '出'
             station2 = parts[idx]
-            if idx + 1 < len(parts) and not parts[idx + 1].lstrip('-+').replace(',', '').isdigit():
-                station2 += ' ' + parts[idx + 1]
-            transactions.append({'date_str': date_str, 'type': type1, 'station1': station1, 'station2': station2, 'amount': int(parts[-1])})
+            if (
+                idx + 1 < len(parts)
+                and not parts[idx + 1].lstrip("-+").replace(",", "").isdigit()
+            ):
+                station2 += " " + parts[idx + 1]
+            transactions.append(
+                {
+                    "date_str": date_str,
+                    "type": type1,
+                    "station1": station1,
+                    "station2": station2,
+                    "amount": int(parts[-1]),
+                }
+            )
     return transactions
 
 
 def get_railway_company(station1, station2):
     stations = (station1, station2)
     if any(station in ENODEN_STATIONS for station in stations):
-        return 'Enoshima Electric Railway'
+        return "Enoshima Electric Railway"
     if any(station in TOKYO_METRO_STATIONS for station in stations):
-        return 'Tokyo Metro'
+        return "Tokyo Metro"
     if any(station in KEIO_STATIONS for station in stations):
-        return 'Keio'
-    if any(station.startswith('KS') for station in stations):
-        return 'Keisei'
-    if any(station.startswith('地') for station in stations):
-        return 'Tokyo Metro'
-    if any(station.startswith('都') for station in stations):
-        return 'Toei Subway'
-    if any(station.startswith('ゆ') for station in stations):
-        return 'Yurikamome'
+        return "Keio"
+    if any(station.startswith("KS") for station in stations):
+        return "Keisei"
+    if any(station.startswith("地") for station in stations):
+        return "Tokyo Metro"
+    if any(station.startswith("都") for station in stations):
+        return "Toei Subway"
+    if any(station.startswith("ゆ") for station in stations):
+        return "Yurikamome"
     if PERSONAL_SETTINGS_ERROR:
         raise ValueError(PERSONAL_SETTINGS_ERROR)
     if NEAREST_STATION in stations:
-        return 'Tokyo Metro'
-    return 'JR'
+        return "Tokyo Metro"
+    return "JR"
 
 
 def get_transaction_info(idx, tx):
@@ -276,48 +317,52 @@ def get_transaction_info(idx, tx):
         if override_desc is not None:
             return expense_account, override_desc
         return expense_account, _auto_description(tx)
-    if tx['type'] == 'ｵｰﾄ':
+    if tx["type"] == "ｵｰﾄ":
         return TOKYU_CARD_ACCOUNT, None
-    if tx['type'] == '物販':
+    if tx["type"] == "物販":
         if PASMO_ACCOUNTS_ERROR:
             raise ValueError(PASMO_ACCOUNTS_ERROR)
         return SHOPPING_ACCOUNT, None
-    if tx['type'] == 'ﾊﾞｽ等':
+    if tx["type"] == "ﾊﾞｽ等":
         return TRANSIT_ACCOUNT, _auto_description(tx)
-    if tx['type'] in ('入', '＊入', '定'):
+    if tx["type"] in ("入", "＊入", "定"):
         return TRANSIT_ACCOUNT, _auto_description(tx)
     return None, None
 
 
 def _auto_description(tx):
-    if tx['type'] in ('入', '＊入', '定'):
-        return get_railway_company(tx['station1'], tx['station2'])
-    if tx['type'] == 'ﾊﾞｽ等':
-        return BUS_COMPANIES.get(tx['station1'])
+    if tx["type"] in ("入", "＊入", "定"):
+        return get_railway_company(tx["station1"], tx["station2"])
+    if tx["type"] == "ﾊﾞｽ等":
+        return BUS_COMPANIES.get(tx["station1"])
     return None
 
 
 def get_purpose(tx):
-    if tx['type'] in ('入', '＊入', '定'):
+    if tx["type"] in ("入", "＊入", "定"):
         return f"{tx['station1']} → {tx['station2']}"
-    if tx['type'] == 'ｵｰﾄ':
-        return 'オート'
-    if tx['type'] == '物販':
-        return '物販'
-    if tx['type'] == 'ﾊﾞｽ等':
+    if tx["type"] == "ｵｰﾄ":
+        return "オート"
+    if tx["type"] == "物販":
+        return "物販"
+    if tx["type"] == "ﾊﾞｽ等":
         return f"バス {tx['station1']}"
-    return ''
+    return ""
 
 
 def output_review(transactions):
-    print(f"{'ID':<4} {'Date':<17} {'Purpose':<25} {'Desc':<25} {'Transfer':<45} {'Increase':>10} {'Decrease':>10}")
+    print(
+        f"{'ID':<4} {'Date':<17} {'Purpose':<25} {'Desc':<25} {'Transfer':<45} {'Increase':>10} {'Decrease':>10}"
+    )
     print("-" * 140)
 
     prev_date = None
     for idx, tx in enumerate(transactions, 1):
-        if tx['amount'] == 0:
+        if tx["amount"] == 0:
             continue
-        weekday = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][tx['date'].weekday()]
+        weekday = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][
+            tx["date"].weekday()
+        ]
         date_str = f"{tx['date'].strftime('%Y-%m-%d')} {weekday}"
 
         if prev_date and prev_date != date_str:
@@ -330,53 +375,72 @@ def output_review(transactions):
 
         purpose = get_purpose(tx)
         transfer = ACCOUNT_NAMES.get(expense_account, expense_account)
-        increase = f"¥{tx['amount']:,}" if tx['amount'] > 0 else ""
-        decrease = f"¥{abs(tx['amount']):,}" if tx['amount'] < 0 else ""
+        increase = f"¥{tx['amount']:,}" if tx["amount"] > 0 else ""
+        decrease = f"¥{abs(tx['amount']):,}" if tx["amount"] < 0 else ""
 
-        print(f"{idx:<4} {date_str:<17} {purpose:<25} {description or '':<25} {transfer:<45} {increase:>10} {decrease:>10}")
+        print(
+            f"{idx:<4} {date_str:<17} {purpose:<25} {description or '':<25} {transfer:<45} {increase:>10} {decrease:>10}"
+        )
 
 
 def output_sql(transactions):
     print("BEGIN;")
     print()
 
-    total = len([tx for tx in transactions if tx['amount'] != 0])
+    total = len([tx for tx in transactions if tx["amount"] != 0])
     count = 0
     for idx, tx in enumerate(transactions, 1):
-        if tx['amount'] == 0:
+        if tx["amount"] == 0:
             continue
         count += 1
         expense_account, description = get_transaction_info(idx, tx)
         if expense_account is None:
             continue
 
-        tx_guid = str(uuid.uuid4()).replace('-', '')
-        split1_guid = str(uuid.uuid4()).replace('-', '')
-        split2_guid = str(uuid.uuid4()).replace('-', '')
+        tx_guid = str(uuid.uuid4()).replace("-", "")
+        split1_guid = str(uuid.uuid4()).replace("-", "")
+        split2_guid = str(uuid.uuid4()).replace("-", "")
         # Reverse order: ID 1 (newest) gets highest time, oldest gets 00:00:01
         reverse_idx = total - count + 1
         minutes, seconds = divmod(reverse_idx, 60)
-        date_str = tx['date'].strftime(f'%Y-%m-%d 00:{minutes:02d}:{seconds:02d}')
-        desc_sql = f"'{description.replace(chr(39), chr(39)*2)}'" if description else 'NULL'
+        date_str = tx["date"].strftime(f"%Y-%m-%d 00:{minutes:02d}:{seconds:02d}")
+        desc_sql = (
+            f"'{description.replace(chr(39), chr(39) * 2)}'" if description else "NULL"
+        )
 
-        print(f"INSERT INTO transactions (guid, currency_guid, num, post_date, enter_date, description)")
-        print(f"VALUES ('{tx_guid}', '{JPY_CURRENCY}', '', '{date_str}', NOW(), {desc_sql});")
-        print(f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)")
-        print(f"VALUES ('{split1_guid}', '{tx_guid}', '{PASMO_ACCOUNT}', '', '', 'c', NULL, {tx['amount']}, 1, {tx['amount']}, 1, NULL);")
-        print(f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)")
-        print(f"VALUES ('{split2_guid}', '{tx_guid}', '{expense_account}', '', '', 'c', NULL, {-tx['amount']}, 1, {-tx['amount']}, 1, NULL);")
+        print(
+            f"INSERT INTO transactions (guid, currency_guid, num, post_date, enter_date, description)"
+        )
+        print(
+            f"VALUES ('{tx_guid}', '{JPY_CURRENCY}', '', '{date_str}', NOW(), {desc_sql});"
+        )
+        print(
+            f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)"
+        )
+        print(
+            f"VALUES ('{split1_guid}', '{tx_guid}', '{PASMO_ACCOUNT}', '', '', 'c', NULL, {tx['amount']}, 1, {tx['amount']}, 1, NULL);"
+        )
+        print(
+            f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)"
+        )
+        print(
+            f"VALUES ('{split2_guid}', '{tx_guid}', '{expense_account}', '', '', 'c', NULL, {-tx['amount']}, 1, {-tx['amount']}, 1, NULL);"
+        )
         print()
 
     print("COMMIT;")
 
 
 def main():
-    if len(sys.argv) < 2 or sys.argv[1] not in ('review', 'sql'):
+    if len(sys.argv) < 2 or sys.argv[1] not in ("review", "sql"):
         print("Usage: python3 scripts/pasmo_import.py [review|sql]", file=sys.stderr)
         sys.exit(1)
 
     if not RAW_DATA.strip():
-        print("Error: statement data is empty. Write it to raw.txt next to this script or set GNUCASH_RAW_DATA.", file=sys.stderr)
+        print(
+            "Error: statement data is empty. Write it to raw.txt next to this script or set GNUCASH_RAW_DATA.",
+            file=sys.stderr,
+        )
         sys.exit(1)
 
     if PASMO_ACCOUNTS_ERROR:
@@ -387,15 +451,15 @@ def main():
 
     now = datetime.now()
     for tx in transactions:
-        month, day = map(int, tx['date_str'].split('/'))
+        month, day = map(int, tx["date_str"].split("/"))
         year = now.year if month <= now.month else now.year - 1
-        tx['date'] = datetime(year, month, day)
+        tx["date"] = datetime(year, month, day)
 
-    if sys.argv[1] == 'review':
+    if sys.argv[1] == "review":
         output_review(transactions)
     else:
         output_sql(transactions)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

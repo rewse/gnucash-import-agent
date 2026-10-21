@@ -7,6 +7,7 @@ Usage:
 2. Run: python3 scripts/rakuten_super_point_import.py review    # Review transactions
 3. Run: python3 scripts/rakuten_super_point_import.py sql       # Generate SQL
 """
+
 import json
 import os
 import uuid
@@ -14,6 +15,7 @@ import sys
 import unicodedata
 from datetime import datetime
 from pathlib import Path
+
 
 def find_project_root():
     configured_root = os.environ.get("GNUCASH_IMPORT_ROOT")
@@ -28,7 +30,9 @@ def find_project_root():
 
 
 PROJECT_ROOT = find_project_root()
-ACCOUNTS_FILE = PROJECT_ROOT / ".kiro/skills/gnucash-import/references/account-guid-cache.json"
+ACCOUNTS_FILE = (
+    PROJECT_ROOT / ".kiro/skills/gnucash-import/references/account-guid-cache.json"
+)
 
 
 def load_accounts():
@@ -52,21 +56,25 @@ def load_accounts():
 
 ACCOUNTS = load_accounts()
 
-def get_guid(path):
-    return ACCOUNTS.get(path) or ACCOUNTS.get('Root Account:' + path)
 
-SOURCE_ACCOUNT = get_guid('Assets:JPY - Current Assets:Reward Programs:Rakuten Super Point')
-RAKUTEN_CASH = get_guid('Assets:JPY - Current Assets:Prepaid:Rakuten Cash')
-POINT_CHARGE = get_guid('Income:Point Charge')
-BOOKS = get_guid('Expenses:Entertainment:Books')
-PART_TIME = get_guid('Income:Part-Time')
-JPY_CURRENCY = 'a77d4ee821e04f02bb7429e437c645e4'
+def get_guid(path):
+    return ACCOUNTS.get(path) or ACCOUNTS.get("Root Account:" + path)
+
+
+SOURCE_ACCOUNT = get_guid(
+    "Assets:JPY - Current Assets:Reward Programs:Rakuten Super Point"
+)
+RAKUTEN_CASH = get_guid("Assets:JPY - Current Assets:Prepaid:Rakuten Cash")
+POINT_CHARGE = get_guid("Income:Point Charge")
+BOOKS = get_guid("Expenses:Entertainment:Books")
+PART_TIME = get_guid("Income:Part-Time")
+JPY_CURRENCY = "a77d4ee821e04f02bb7429e437c645e4"
 
 ACCOUNT_NAMES = {
-    POINT_CHARGE: 'Income:Point Charge',
-    BOOKS: 'Expenses:Entertainment:Books',
-    RAKUTEN_CASH: 'Assets:JPY - Current Assets:Prepaid:Rakuten Cash',
-    PART_TIME: 'Income:Part-Time',
+    POINT_CHARGE: "Income:Point Charge",
+    BOOKS: "Expenses:Entertainment:Books",
+    RAKUTEN_CASH: "Assets:JPY - Current Assets:Prepaid:Rakuten Cash",
+    PART_TIME: "Income:Part-Time",
 }
 
 # ============================================================
@@ -104,7 +112,11 @@ def load_raw_data(file_name=RAW_DATA_FILE, environment_variable="GNUCASH_RAW_DAT
     The environment variable, when set, names the file to read instead.
     """
     configured = os.environ.get(environment_variable)
-    path = Path(configured) if configured else Path(__file__).resolve().with_name(file_name)
+    path = (
+        Path(configured)
+        if configured
+        else Path(__file__).resolve().with_name(file_name)
+    )
     try:
         # newline="" keeps a carriage return inside a field from splitting a row.
         with open(path, encoding="utf-8-sig", newline="") as raw_file:
@@ -125,30 +137,31 @@ RAW_DATA = load_raw_data()
 # EDIT BELOW: Manual overrides by ID (1-based)
 # Format: ID: (ACCOUNT_GUID, 'Description') or ID: (ACCOUNT_GUID, None)
 # ============================================================
-MANUAL_OVERRIDES = {
-}
+MANUAL_OVERRIDES = {}
 
 
 def parse_transactions(raw_data):
     transactions = []
-    for line in raw_data.strip().split('\n'):
+    for line in raw_data.strip().split("\n"):
         if not line.strip():
             continue
-        parts = line.split('\t')
+        parts = line.split("\t")
         if len(parts) < 6:
             continue
         date_str, service, detail, tx_type, points_str, desc = parts[:6]
-        date = datetime.strptime(date_str, '%Y/%m/%d')
-        points = int(points_str.replace(',', ''))
-        transactions.append({
-            'date': date,
-            'service': service,
-            'detail': detail,
-            'type': tx_type,
-            'points': points,
-            'desc': desc,
-        })
-    transactions.sort(key=lambda x: x['date'], reverse=True)
+        date = datetime.strptime(date_str, "%Y/%m/%d")
+        points = int(points_str.replace(",", ""))
+        transactions.append(
+            {
+                "date": date,
+                "service": service,
+                "detail": detail,
+                "type": tx_type,
+                "points": points,
+                "desc": desc,
+            }
+        )
+    transactions.sort(key=lambda x: x["date"], reverse=True)
     return transactions
 
 
@@ -157,33 +170,39 @@ def get_transaction_info(idx, tx):
     if idx in MANUAL_OVERRIDES:
         guid, desc = MANUAL_OVERRIDES[idx]
         guid = get_guid(guid) if len(guid) != 32 else guid
-        if tx['type'] == 'チャージ':
-            return RAKUTEN_CASH, guid, desc or tx['desc'], tx['points']
-        elif tx['type'] == '利用':
-            return SOURCE_ACCOUNT, guid, desc or tx['desc'], -tx['points']
+        if tx["type"] == "チャージ":
+            return RAKUTEN_CASH, guid, desc or tx["desc"], tx["points"]
+        elif tx["type"] == "利用":
+            return SOURCE_ACCOUNT, guid, desc or tx["desc"], -tx["points"]
         else:
-            return SOURCE_ACCOUNT, guid, desc or tx['desc'], tx['points']
+            return SOURCE_ACCOUNT, guid, desc or tx["desc"], tx["points"]
 
-    if tx['type'] == 'チャージ':
-        return RAKUTEN_CASH, PART_TIME, tx['desc'], tx['points']
+    if tx["type"] == "チャージ":
+        return RAKUTEN_CASH, PART_TIME, tx["desc"], tx["points"]
 
-    if tx['type'] == '利用':
-        if '楽天マガジン' in tx['service']:
-            return SOURCE_ACCOUNT, BOOKS, tx['desc'], -tx['points']
-        raise ValueError(f"Unknown use transaction at ID {idx}: {tx['service']} / {tx['detail']} — add to MANUAL_OVERRIDES")
+    if tx["type"] == "利用":
+        if "楽天マガジン" in tx["service"]:
+            return SOURCE_ACCOUNT, BOOKS, tx["desc"], -tx["points"]
+        raise ValueError(
+            f"Unknown use transaction at ID {idx}: {tx['service']} / {tx['detail']} — add to MANUAL_OVERRIDES"
+        )
 
     # 獲得
-    return SOURCE_ACCOUNT, POINT_CHARGE, tx['desc'], tx['points']
+    return SOURCE_ACCOUNT, POINT_CHARGE, tx["desc"], tx["points"]
 
 
 def output_review(transactions):
-    print(f"{'ID':<4} {'Date':<14} {'Service':<16} {'Desc':<25} {'Transfer':<45} {'Increase':>10} {'Decrease':>10}")
+    print(
+        f"{'ID':<4} {'Date':<14} {'Service':<16} {'Desc':<25} {'Transfer':<45} {'Increase':>10} {'Decrease':>10}"
+    )
     print("-" * 130)
 
     prev_date = None
     for idx, tx in enumerate(transactions, 1):
-        weekday = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][tx['date'].weekday()]
-        date_str = tx['date'].strftime('%Y-%m-%d')
+        weekday = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][
+            tx["date"].weekday()
+        ]
+        date_str = tx["date"].strftime("%Y-%m-%d")
         date_display = f"{date_str} {weekday}"
 
         if prev_date and prev_date != date_str:
@@ -192,16 +211,18 @@ def output_review(transactions):
 
         try:
             source, transfer_guid, description, amount = get_transaction_info(idx, tx)
-            transfer = ACCOUNT_NAMES.get(transfer_guid, '???')
+            transfer = ACCOUNT_NAMES.get(transfer_guid, "???")
         except ValueError:
-            description = '???'
-            transfer = '??? (needs MANUAL_OVERRIDES)'
-            amount = -tx['points'] if tx['type'] == '利用' else tx['points']
+            description = "???"
+            transfer = "??? (needs MANUAL_OVERRIDES)"
+            amount = -tx["points"] if tx["type"] == "利用" else tx["points"]
 
         increase = f"{amount:,}" if amount > 0 else ""
         decrease = f"{abs(amount):,}" if amount < 0 else ""
 
-        print(f"{idx:<4} {date_display:<14} {tx['service']:<16} {str(description or ''):<25} {transfer:<45} {increase:>10} {decrease:>10}")
+        print(
+            f"{idx:<4} {date_display:<14} {tx['service']:<16} {str(description or ''):<25} {transfer:<45} {increase:>10} {decrease:>10}"
+        )
 
 
 def output_sql(transactions):
@@ -217,37 +238,58 @@ def output_sql(transactions):
         split2_guid = uuid.uuid4().hex
         reverse_idx = total - idx + 1
         minutes, seconds = divmod(reverse_idx, 60)
-        date_str = tx['date'].strftime(f'%Y-%m-%d 00:{minutes:02d}:{seconds:02d}')
-        desc_sql = f"'{description.replace(chr(39), chr(39)*2)}'" if description else 'NULL'
+        date_str = tx["date"].strftime(f"%Y-%m-%d 00:{minutes:02d}:{seconds:02d}")
+        desc_sql = (
+            f"'{description.replace(chr(39), chr(39) * 2)}'" if description else "NULL"
+        )
 
-        print(f"-- Transaction {idx}: {tx['date'].strftime('%Y-%m-%d')} {description} {amount:+,}")
-        print(f"INSERT INTO transactions (guid, currency_guid, num, post_date, enter_date, description)")
-        print(f"VALUES ('{tx_guid}', '{JPY_CURRENCY}', '', '{date_str}', NOW(), {desc_sql});")
-        print(f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)")
-        print(f"VALUES ('{split1_guid}', '{tx_guid}', '{source}', '', '', 'c', NULL, {amount}, 1, {amount}, 1, NULL);")
-        print(f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)")
-        print(f"VALUES ('{split2_guid}', '{tx_guid}', '{transfer_guid}', '', '', 'c', NULL, {-amount}, 1, {-amount}, 1, NULL);")
+        print(
+            f"-- Transaction {idx}: {tx['date'].strftime('%Y-%m-%d')} {description} {amount:+,}"
+        )
+        print(
+            f"INSERT INTO transactions (guid, currency_guid, num, post_date, enter_date, description)"
+        )
+        print(
+            f"VALUES ('{tx_guid}', '{JPY_CURRENCY}', '', '{date_str}', NOW(), {desc_sql});"
+        )
+        print(
+            f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)"
+        )
+        print(
+            f"VALUES ('{split1_guid}', '{tx_guid}', '{source}', '', '', 'c', NULL, {amount}, 1, {amount}, 1, NULL);"
+        )
+        print(
+            f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)"
+        )
+        print(
+            f"VALUES ('{split2_guid}', '{tx_guid}', '{transfer_guid}', '', '', 'c', NULL, {-amount}, 1, {-amount}, 1, NULL);"
+        )
         print()
 
     print("COMMIT;")
 
 
 def main():
-    if len(sys.argv) < 2 or sys.argv[1] not in ['review', 'sql']:
-        print("Usage: python3 rakuten_super_point_import.py [review|sql]", file=sys.stderr)
+    if len(sys.argv) < 2 or sys.argv[1] not in ["review", "sql"]:
+        print(
+            "Usage: python3 rakuten_super_point_import.py [review|sql]", file=sys.stderr
+        )
         sys.exit(1)
 
     if not RAW_DATA.strip():
-        print("Error: statement data is empty. Write it to raw.txt next to this script or set GNUCASH_RAW_DATA.", file=sys.stderr)
+        print(
+            "Error: statement data is empty. Write it to raw.txt next to this script or set GNUCASH_RAW_DATA.",
+            file=sys.stderr,
+        )
         sys.exit(1)
 
     transactions = parse_transactions(RAW_DATA)
 
-    if sys.argv[1] == 'review':
+    if sys.argv[1] == "review":
         output_review(transactions)
     else:
         output_sql(transactions)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

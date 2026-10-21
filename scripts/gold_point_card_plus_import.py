@@ -8,6 +8,7 @@ Usage:
 3. Run: python3 scripts/gold_point_card_plus_import.py review    # Review transactions
 4. Run: python3 scripts/gold_point_card_plus_import.py sql       # Generate SQL
 """
+
 import json
 import os
 import uuid
@@ -16,6 +17,7 @@ import re
 import unicodedata
 from datetime import datetime
 from pathlib import Path
+
 
 def find_project_root():
     configured_root = os.environ.get("GNUCASH_IMPORT_ROOT")
@@ -30,7 +32,9 @@ def find_project_root():
 
 
 PROJECT_ROOT = find_project_root()
-ACCOUNTS_FILE = PROJECT_ROOT / ".kiro/skills/gnucash-import/references/account-guid-cache.json"
+ACCOUNTS_FILE = (
+    PROJECT_ROOT / ".kiro/skills/gnucash-import/references/account-guid-cache.json"
+)
 
 
 def load_accounts():
@@ -54,15 +58,17 @@ def load_accounts():
 
 ACCOUNTS = load_accounts()
 
-def get_guid(path):
-    return ACCOUNTS.get(path) or ACCOUNTS.get('Root Account:' + path)
 
-SOURCE_ACCOUNT = get_guid('Liabilities:Credit Card:GOLD POINT CARD +')
+def get_guid(path):
+    return ACCOUNTS.get(path) or ACCOUNTS.get("Root Account:" + path)
+
+
+SOURCE_ACCOUNT = get_guid("Liabilities:Credit Card:GOLD POINT CARD +")
 
 CURRENCIES = {
-    'JPY': 'a77d4ee821e04f02bb7429e437c645e4',
+    "JPY": "a77d4ee821e04f02bb7429e437c645e4",
 }
-CURRENCY_DENOM = {'JPY': 1}
+CURRENCY_DENOM = {"JPY": 1}
 
 ACCOUNT_NAMES = {
     # Add accounts used in MANUAL_OVERRIDES here.
@@ -103,7 +109,11 @@ def load_raw_data(file_name=RAW_DATA_FILE, environment_variable="GNUCASH_RAW_DAT
     The environment variable, when set, names the file to read instead.
     """
     configured = os.environ.get(environment_variable)
-    path = Path(configured) if configured else Path(__file__).resolve().with_name(file_name)
+    path = (
+        Path(configured)
+        if configured
+        else Path(__file__).resolve().with_name(file_name)
+    )
     try:
         # newline="" keeps a carriage return inside a field from splitting a row.
         with open(path, encoding="utf-8-sig", newline="") as raw_file:
@@ -123,53 +133,58 @@ RAW_DATA = load_raw_data()
 # EDIT BELOW: Manual overrides by ID (1-based)
 # Format: ID: (ACCOUNT_GUID, 'Description') or ID: (ACCOUNT_GUID, None)
 # ============================================================
-MANUAL_OVERRIDES = {
-}
+MANUAL_OVERRIDES = {}
 
 
 def parse_transactions(raw_data):
     transactions = []
-    for line in raw_data.strip().split('\n'):
+    for line in raw_data.strip().split("\n"):
         if not line.strip():
             continue
-        if 'ご利用分' in line or '＜お支払金額総合計＞' in line:
+        if "ご利用分" in line or "＜お支払金額総合計＞" in line:
             continue
 
         # Confirmed format: starts with \tYY/MM/DD
         # Unconfirmed format: starts with YY/MM/DD
-        m = re.match(r'\t?(\d{2}/\d{2}/\d{2})\t', line)
+        m = re.match(r"\t?(\d{2}/\d{2}/\d{2})\t", line)
         if not m:
             continue
 
-        fields = line.lstrip('\t').split('\t')
-        date = datetime.strptime(fields[0], '%y/%m/%d')
+        fields = line.lstrip("\t").split("\t")
+        date = datetime.strptime(fields[0], "%y/%m/%d")
 
-        if line.startswith('\t'):
+        if line.startswith("\t"):
             # Confirmed: date, merchant, amount, pay_type, installment, pay_amount, ...
             merchant = fields[1]
-            amount = -int(fields[2].replace(',', ''))
+            amount = -int(fields[2].replace(",", ""))
         else:
             # Unconfirmed: date, merchant, card_holder, pay_type, installment_count, pay_month, amount, ...
             merchant = fields[1]
-            amount = -int(fields[6].replace(',', ''))
+            amount = -int(fields[6].replace(",", ""))
 
-        transactions.append({'date': date, 'merchant': merchant, 'amount': amount})
+        transactions.append({"date": date, "merchant": merchant, "amount": amount})
     return transactions
 
 
 def get_transaction_info(idx, tx):
     if idx in MANUAL_OVERRIDES:
         return MANUAL_OVERRIDES[idx]
-    raise NotImplementedError(f"No mapping for ID {idx}: {tx['merchant']} ¥{abs(tx['amount']):,}")
+    raise NotImplementedError(
+        f"No mapping for ID {idx}: {tx['merchant']} ¥{abs(tx['amount']):,}"
+    )
 
 
 def output_review(transactions):
-    print(f"{'ID':<4} {'Date':<14} {'Merchant':<20} {'Desc':<30} {'Transfer':<45} {'Amount':>10}")
+    print(
+        f"{'ID':<4} {'Date':<14} {'Merchant':<20} {'Desc':<30} {'Transfer':<45} {'Amount':>10}"
+    )
     print("-" * 130)
 
     prev_date = None
     for idx, tx in enumerate(transactions, 1):
-        weekday = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][tx['date'].weekday()]
+        weekday = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][
+            tx["date"].weekday()
+        ]
         date_str = f"{tx['date'].strftime('%Y-%m-%d')} {weekday}"
 
         if prev_date and prev_date != date_str:
@@ -178,13 +193,15 @@ def output_review(transactions):
 
         try:
             expense_account, description = get_transaction_info(idx, tx)
-            transfer = ACCOUNT_NAMES.get(expense_account, expense_account or '')
+            transfer = ACCOUNT_NAMES.get(expense_account, expense_account or "")
         except NotImplementedError:
-            description = '???'
-            transfer = '???'
+            description = "???"
+            transfer = "???"
 
         amt_str = f"¥{abs(tx['amount']):,}"
-        print(f"{idx:<4} {date_str:<14} {tx['merchant']:<20} {description or '':<30} {transfer:<45} {amt_str:>10}")
+        print(
+            f"{idx:<4} {date_str:<14} {tx['merchant']:<20} {description or '':<30} {transfer:<45} {amt_str:>10}"
+        )
 
 
 def output_sql(transactions):
@@ -195,44 +212,64 @@ def output_sql(transactions):
     for idx, tx in enumerate(transactions, 1):
         expense_account, description = get_transaction_info(idx, tx)
 
-        currency_guid = CURRENCIES['JPY']
-        value_num = tx['amount']
+        currency_guid = CURRENCIES["JPY"]
+        value_num = tx["amount"]
 
         tx_guid = uuid.uuid4().hex
         split1_guid = uuid.uuid4().hex
         split2_guid = uuid.uuid4().hex
         reverse_idx = total - idx + 1
         minutes, seconds = divmod(reverse_idx, 60)
-        date_str = tx['date'].strftime(f'%Y-%m-%d 00:{minutes:02d}:{seconds:02d}')
-        desc_sql = f"'{description.replace(chr(39), chr(39)*2)}'" if description else 'NULL'
+        date_str = tx["date"].strftime(f"%Y-%m-%d 00:{minutes:02d}:{seconds:02d}")
+        desc_sql = (
+            f"'{description.replace(chr(39), chr(39) * 2)}'" if description else "NULL"
+        )
 
-        print(f"INSERT INTO transactions (guid, currency_guid, num, post_date, enter_date, description)")
-        print(f"VALUES ('{tx_guid}', '{currency_guid}', '', '{date_str}', NOW(), {desc_sql});")
-        print(f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)")
-        print(f"VALUES ('{split1_guid}', '{tx_guid}', '{SOURCE_ACCOUNT}', '', '', 'c', NULL, {value_num}, 1, {value_num}, 1, NULL);")
-        print(f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)")
-        print(f"VALUES ('{split2_guid}', '{tx_guid}', '{expense_account}', '', '', 'c', NULL, {-value_num}, 1, {-value_num}, 1, NULL);")
+        print(
+            f"INSERT INTO transactions (guid, currency_guid, num, post_date, enter_date, description)"
+        )
+        print(
+            f"VALUES ('{tx_guid}', '{currency_guid}', '', '{date_str}', NOW(), {desc_sql});"
+        )
+        print(
+            f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)"
+        )
+        print(
+            f"VALUES ('{split1_guid}', '{tx_guid}', '{SOURCE_ACCOUNT}', '', '', 'c', NULL, {value_num}, 1, {value_num}, 1, NULL);"
+        )
+        print(
+            f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)"
+        )
+        print(
+            f"VALUES ('{split2_guid}', '{tx_guid}', '{expense_account}', '', '', 'c', NULL, {-value_num}, 1, {-value_num}, 1, NULL);"
+        )
         print()
 
     print("COMMIT;")
 
 
 def main():
-    if len(sys.argv) < 2 or sys.argv[1] not in ['review', 'sql']:
-        print("Usage: python3 gold_point_card_plus_import.py [review|sql]", file=sys.stderr)
+    if len(sys.argv) < 2 or sys.argv[1] not in ["review", "sql"]:
+        print(
+            "Usage: python3 gold_point_card_plus_import.py [review|sql]",
+            file=sys.stderr,
+        )
         sys.exit(1)
 
     if not RAW_DATA.strip():
-        print("Error: statement data is empty. Write it to raw.txt next to this script or set GNUCASH_RAW_DATA.", file=sys.stderr)
+        print(
+            "Error: statement data is empty. Write it to raw.txt next to this script or set GNUCASH_RAW_DATA.",
+            file=sys.stderr,
+        )
         sys.exit(1)
 
     transactions = parse_transactions(RAW_DATA)
 
-    if sys.argv[1] == 'review':
+    if sys.argv[1] == "review":
         output_review(transactions)
     else:
         output_sql(transactions)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

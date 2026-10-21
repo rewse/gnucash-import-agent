@@ -7,6 +7,7 @@ Usage:
 2. Run: python3 scripts/ponta_import.py review    # Review transactions
 3. Run: python3 scripts/ponta_import.py sql       # Generate SQL
 """
+
 import json
 import os
 import uuid
@@ -14,6 +15,7 @@ import sys
 import unicodedata
 from datetime import datetime
 from pathlib import Path
+
 
 def find_project_root():
     configured_root = os.environ.get("GNUCASH_IMPORT_ROOT")
@@ -28,7 +30,9 @@ def find_project_root():
 
 
 PROJECT_ROOT = find_project_root()
-ACCOUNTS_FILE = PROJECT_ROOT / ".kiro/skills/gnucash-import/references/account-guid-cache.json"
+ACCOUNTS_FILE = (
+    PROJECT_ROOT / ".kiro/skills/gnucash-import/references/account-guid-cache.json"
+)
 
 
 def load_accounts():
@@ -52,11 +56,13 @@ def load_accounts():
 
 ACCOUNTS = load_accounts()
 
-def get_guid(path):
-    return ACCOUNTS.get(path) or ACCOUNTS.get('Root Account:' + path)
 
-SOURCE_ACCOUNT = get_guid('Assets:JPY - Current Assets:Reward Programs:Ponta')
-JPY_CURRENCY = 'a77d4ee821e04f02bb7429e437c645e4'
+def get_guid(path):
+    return ACCOUNTS.get(path) or ACCOUNTS.get("Root Account:" + path)
+
+
+SOURCE_ACCOUNT = get_guid("Assets:JPY - Current Assets:Reward Programs:Ponta")
+JPY_CURRENCY = "a77d4ee821e04f02bb7429e437c645e4"
 
 # ============================================================
 # Statement data loading
@@ -93,7 +99,11 @@ def load_raw_data(file_name=RAW_DATA_FILE, environment_variable="GNUCASH_RAW_DAT
     The environment variable, when set, names the file to read instead.
     """
     configured = os.environ.get(environment_variable)
-    path = Path(configured) if configured else Path(__file__).resolve().with_name(file_name)
+    path = (
+        Path(configured)
+        if configured
+        else Path(__file__).resolve().with_name(file_name)
+    )
     try:
         # newline="" keeps a carriage return inside a field from splitting a row.
         with open(path, encoding="utf-8-sig", newline="") as raw_file:
@@ -114,29 +124,30 @@ RAW_DATA = load_raw_data()
 # EDIT BELOW: Manual overrides by ID (1-based)
 # Format: ID: (ACCOUNT_GUID, 'Description') or ID: (ACCOUNT_GUID, None)
 # ============================================================
-MANUAL_OVERRIDES = {
-}
+MANUAL_OVERRIDES = {}
 
 
 def parse_transactions(raw_data):
     """Parse RAW_DATA into list of transactions."""
     transactions = []
-    for line in raw_data.strip().split('\n'):
+    for line in raw_data.strip().split("\n"):
         if not line.strip():
             continue
-        parts = line.split('\t')
+        parts = line.split("\t")
         if len(parts) < 4:
             continue
         date_str, place, tx_type, points_str = parts[:4]
-        date = datetime.strptime(date_str, '%Y/%m/%d')
-        points = int(points_str.replace(',', '').replace('+', ''))
-        transactions.append({
-            'date': date,
-            'place': place,
-            'type': tx_type,
-            'points': points,
-        })
-    transactions.sort(key=lambda x: x['date'], reverse=True)
+        date = datetime.strptime(date_str, "%Y/%m/%d")
+        points = int(points_str.replace(",", "").replace("+", ""))
+        transactions.append(
+            {
+                "date": date,
+                "place": place,
+                "type": tx_type,
+                "points": points,
+            }
+        )
+    transactions.sort(key=lambda x: x["date"], reverse=True)
     return transactions
 
 
@@ -145,19 +156,23 @@ def get_transaction_info(idx, tx):
     if idx in MANUAL_OVERRIDES:
         guid, desc = MANUAL_OVERRIDES[idx]
         return get_guid(guid) if len(guid) != 32 else guid, desc
-    if tx['points'] >= 0:
-        return get_guid('Income:Point Charge'), tx['place']
-    return None, tx['place']
+    if tx["points"] >= 0:
+        return get_guid("Income:Point Charge"), tx["place"]
+    return None, tx["place"]
 
 
 def output_review(transactions):
-    print(f"{'ID':<4} {'Date':<14} {'Desc':<50} {'Transfer':<30} {'Increase':>10} {'Decrease':>10}")
+    print(
+        f"{'ID':<4} {'Date':<14} {'Desc':<50} {'Transfer':<30} {'Increase':>10} {'Decrease':>10}"
+    )
     print("-" * 120)
 
     prev_date = None
     for idx, tx in enumerate(transactions, 1):
-        weekday = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][tx['date'].weekday()]
-        date_str = tx['date'].strftime('%Y-%m-%d')
+        weekday = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][
+            tx["date"].weekday()
+        ]
+        date_str = tx["date"].strftime("%Y-%m-%d")
         date_display = f"{date_str} {weekday}"
 
         if prev_date and prev_date != date_str:
@@ -165,11 +180,15 @@ def output_review(transactions):
         prev_date = date_str
 
         account_guid, _ = get_transaction_info(idx, tx)
-        transfer = next((k for k, v in ACCOUNTS.items() if v == account_guid), account_guid or '???')
-        increase = f"{tx['points']:,}" if tx['points'] > 0 else ""
-        decrease = f"{abs(tx['points']):,}" if tx['points'] < 0 else ""
+        transfer = next(
+            (k for k, v in ACCOUNTS.items() if v == account_guid), account_guid or "???"
+        )
+        increase = f"{tx['points']:,}" if tx["points"] > 0 else ""
+        decrease = f"{abs(tx['points']):,}" if tx["points"] < 0 else ""
 
-        print(f"{idx:<4} {date_display:<14} {tx['place']:<50} {transfer:<30} {increase:>10} {decrease:>10}")
+        print(
+            f"{idx:<4} {date_display:<14} {tx['place']:<50} {transfer:<30} {increase:>10} {decrease:>10}"
+        )
 
 
 def output_sql(transactions):
@@ -180,7 +199,10 @@ def output_sql(transactions):
     for idx, tx in enumerate(transactions, 1):
         account_guid, description = get_transaction_info(idx, tx)
         if not account_guid:
-            print(f"-- ERROR: No account for transaction {idx}: {tx['place']} {tx['points']:+,}", file=sys.stderr)
+            print(
+                f"-- ERROR: No account for transaction {idx}: {tx['place']} {tx['points']:+,}",
+                file=sys.stderr,
+            )
             sys.exit(1)
 
         tx_guid = uuid.uuid4().hex
@@ -188,37 +210,56 @@ def output_sql(transactions):
         split2_guid = uuid.uuid4().hex
         reverse_idx = total_count - idx + 1
         minutes, seconds = divmod(reverse_idx, 60)
-        date_str = tx['date'].strftime(f'%Y-%m-%d 00:{minutes:02d}:{seconds:02d}')
-        desc_sql = f"'{description.replace(chr(39), chr(39)*2)}'" if description else 'NULL'
+        date_str = tx["date"].strftime(f"%Y-%m-%d 00:{minutes:02d}:{seconds:02d}")
+        desc_sql = (
+            f"'{description.replace(chr(39), chr(39) * 2)}'" if description else "NULL"
+        )
 
-        print(f"-- Transaction {idx}: {tx['date'].strftime('%Y-%m-%d')} {description} {tx['points']:+,}")
-        print(f"INSERT INTO transactions (guid, currency_guid, num, post_date, enter_date, description)")
-        print(f"VALUES ('{tx_guid}', '{JPY_CURRENCY}', '', '{date_str}', NOW(), {desc_sql});")
-        print(f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)")
-        print(f"VALUES ('{split1_guid}', '{tx_guid}', '{SOURCE_ACCOUNT}', '', '', 'c', NULL, {tx['points']}, 1, {tx['points']}, 1, NULL);")
-        print(f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)")
-        print(f"VALUES ('{split2_guid}', '{tx_guid}', '{account_guid}', '', '', 'c', NULL, {-tx['points']}, 1, {-tx['points']}, 1, NULL);")
+        print(
+            f"-- Transaction {idx}: {tx['date'].strftime('%Y-%m-%d')} {description} {tx['points']:+,}"
+        )
+        print(
+            f"INSERT INTO transactions (guid, currency_guid, num, post_date, enter_date, description)"
+        )
+        print(
+            f"VALUES ('{tx_guid}', '{JPY_CURRENCY}', '', '{date_str}', NOW(), {desc_sql});"
+        )
+        print(
+            f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)"
+        )
+        print(
+            f"VALUES ('{split1_guid}', '{tx_guid}', '{SOURCE_ACCOUNT}', '', '', 'c', NULL, {tx['points']}, 1, {tx['points']}, 1, NULL);"
+        )
+        print(
+            f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)"
+        )
+        print(
+            f"VALUES ('{split2_guid}', '{tx_guid}', '{account_guid}', '', '', 'c', NULL, {-tx['points']}, 1, {-tx['points']}, 1, NULL);"
+        )
         print()
 
     print("COMMIT;")
 
 
 def main():
-    if len(sys.argv) < 2 or sys.argv[1] not in ['review', 'sql']:
+    if len(sys.argv) < 2 or sys.argv[1] not in ["review", "sql"]:
         print("Usage: python3 ponta_import.py [review|sql]", file=sys.stderr)
         sys.exit(1)
 
     if not RAW_DATA.strip():
-        print("Error: statement data is empty. Write it to raw.txt next to this script or set GNUCASH_RAW_DATA.", file=sys.stderr)
+        print(
+            "Error: statement data is empty. Write it to raw.txt next to this script or set GNUCASH_RAW_DATA.",
+            file=sys.stderr,
+        )
         sys.exit(1)
 
     transactions = parse_transactions(RAW_DATA)
 
-    if sys.argv[1] == 'review':
+    if sys.argv[1] == "review":
         output_review(transactions)
     else:
         output_sql(transactions)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

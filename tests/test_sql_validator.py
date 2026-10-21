@@ -65,7 +65,8 @@ class SqlValidatorTest(unittest.TestCase):
 
     def test_rejects_forbidden_statement_hidden_after_carriage_return(self):
         sql = valid_sql().replace(
-            "BEGIN;", "BEGIN; -- hidden through carriage return\rDELETE FROM accounts;\n"
+            "BEGIN;",
+            "BEGIN; -- hidden through carriage return\rDELETE FROM accounts;\n",
         )
         with self.assertRaises(self.module.ValidationError):
             self.module.validate_sql(sql, SOURCE, {SOURCE, TARGET}, CURRENCY)
@@ -166,9 +167,7 @@ class SqlValidatorTest(unittest.TestCase):
             self.module.validate_sql(sql, SOURCE, {SOURCE, TARGET}, CURRENCY)
 
     def test_rejects_invalid_timestamp(self):
-        sql = valid_sql().replace(
-            "2026-09-17 00:00:01", "2026-99-99 99:99:99"
-        )
+        sql = valid_sql().replace("2026-09-17 00:00:01", "2026-99-99 99:99:99")
         with self.assertRaises(self.module.ValidationError):
             self.module.validate_sql(sql, SOURCE, {SOURCE, TARGET}, CURRENCY)
 

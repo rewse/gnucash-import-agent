@@ -7,6 +7,7 @@ Usage:
 3. Run: python3 scripts/mufg_bank_import.py review
 4. Run: python3 scripts/mufg_bank_import.py sql
 """
+
 import json
 import os
 import re
@@ -15,6 +16,7 @@ import uuid
 import unicodedata
 from datetime import date
 from pathlib import Path
+
 
 def find_project_root():
     configured_root = os.environ.get("GNUCASH_IMPORT_ROOT")
@@ -29,7 +31,9 @@ def find_project_root():
 
 
 PROJECT_ROOT = find_project_root()
-ACCOUNTS_FILE = PROJECT_ROOT / ".kiro/skills/gnucash-import/references/account-guid-cache.json"
+ACCOUNTS_FILE = (
+    PROJECT_ROOT / ".kiro/skills/gnucash-import/references/account-guid-cache.json"
+)
 
 
 def load_accounts():
@@ -55,7 +59,7 @@ ACCOUNTS = load_accounts()
 
 
 def get_guid(path):
-    return ACCOUNTS.get(path) or ACCOUNTS.get('Root Account:' + path)
+    return ACCOUNTS.get(path) or ACCOUNTS.get("Root Account:" + path)
 
 
 PERSONAL_FILE = PROJECT_ROOT / ".kiro/skills/gnucash-import/references/personal.json"
@@ -75,9 +79,7 @@ def _is_safe_identity_match(value):
         return False
     normalized = "".join(value.split())
     markers = ("ことら送金", "振込")
-    return len(normalized) >= 3 and not any(
-        normalized in marker for marker in markers
-    )
+    return len(normalized) >= 3 and not any(normalized in marker for marker in markers)
 
 
 def load_personal_rules(source_name):
@@ -124,16 +126,15 @@ def load_personal_rules(source_name):
 PERSONAL_RULES, PERSONAL_RULE_ERROR = load_personal_rules("mufg_bank")
 
 
-SOURCE_ACCOUNT = get_guid('Assets:JPY - Current Assets:Banks:MUFG Bank')
-INTEREST = get_guid('Income:Interest Income')
-PROPERTY_INS = get_guid('Expenses:Insurances:Property Insurances')
+SOURCE_ACCOUNT = get_guid("Assets:JPY - Current Assets:Banks:MUFG Bank")
+INTEREST = get_guid("Income:Interest Income")
+PROPERTY_INS = get_guid("Expenses:Insurances:Property Insurances")
 
-JPY_CURRENCY = 'a77d4ee821e04f02bb7429e437c645e4'
+JPY_CURRENCY = "a77d4ee821e04f02bb7429e437c645e4"
 
 ACCOUNT_NAMES = {
-    INTEREST: 'Income:Interest Income',
-    PROPERTY_INS: 'Expenses:Insurances:Property Insurances',
-
+    INTEREST: "Income:Interest Income",
+    PROPERTY_INS: "Expenses:Insurances:Property Insurances",
 }
 
 # ============================================================
@@ -171,7 +172,11 @@ def load_raw_data(file_name=RAW_DATA_FILE, environment_variable="GNUCASH_RAW_DAT
     The environment variable, when set, names the file to read instead.
     """
     configured = os.environ.get(environment_variable)
-    path = Path(configured) if configured else Path(__file__).resolve().with_name(file_name)
+    path = (
+        Path(configured)
+        if configured
+        else Path(__file__).resolve().with_name(file_name)
+    )
     try:
         # newline="" keeps a carriage return inside a field from splitting a row.
         with open(path, encoding="utf-8-sig", newline="") as raw_file:
@@ -191,8 +196,7 @@ RAW_DATA = load_raw_data()
 # EDIT BELOW: Manual overrides by ID (1-based)
 # Format: ID: (ACCOUNT_GUID, 'Description') or ID: (ACCOUNT_GUID, None)
 # ============================================================
-MANUAL_OVERRIDES = {
-}
+MANUAL_OVERRIDES = {}
 
 
 def parse_amount(s):
@@ -200,76 +204,84 @@ def parse_amount(s):
     s = s.strip()
     if not s:
         return 0
-    return int(re.sub(r'[,\s円]', '', s))
+    return int(re.sub(r"[,\s円]", "", s))
 
 
 def parse_transactions(raw_data):
     transactions = []
     year = None
-    for line in raw_data.strip().split('\n'):
+    for line in raw_data.strip().split("\n"):
         line = line.rstrip()
-        if not line or line == 'メモ内容':
+        if not line or line == "メモ内容":
             continue
-        m = re.match(r'(\d{4})年', line)
+        m = re.match(r"(\d{4})年", line)
         if m:
             year = int(m.group(1))
             continue
-        m = re.match(r'(\d{1,2})/(\d{1,2})\t', line)
+        m = re.match(r"(\d{1,2})/(\d{1,2})\t", line)
         if m and year:
-            parts = line.split('\t')
+            parts = line.split("\t")
             month, day = int(m.group(1)), int(m.group(2))
             withdrawal = parse_amount(parts[1]) if len(parts) > 1 else 0
             deposit = parse_amount(parts[2]) if len(parts) > 2 else 0
-            desc = parts[3].strip() if len(parts) > 3 else ''
+            desc = parts[3].strip() if len(parts) > 3 else ""
             amount = deposit - withdrawal
-            transactions.append({
-                'date': date(year, month, day),
-                'amount': amount,
-                'desc': desc,
-            })
+            transactions.append(
+                {
+                    "date": date(year, month, day),
+                    "amount": amount,
+                    "desc": desc,
+                }
+            )
     return transactions
 
 
 def get_transaction_info(idx, tx):
     if idx in MANUAL_OVERRIDES:
         return MANUAL_OVERRIDES[idx]
-    desc = tx['desc']
-    if '利息' in desc:
+    desc = tx["desc"]
+    if "利息" in desc:
         return INTEREST, None
-    if 'メイジヤスダセイメイ' in desc:
+    if "メイジヤスダセイメイ" in desc:
         return PROPERTY_INS, None
-    if 'ラクテンソンガイホケン' in desc:
+    if "ラクテンソンガイホケン" in desc:
         return PROPERTY_INS, None
-    is_transfer = '振込' in desc or 'ことら送金' in desc
+    is_transfer = "振込" in desc or "ことら送金" in desc
     rule = PERSONAL_RULES.get("self_transfer")
     if is_transfer and PERSONAL_RULE_ERROR:
         raise ValueError(PERSONAL_RULE_ERROR)
     if is_transfer and rule and rule["contains"] in desc:
         return rule["account"], None
     if is_transfer:
-        raise ValueError("MUFG Bank: missing personal.json transfer_rules.mufg_bank.self_transfer")
+        raise ValueError(
+            "MUFG Bank: missing personal.json transfer_rules.mufg_bank.self_transfer"
+        )
     raise ValueError(f"Unknown transaction type at ID {idx}: {desc}")
 
 
 def output_review(transactions):
-    print(f"{'ID':<4} {'Date':<14} {'Desc':<55} {'Transfer':<40} {'Increase':>10} {'Decrease':>10}")
-    print('-' * 136)
+    print(
+        f"{'ID':<4} {'Date':<14} {'Desc':<55} {'Transfer':<40} {'Increase':>10} {'Decrease':>10}"
+    )
+    print("-" * 136)
     prev_date = None
     for idx, tx in enumerate(transactions, 1):
-        if prev_date and prev_date != tx['date']:
-            print('-' * 136)
-        prev_date = tx['date']
+        if prev_date and prev_date != tx["date"]:
+            print("-" * 136)
+        prev_date = tx["date"]
         account, description = get_transaction_info(idx, tx)
-        weekday = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+        weekday = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
         date_str = f"{tx['date']} {weekday[tx['date'].weekday()]}"
-        transfer = ACCOUNT_NAMES.get(account, account or '')
-        inc = f"¥{tx['amount']:,}" if tx['amount'] > 0 else ''
-        dec = f"¥{abs(tx['amount']):,}" if tx['amount'] < 0 else ''
-        print(f"{idx:<4} {date_str:<14} {tx['desc']:<55} {transfer:<40} {inc:>10} {dec:>10}")
+        transfer = ACCOUNT_NAMES.get(account, account or "")
+        inc = f"¥{tx['amount']:,}" if tx["amount"] > 0 else ""
+        dec = f"¥{abs(tx['amount']):,}" if tx["amount"] < 0 else ""
+        print(
+            f"{idx:<4} {date_str:<14} {tx['desc']:<55} {transfer:<40} {inc:>10} {dec:>10}"
+        )
 
 
 def output_sql(transactions):
-    print('BEGIN;')
+    print("BEGIN;")
     print()
     total = len(transactions)
     for idx, tx in enumerate(transactions, 1):
@@ -280,30 +292,47 @@ def output_sql(transactions):
         reverse_idx = total - idx + 1
         minutes, seconds = divmod(reverse_idx, 60)
         date_str = f"{tx['date']} 00:{minutes:02d}:{seconds:02d}"
-        desc_sql = f"'{description.replace(chr(39), chr(39)*2)}'" if description else 'NULL'
-        print(f"INSERT INTO transactions (guid, currency_guid, num, post_date, enter_date, description)")
-        print(f"VALUES ('{tx_guid}', '{JPY_CURRENCY}', '', '{date_str}', NOW(), {desc_sql});")
-        print(f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)")
-        print(f"VALUES ('{s1_guid}', '{tx_guid}', '{SOURCE_ACCOUNT}', '', '', 'c', NULL, {tx['amount']}, 1, {tx['amount']}, 1, NULL);")
-        print(f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)")
-        print(f"VALUES ('{s2_guid}', '{tx_guid}', '{account}', '', '', 'c', NULL, {-tx['amount']}, 1, {-tx['amount']}, 1, NULL);")
+        desc_sql = (
+            f"'{description.replace(chr(39), chr(39) * 2)}'" if description else "NULL"
+        )
+        print(
+            f"INSERT INTO transactions (guid, currency_guid, num, post_date, enter_date, description)"
+        )
+        print(
+            f"VALUES ('{tx_guid}', '{JPY_CURRENCY}', '', '{date_str}', NOW(), {desc_sql});"
+        )
+        print(
+            f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)"
+        )
+        print(
+            f"VALUES ('{s1_guid}', '{tx_guid}', '{SOURCE_ACCOUNT}', '', '', 'c', NULL, {tx['amount']}, 1, {tx['amount']}, 1, NULL);"
+        )
+        print(
+            f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)"
+        )
+        print(
+            f"VALUES ('{s2_guid}', '{tx_guid}', '{account}', '', '', 'c', NULL, {-tx['amount']}, 1, {-tx['amount']}, 1, NULL);"
+        )
         print()
-    print('COMMIT;')
+    print("COMMIT;")
 
 
 def main():
-    if len(sys.argv) < 2 or sys.argv[1] not in ('review', 'sql'):
-        print('Usage: python3 mufg_bank_import.py [review|sql]', file=sys.stderr)
+    if len(sys.argv) < 2 or sys.argv[1] not in ("review", "sql"):
+        print("Usage: python3 mufg_bank_import.py [review|sql]", file=sys.stderr)
         sys.exit(1)
     if not RAW_DATA.strip():
-        print('Error: statement data is empty. Write it to raw.txt next to this script or set GNUCASH_RAW_DATA.', file=sys.stderr)
+        print(
+            "Error: statement data is empty. Write it to raw.txt next to this script or set GNUCASH_RAW_DATA.",
+            file=sys.stderr,
+        )
         sys.exit(1)
     transactions = parse_transactions(RAW_DATA)
-    if sys.argv[1] == 'review':
+    if sys.argv[1] == "review":
         output_review(transactions)
     else:
         output_sql(transactions)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

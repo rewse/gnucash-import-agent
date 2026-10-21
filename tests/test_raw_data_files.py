@@ -20,9 +20,7 @@ TEMPLATE = ROOT / ".kiro/skills/gnucash-import/references/templates/script-templ
 
 # Text that would run as Python if it were pasted into a triple-quoted literal.
 SOURCE_BREAKOUT = '"""\nraise SystemExit("statement text executed as code")\n"""'
-CONTROL_PAYLOAD = (
-    "a\r\nb\rc\x1b[2Kd\x07e\x85f\x7fg\u202eh\u2066i\tj\x00k\n"
-)
+CONTROL_PAYLOAD = "a\r\nb\rc\x1b[2Kd\x07e\x85f\x7fg\u202eh\u2066i\tj\x00k\n"
 CONTROL_EXPECTED = "a\nbc[2Kdefghi\tjk\n"
 
 
@@ -72,7 +70,10 @@ class RawDataFileTest(unittest.TestCase):
             "os": os,
             "unicodedata": unicodedata,
         }
-        exec(compile(ast.Module(body=body, type_ignores=[]), str(path), "exec"), namespace)
+        exec(
+            compile(ast.Module(body=body, type_ignores=[]), str(path), "exec"),
+            namespace,
+        )
         self.assertIn("load_raw_data", namespace, path.name)
         return namespace
 
@@ -93,14 +94,20 @@ class RawDataFileTest(unittest.TestCase):
         project_root = Path(temporary.name)
         references = project_root / ".kiro/skills/gnucash-import/references"
         references.mkdir(parents=True)
-        accounts = {path: f"{index + 1:032x}" for index, path in enumerate(sorted(paths))}
-        (references / "account-guid-cache.json").write_text(json.dumps({"accounts": accounts}))
+        accounts = {
+            path: f"{index + 1:032x}" for index, path in enumerate(sorted(paths))
+        }
+        (references / "account-guid-cache.json").write_text(
+            json.dumps({"accounts": accounts})
+        )
         spec = importlib.util.spec_from_file_location(
             f"raw_data_{script_path.stem}_{id(temporary)}", script_path
         )
         assert spec is not None and spec.loader is not None
         module = importlib.util.module_from_spec(spec)
-        with patch.dict(os.environ, {"GNUCASH_IMPORT_ROOT": str(project_root), **environment}):
+        with patch.dict(
+            os.environ, {"GNUCASH_IMPORT_ROOT": str(project_root), **environment}
+        ):
             spec.loader.exec_module(module)
         return module
 
@@ -112,19 +119,28 @@ class RawDataFileTest(unittest.TestCase):
                     if not isinstance(node, ast.Assign):
                         continue
                     names = [t.id for t in node.targets if isinstance(t, ast.Name)]
-                    if any(name.startswith("RAW_DATA") and name != "RAW_DATA_FILE" for name in names):
+                    if any(
+                        name.startswith("RAW_DATA") and name != "RAW_DATA_FILE"
+                        for name in names
+                    ):
                         self.assertNotIsInstance(node.value, ast.Constant, names)
                 self.assertTrue(
                     any(
-                        isinstance(node, ast.FunctionDef) and node.name == "load_raw_data"
+                        isinstance(node, ast.FunctionDef)
+                        and node.name == "load_raw_data"
                         for node in tree.body
                     )
                 )
 
     def test_scripts_read_statement_data_from_environment_files(self):
         for script in _targets()[:-1]:
-            with self.subTest(script=script.name), tempfile.TemporaryDirectory() as temporary:
-                names = [name for name in _raw_data_names(script) if name != "RAW_DATA_FILE"]
+            with (
+                self.subTest(script=script.name),
+                tempfile.TemporaryDirectory() as temporary,
+            ):
+                names = [
+                    name for name in _raw_data_names(script) if name != "RAW_DATA_FILE"
+                ]
                 self.assertTrue(names)
                 environment = {}
                 for name in names:
@@ -148,7 +164,10 @@ class RawDataFileTest(unittest.TestCase):
 
     def test_missing_statement_file_reads_as_empty(self):
         for target in _targets():
-            with self.subTest(target=target.name), tempfile.TemporaryDirectory() as temporary:
+            with (
+                self.subTest(target=target.name),
+                tempfile.TemporaryDirectory() as temporary,
+            ):
                 functions = self._load_functions(target, Path(temporary) / "import.py")
                 load_raw_data = cast(Callable[..., str], functions["load_raw_data"])
                 with patch.dict(os.environ, {}, clear=False):
@@ -157,7 +176,10 @@ class RawDataFileTest(unittest.TestCase):
 
     def test_control_characters_are_removed_except_tab_and_newline(self):
         for target in _targets():
-            with self.subTest(target=target.name), tempfile.TemporaryDirectory() as temporary:
+            with (
+                self.subTest(target=target.name),
+                tempfile.TemporaryDirectory() as temporary,
+            ):
                 work_dir = Path(temporary)
                 (work_dir / "raw.txt").write_bytes(
                     ("\ufeff" + CONTROL_PAYLOAD).encode("utf-8")
@@ -191,7 +213,10 @@ class RawDataFileTest(unittest.TestCase):
                     self.assertNotIn("\r", text)
                     self.assertNotIn("\x1b", text)
                     self.assertFalse(
-                        any(line.lstrip().startswith("DELETE") for line in text.splitlines())
+                        any(
+                            line.lstrip().startswith("DELETE")
+                            for line in text.splitlines()
+                        )
                     )
 
 

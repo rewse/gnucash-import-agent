@@ -7,6 +7,7 @@ Usage:
 3. Run: python3 scripts/sbi_shinsei_bank_import.py review
 4. Run: python3 scripts/sbi_shinsei_bank_import.py sql
 """
+
 import json
 import os
 import sys
@@ -14,6 +15,7 @@ import uuid
 import unicodedata
 from datetime import date
 from pathlib import Path
+
 
 def find_project_root():
     configured_root = os.environ.get("GNUCASH_IMPORT_ROOT")
@@ -28,7 +30,9 @@ def find_project_root():
 
 
 PROJECT_ROOT = find_project_root()
-ACCOUNTS_FILE = PROJECT_ROOT / ".kiro/skills/gnucash-import/references/account-guid-cache.json"
+ACCOUNTS_FILE = (
+    PROJECT_ROOT / ".kiro/skills/gnucash-import/references/account-guid-cache.json"
+)
 
 
 def load_accounts():
@@ -54,68 +58,72 @@ ACCOUNTS = load_accounts()
 
 
 def get_guid(path):
-    return ACCOUNTS.get(path) or ACCOUNTS.get('Root Account:' + path)
+    return ACCOUNTS.get(path) or ACCOUNTS.get("Root Account:" + path)
 
 
 SOURCE_ACCOUNTS = {
-    'JPY': get_guid('Assets:JPY - Current Assets:Banks:SBI Shinsei Bank'),
-    'HYPER': get_guid('Assets:JPY - Current Assets:Banks:SBI Shinsei Bank:SBI Hyper Deposit'),
-    'USD': get_guid('Assets:USD - Current Assets:Banks:SBI Shinsei Bank'),
+    "JPY": get_guid("Assets:JPY - Current Assets:Banks:SBI Shinsei Bank"),
+    "HYPER": get_guid(
+        "Assets:JPY - Current Assets:Banks:SBI Shinsei Bank:SBI Hyper Deposit"
+    ),
+    "USD": get_guid("Assets:USD - Current Assets:Banks:SBI Shinsei Bank"),
 }
-INCOME_TAX = get_guid('Expenses:Tax:Income Tax')
-INTEREST_INCOME = get_guid('Income:Interest Income')
-FEES = get_guid('Expenses:Fees')
-CASH = get_guid('Assets:JPY - Current Assets:Cash')
-SBI_SEC = get_guid('Assets:JPY - Current Assets:Securities:SBI Securities')
-SHINSEI_JPY = SOURCE_ACCOUNTS['JPY']
-SHINSEI_TIME_DEPOSIT = get_guid('Assets:JPY - Current Assets:Banks:SBI Shinsei Bank:Saving Account')
-DOCOMO_SMTB = get_guid('Assets:JPY - Current Assets:Banks:DOCOMO SMTB Net Bank')
-LUXURY_CARD = get_guid('Liabilities:Credit Card:Luxury Card Mastercard Titanium')
-CASH_BACK = get_guid('Income:Cash Back')
-MORGAN_STANLEY_USD = get_guid('Assets:USD - Current Assets:Securities:Morgan Stanley')
+INCOME_TAX = get_guid("Expenses:Tax:Income Tax")
+INTEREST_INCOME = get_guid("Income:Interest Income")
+FEES = get_guid("Expenses:Fees")
+CASH = get_guid("Assets:JPY - Current Assets:Cash")
+SBI_SEC = get_guid("Assets:JPY - Current Assets:Securities:SBI Securities")
+SHINSEI_JPY = SOURCE_ACCOUNTS["JPY"]
+SHINSEI_TIME_DEPOSIT = get_guid(
+    "Assets:JPY - Current Assets:Banks:SBI Shinsei Bank:Saving Account"
+)
+DOCOMO_SMTB = get_guid("Assets:JPY - Current Assets:Banks:DOCOMO SMTB Net Bank")
+LUXURY_CARD = get_guid("Liabilities:Credit Card:Luxury Card Mastercard Titanium")
+CASH_BACK = get_guid("Income:Cash Back")
+MORGAN_STANLEY_USD = get_guid("Assets:USD - Current Assets:Securities:Morgan Stanley")
 
 CURRENCIES = {
-    'JPY': 'a77d4ee821e04f02bb7429e437c645e4',
-    'USD': '327c5a1bcfb147ceba2370ee17093159',
+    "JPY": "a77d4ee821e04f02bb7429e437c645e4",
+    "USD": "327c5a1bcfb147ceba2370ee17093159",
 }
-CURRENCY_DENOM = {'JPY': 1, 'USD': 100}
+CURRENCY_DENOM = {"JPY": 1, "USD": 100}
 
 ACCOUNT_NAMES = {
-    INCOME_TAX: 'Expenses:Tax:Income Tax',
-    INTEREST_INCOME: 'Income:Interest Income',
-    FEES: 'Expenses:Fees',
-    CASH: 'Assets:Cash',
-    SBI_SEC: 'Assets:Securities:SBI Securities',
-    SHINSEI_JPY: 'Assets:Banks:SBI Shinsei Bank (JPY)',
-    SHINSEI_TIME_DEPOSIT: 'Assets:Banks:SBI Shinsei Bank:Saving Account',
-    DOCOMO_SMTB: 'Assets:Banks:DOCOMO SMTB Net Bank',
-    LUXURY_CARD: 'Liabilities:Credit Card:Luxury Card',
-    CASH_BACK: 'Income:Cash Back',
-    MORGAN_STANLEY_USD: 'Assets:USD - Securities:Morgan Stanley',
+    INCOME_TAX: "Expenses:Tax:Income Tax",
+    INTEREST_INCOME: "Income:Interest Income",
+    FEES: "Expenses:Fees",
+    CASH: "Assets:Cash",
+    SBI_SEC: "Assets:Securities:SBI Securities",
+    SHINSEI_JPY: "Assets:Banks:SBI Shinsei Bank (JPY)",
+    SHINSEI_TIME_DEPOSIT: "Assets:Banks:SBI Shinsei Bank:Saving Account",
+    DOCOMO_SMTB: "Assets:Banks:DOCOMO SMTB Net Bank",
+    LUXURY_CARD: "Liabilities:Credit Card:Luxury Card",
+    CASH_BACK: "Income:Cash Back",
+    MORGAN_STANLEY_USD: "Assets:USD - Securities:Morgan Stanley",
 }
 
 # Mapping: (account_type, pattern) -> (account_guid, description)
 RULES = {
-    ('JPY', 'ATM 現金出金（提携取引）'): (CASH, None),
-    ('JPY', '地方税'): (INCOME_TAX, 'Tokyo'),
-    ('JPY', '国税'): (INCOME_TAX, 'Japan'),
-    ('JPY', '税引前利息'): (INTEREST_INCOME, 'SBI Shinsei Bank'),
-    ('HYPER', 'SBI証券精算'): (SBI_SEC, None),
-    ('HYPER', '円普通預金'): (SHINSEI_JPY, None),
-    ('HYPER', '地方税'): (INCOME_TAX, 'Tokyo'),
-    ('HYPER', '国税'): (INCOME_TAX, 'Japan'),
-    ('HYPER', '税引前利息'): (INTEREST_INCOME, 'SBI Shinsei Bank'),
-    ('USD', '円普通預金'): (SHINSEI_JPY, None),
-    ('USD', '地方税'): (INCOME_TAX, 'Tokyo'),
-    ('USD', '国税'): (INCOME_TAX, 'Japan'),
-    ('USD', '税引前利息'): (INTEREST_INCOME, 'SBI Shinsei Bank'),
-    ('USD', '被仕向事務手数料'): (FEES, 'SBI Shinsei Bank'),
-    ('USD', '外為送金'): (MORGAN_STANLEY_USD, 'Morgan Stanley'),
-    ('JPY', '振込手数料'): (FEES, 'SBI Shinsei Bank'),
-    ('JPY', '振込 ｶ) ｱﾌﾟﾗｽ'): (LUXURY_CARD, None),
-    ('JPY', 'ｼﾖｳｶｲｷﾔﾝﾍﾟ-ﾝ'): (CASH_BACK, 'Referral Campaign'),
+    ("JPY", "ATM 現金出金（提携取引）"): (CASH, None),
+    ("JPY", "地方税"): (INCOME_TAX, "Tokyo"),
+    ("JPY", "国税"): (INCOME_TAX, "Japan"),
+    ("JPY", "税引前利息"): (INTEREST_INCOME, "SBI Shinsei Bank"),
+    ("HYPER", "SBI証券精算"): (SBI_SEC, None),
+    ("HYPER", "円普通預金"): (SHINSEI_JPY, None),
+    ("HYPER", "地方税"): (INCOME_TAX, "Tokyo"),
+    ("HYPER", "国税"): (INCOME_TAX, "Japan"),
+    ("HYPER", "税引前利息"): (INTEREST_INCOME, "SBI Shinsei Bank"),
+    ("USD", "円普通預金"): (SHINSEI_JPY, None),
+    ("USD", "地方税"): (INCOME_TAX, "Tokyo"),
+    ("USD", "国税"): (INCOME_TAX, "Japan"),
+    ("USD", "税引前利息"): (INTEREST_INCOME, "SBI Shinsei Bank"),
+    ("USD", "被仕向事務手数料"): (FEES, "SBI Shinsei Bank"),
+    ("USD", "外為送金"): (MORGAN_STANLEY_USD, "Morgan Stanley"),
+    ("JPY", "振込手数料"): (FEES, "SBI Shinsei Bank"),
+    ("JPY", "振込 ｶ) ｱﾌﾟﾗｽ"): (LUXURY_CARD, None),
+    ("JPY", "ｼﾖｳｶｲｷﾔﾝﾍﾟ-ﾝ"): (CASH_BACK, "Referral Campaign"),
     # Counter side comes from SPLIT_OVERRIDES
-    ('JPY', '満期解約 パワーダイレクト円定期100'): (None, None),
+    ("JPY", "満期解約 パワーダイレクト円定期100"): (None, None),
 }
 
 # Transactions whose counter side needs more than one split.
@@ -128,8 +136,16 @@ SPLIT_OVERRIDES = {}
 # needs the JPY quantity of the counter split, because GnuCash stores each
 # split's quantity in its account's commodity.
 JPY_COUNTER_ACCOUNTS = {
-    CASH, CASH_BACK, DOCOMO_SMTB, FEES, INCOME_TAX, INTEREST_INCOME,
-    LUXURY_CARD, SBI_SEC, SHINSEI_JPY, SHINSEI_TIME_DEPOSIT,
+    CASH,
+    CASH_BACK,
+    DOCOMO_SMTB,
+    FEES,
+    INCOME_TAX,
+    INTEREST_INCOME,
+    LUXURY_CARD,
+    SBI_SEC,
+    SHINSEI_JPY,
+    SHINSEI_TIME_DEPOSIT,
 }
 
 # USD row ID -> JPY quantity (integer yen) of its JPY counter split.
@@ -174,7 +190,11 @@ def load_raw_data(file_name=RAW_DATA_FILE, environment_variable="GNUCASH_RAW_DAT
     The environment variable, when set, names the file to read instead.
     """
     configured = os.environ.get(environment_variable)
-    path = Path(configured) if configured else Path(__file__).resolve().with_name(file_name)
+    path = (
+        Path(configured)
+        if configured
+        else Path(__file__).resolve().with_name(file_name)
+    )
     try:
         # newline="" keeps a carriage return inside a field from splitting a row.
         with open(path, encoding="utf-8-sig", newline="") as raw_file:
@@ -194,39 +214,42 @@ RAW_DATA = load_raw_data()
 # EDIT BELOW: Manual overrides by ID (1-based)
 # Format: ID: (ACCOUNT_GUID, 'Description') or ID: (ACCOUNT_GUID, None)
 # ============================================================
-MANUAL_OVERRIDES = {
-}
+MANUAL_OVERRIDES = {}
 
 
 def parse_transactions(raw_data):
     transactions = []
-    for line in raw_data.strip().split('\n'):
+    for line in raw_data.strip().split("\n"):
         if not line.strip():
             continue
-        parts = line.split('\t')
+        parts = line.split("\t")
         acct_type = parts[0].strip()
-        y, m, d = parts[1].strip().split('/')
+        y, m, d = parts[1].strip().split("/")
         desc = parts[2].strip()
         withdrawal = float(parts[3].strip()) if parts[3].strip() else 0
         deposit = float(parts[4].strip()) if len(parts) > 4 and parts[4].strip() else 0
-        currency = 'USD' if acct_type == 'USD' else 'JPY'
-        transactions.append({
-            'date': date(int(y), int(m), int(d)),
-            'desc': desc,
-            'acct_type': acct_type,
-            'currency': currency,
-            'amount': deposit - withdrawal,
-        })
+        currency = "USD" if acct_type == "USD" else "JPY"
+        transactions.append(
+            {
+                "date": date(int(y), int(m), int(d)),
+                "desc": desc,
+                "acct_type": acct_type,
+                "currency": currency,
+                "amount": deposit - withdrawal,
+            }
+        )
     return transactions
 
 
 def get_transaction_info(idx, tx):
     if idx in MANUAL_OVERRIDES:
         return MANUAL_OVERRIDES[idx]
-    key = (tx['acct_type'], tx['desc'])
+    key = (tx["acct_type"], tx["desc"])
     if key in RULES:
         return RULES[key]
-    raise ValueError(f"Unknown transaction type at ID {idx}: [{tx['acct_type']}] {tx['desc']}")
+    raise ValueError(
+        f"Unknown transaction type at ID {idx}: [{tx['acct_type']}] {tx['desc']}"
+    )
 
 
 def get_counter_splits(idx, tx):
@@ -234,24 +257,30 @@ def get_counter_splits(idx, tx):
     if idx in SPLIT_OVERRIDES:
         splits = SPLIT_OVERRIDES[idx]
         total = sum(a for _, a in splits)
-        if round(total, 2) != round(tx['amount'], 2):
-            raise ValueError(f"Split total {total} != statement amount {tx['amount']} at ID {idx}")
+        if round(total, 2) != round(tx["amount"], 2):
+            raise ValueError(
+                f"Split total {total} != statement amount {tx['amount']} at ID {idx}"
+            )
         return splits
     account, _ = get_transaction_info(idx, tx)
     if account is None:
         raise ValueError(f"ID {idx} needs an entry in SPLIT_OVERRIDES")
-    return [(account, tx['amount'])]
+    return [(account, tx["amount"])]
 
 
 def get_counter_quantity(idx, tx, account, amount):
     """Return (quantity_num, quantity_denom) for a counter split worth `amount`."""
-    denom = CURRENCY_DENOM[tx['currency']]
-    if tx['currency'] != 'USD' or account not in JPY_COUNTER_ACCOUNTS:
+    denom = CURRENCY_DENOM[tx["currency"]]
+    if tx["currency"] != "USD" or account not in JPY_COUNTER_ACCOUNTS:
         return -round(amount * denom), denom
     if idx not in JPY_QUANTITIES:
-        raise ValueError(f"ID {idx}: USD row with a JPY counter account needs JPY_QUANTITIES")
-    if amount != tx['amount']:
-        raise ValueError(f"ID {idx}: JPY_QUANTITIES supports only a single counter split")
+        raise ValueError(
+            f"ID {idx}: USD row with a JPY counter account needs JPY_QUANTITIES"
+        )
+    if amount != tx["amount"]:
+        raise ValueError(
+            f"ID {idx}: JPY_QUANTITIES supports only a single counter split"
+        )
     jpy = JPY_QUANTITIES[idx]
     if not isinstance(jpy, int) or isinstance(jpy, bool) or jpy <= 0:
         raise ValueError(f"ID {idx}: JPY_QUANTITIES must be a positive integer")
@@ -259,85 +288,110 @@ def get_counter_quantity(idx, tx, account, amount):
 
 
 def output_review(transactions):
-    print(f"{'ID':<4} {'Date':<14} {'Type':<6} {'Statement':<30} {'Desc':<20} {'Transfer':<40} {'Increase':>12} {'Decrease':>12}")
-    print('-' * 140)
+    print(
+        f"{'ID':<4} {'Date':<14} {'Type':<6} {'Statement':<30} {'Desc':<20} {'Transfer':<40} {'Increase':>12} {'Decrease':>12}"
+    )
+    print("-" * 140)
     prev_date = None
     for idx, tx in enumerate(transactions, 1):
-        if prev_date and prev_date != tx['date']:
-            print('-' * 140)
-        prev_date = tx['date']
+        if prev_date and prev_date != tx["date"]:
+            print("-" * 140)
+        prev_date = tx["date"]
         account, description = get_transaction_info(idx, tx)
         splits = get_counter_splits(idx, tx)
-        weekday = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+        weekday = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
         date_str = f"{tx['date']} {weekday[tx['date'].weekday()]}"
-        transfer = ACCOUNT_NAMES.get(account, account or '') if len(splits) == 1 else ''
-        desc_str = description or ''
-        if tx['currency'] == 'USD':
-            inc = f"${tx['amount']:,.2f}" if tx['amount'] > 0 else ''
-            dec = f"${abs(tx['amount']):,.2f}" if tx['amount'] < 0 else ''
+        transfer = ACCOUNT_NAMES.get(account, account or "") if len(splits) == 1 else ""
+        desc_str = description or ""
+        if tx["currency"] == "USD":
+            inc = f"${tx['amount']:,.2f}" if tx["amount"] > 0 else ""
+            dec = f"${abs(tx['amount']):,.2f}" if tx["amount"] < 0 else ""
         else:
-            inc = f"¥{int(tx['amount']):,}" if tx['amount'] > 0 else ''
-            dec = f"¥{int(abs(tx['amount'])):,}" if tx['amount'] < 0 else ''
-        print(f"{idx:<4} {date_str:<14} {tx['acct_type']:<6} {tx['desc']:<30} {desc_str:<20} {transfer:<40} {inc:>12} {dec:>12}")
+            inc = f"¥{int(tx['amount']):,}" if tx["amount"] > 0 else ""
+            dec = f"¥{int(abs(tx['amount'])):,}" if tx["amount"] < 0 else ""
+        print(
+            f"{idx:<4} {date_str:<14} {tx['acct_type']:<6} {tx['desc']:<30} {desc_str:<20} {transfer:<40} {inc:>12} {dec:>12}"
+        )
         if len(splits) == 1:
             qn, qd = get_counter_quantity(idx, tx, splits[0][0], splits[0][1])
-            if tx['currency'] == 'USD' and qd == 1:
-                print(f"{'':<4} {'':<14} {'':<6} {'  (JPY quantity)':<30} {'':<20} {transfer:<40} {'¥' + format(abs(qn), ','):>12}")
+            if tx["currency"] == "USD" and qd == 1:
+                print(
+                    f"{'':<4} {'':<14} {'':<6} {'  (JPY quantity)':<30} {'':<20} {transfer:<40} {'¥' + format(abs(qn), ','):>12}"
+                )
         if len(splits) > 1:
             for sub, (acct, amt) in enumerate(splits, 1):
-                sub_transfer = ACCOUNT_NAMES.get(acct, acct or '')
-                sub_inc = f"¥{int(amt):,}" if amt > 0 else ''
-                sub_dec = f"¥{int(abs(amt)):,}" if amt < 0 else ''
-                print(f"{str(idx)+'-'+str(sub):<4} {'':<14} {'':<6} {'':<30} {'':<20} {sub_transfer:<40} {sub_inc:>12} {sub_dec:>12}")
+                sub_transfer = ACCOUNT_NAMES.get(acct, acct or "")
+                sub_inc = f"¥{int(amt):,}" if amt > 0 else ""
+                sub_dec = f"¥{int(abs(amt)):,}" if amt < 0 else ""
+                print(
+                    f"{str(idx) + '-' + str(sub):<4} {'':<14} {'':<6} {'':<30} {'':<20} {sub_transfer:<40} {sub_inc:>12} {sub_dec:>12}"
+                )
 
 
 def output_sql(transactions):
-    print('BEGIN;')
+    print("BEGIN;")
     print()
     total = len(transactions)
     for idx, tx in enumerate(transactions, 1):
         account, description = get_transaction_info(idx, tx)
         counter_splits = get_counter_splits(idx, tx)
-        currency = tx['currency']
+        currency = tx["currency"]
         currency_guid = CURRENCIES[currency]
         denom = CURRENCY_DENOM[currency]
-        source = SOURCE_ACCOUNTS[tx['acct_type']]
-        value_num = round(tx['amount'] * denom)
+        source = SOURCE_ACCOUNTS[tx["acct_type"]]
+        value_num = round(tx["amount"] * denom)
 
         tx_guid = uuid.uuid4().hex
         s1_guid = uuid.uuid4().hex
         reverse_idx = total - idx + 1
         minutes, seconds = divmod(reverse_idx, 60)
         date_str = f"{tx['date']} 00:{minutes:02d}:{seconds:02d}"
-        desc_sql = f"'{description.replace(chr(39), chr(39)*2)}'" if description else 'NULL'
+        desc_sql = (
+            f"'{description.replace(chr(39), chr(39) * 2)}'" if description else "NULL"
+        )
 
-        print(f"INSERT INTO transactions (guid, currency_guid, num, post_date, enter_date, description)")
-        print(f"VALUES ('{tx_guid}', '{currency_guid}', '', '{date_str}', NOW(), {desc_sql});")
-        print(f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)")
-        print(f"VALUES ('{s1_guid}', '{tx_guid}', '{source}', '', '', 'c', NULL, {value_num}, {denom}, {value_num}, {denom}, NULL);")
+        print(
+            f"INSERT INTO transactions (guid, currency_guid, num, post_date, enter_date, description)"
+        )
+        print(
+            f"VALUES ('{tx_guid}', '{currency_guid}', '', '{date_str}', NOW(), {desc_sql});"
+        )
+        print(
+            f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)"
+        )
+        print(
+            f"VALUES ('{s1_guid}', '{tx_guid}', '{source}', '', '', 'c', NULL, {value_num}, {denom}, {value_num}, {denom}, NULL);"
+        )
         for acct, amt in counter_splits:
             sn = round(amt * denom)
             qn, qd = get_counter_quantity(idx, tx, acct, amt)
             sg = uuid.uuid4().hex
-            print(f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)")
-            print(f"VALUES ('{sg}', '{tx_guid}', '{acct}', '', '', 'c', NULL, {-sn}, {denom}, {qn}, {qd}, NULL);")
+            print(
+                f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)"
+            )
+            print(
+                f"VALUES ('{sg}', '{tx_guid}', '{acct}', '', '', 'c', NULL, {-sn}, {denom}, {qn}, {qd}, NULL);"
+            )
         print()
-    print('COMMIT;')
+    print("COMMIT;")
 
 
 def main():
-    if len(sys.argv) < 2 or sys.argv[1] not in ('review', 'sql'):
-        print('Usage: python3 sbi_shinsei_bank_import.py [review|sql]', file=sys.stderr)
+    if len(sys.argv) < 2 or sys.argv[1] not in ("review", "sql"):
+        print("Usage: python3 sbi_shinsei_bank_import.py [review|sql]", file=sys.stderr)
         sys.exit(1)
     if not RAW_DATA.strip():
-        print('Error: statement data is empty. Write it to raw.txt next to this script or set GNUCASH_RAW_DATA.', file=sys.stderr)
+        print(
+            "Error: statement data is empty. Write it to raw.txt next to this script or set GNUCASH_RAW_DATA.",
+            file=sys.stderr,
+        )
         sys.exit(1)
     transactions = parse_transactions(RAW_DATA)
-    if sys.argv[1] == 'review':
+    if sys.argv[1] == "review":
         output_review(transactions)
     else:
         output_sql(transactions)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

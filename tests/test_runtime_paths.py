@@ -42,7 +42,10 @@ class RuntimePathTest(unittest.TestCase):
             "__file__": str(source_file),
             "os": os,
         }
-        exec(compile(ast.Module(body=[function], type_ignores=[]), str(path), "exec"), namespace)
+        exec(
+            compile(ast.Module(body=[function], type_ignores=[]), str(path), "exec"),
+            namespace,
+        )
         return cast(Callable[[], Path], namespace["find_project_root"])
 
     @staticmethod
@@ -52,7 +55,10 @@ class RuntimePathTest(unittest.TestCase):
 
     def test_all_resolvers_honor_precedence_fallback_spaces_and_failure(self):
         for target in self._targets():
-            with self.subTest(target=target.name), tempfile.TemporaryDirectory() as temporary:
+            with (
+                self.subTest(target=target.name),
+                tempfile.TemporaryDirectory() as temporary,
+            ):
                 base = Path(temporary)
                 env_root = self._root(base / "environment root with spaces")
                 cwd_root = self._root(base / "working root with spaces")
@@ -61,9 +67,15 @@ class RuntimePathTest(unittest.TestCase):
                 source_file.parent.mkdir()
                 resolver = self._resolver(target, source_file)
 
-                with patch.dict(os.environ, {"GNUCASH_IMPORT_ROOT": str(env_root)}), working_directory(cwd_root):
+                with (
+                    patch.dict(os.environ, {"GNUCASH_IMPORT_ROOT": str(env_root)}),
+                    working_directory(cwd_root),
+                ):
                     self.assertEqual(env_root, resolver())
-                with patch.dict(os.environ, {}, clear=True), working_directory(cwd_root):
+                with (
+                    patch.dict(os.environ, {}, clear=True),
+                    working_directory(cwd_root),
+                ):
                     self.assertEqual(cwd_root.resolve(), resolver().resolve())
                 with patch.dict(os.environ, {}, clear=True), working_directory(base):
                     self.assertEqual(source_root.resolve(), resolver().resolve())

@@ -52,19 +52,32 @@ class AccountCacheTest(unittest.TestCase):
 
     def test_all_targets_reject_non_guid_cache_values_before_exposing_accounts(self):
         for index, target in enumerate(self._targets()):
-            with self.subTest(target=target.name), tempfile.TemporaryDirectory() as temporary:
+            with (
+                self.subTest(target=target.name),
+                tempfile.TemporaryDirectory() as temporary,
+            ):
                 project_root = Path(temporary)
                 references = project_root / ".kiro/skills/gnucash-import/references"
                 references.mkdir(parents=True)
-                accounts = {path: f"{position + 1:032x}" for position, path in enumerate(sorted(self._account_paths(target)))}
+                accounts = {
+                    path: f"{position + 1:032x}"
+                    for position, path in enumerate(sorted(self._account_paths(target)))
+                }
                 accounts["Assets:Injected"] = INJECTED_VALUE
-                (references / "account-guid-cache.json").write_text(json.dumps({"accounts": accounts}))
-                spec = importlib.util.spec_from_file_location(f"cache_target_{index}", target)
+                (references / "account-guid-cache.json").write_text(
+                    json.dumps({"accounts": accounts})
+                )
+                spec = importlib.util.spec_from_file_location(
+                    f"cache_target_{index}", target
+                )
                 assert spec is not None
                 module = importlib.util.module_from_spec(spec)
                 assert spec.loader is not None
                 output = StringIO()
-                with patch.dict(os.environ, {"GNUCASH_IMPORT_ROOT": str(project_root)}), redirect_stdout(output):
+                with (
+                    patch.dict(os.environ, {"GNUCASH_IMPORT_ROOT": str(project_root)}),
+                    redirect_stdout(output),
+                ):
                     with self.assertRaises(ValueError) as caught:
                         spec.loader.exec_module(module)
                 self.assertNotIn(INJECTED_VALUE, str(caught.exception))
@@ -78,7 +91,9 @@ class AccountCacheTest(unittest.TestCase):
             references = project_root / ".kiro/skills/gnucash-import/references"
             references.mkdir(parents=True)
             accounts = {path: "a" * 32 for path in self._account_paths(target)}
-            (references / "account-guid-cache.json").write_text(json.dumps({"accounts": accounts}))
+            (references / "account-guid-cache.json").write_text(
+                json.dumps({"accounts": accounts})
+            )
             spec = importlib.util.spec_from_file_location("valid_cache_target", target)
             assert spec is not None
             module = importlib.util.module_from_spec(spec)
@@ -87,9 +102,10 @@ class AccountCacheTest(unittest.TestCase):
                 spec.loader.exec_module(module)
             self.assertEqual(set(accounts.values()), set(module.ACCOUNTS.values()))
 
-
     def test_unresolved_account_paths_fail_fast_without_echoing_the_path(self):
-        targets = [ROOT / f"scripts/{slug}_import.py" for slug in FAIL_FAST_SCRIPTS] + [TEMPLATE]
+        targets = [ROOT / f"scripts/{slug}_import.py" for slug in FAIL_FAST_SCRIPTS] + [
+            TEMPLATE
+        ]
         for target in targets:
             with self.subTest(target=target.name):
                 tree = ast.parse(target.read_text())
@@ -99,14 +115,24 @@ class AccountCacheTest(unittest.TestCase):
                     if isinstance(node, ast.FunctionDef) and node.name == "get_guid"
                 )
                 namespace = {"ACCOUNTS": {"Assets:Known": "a" * 32}, "sys": sys}
-                exec(compile(ast.Module(body=[function], type_ignores=[]), str(target), "exec"), namespace)
+                exec(
+                    compile(
+                        ast.Module(body=[function], type_ignores=[]),
+                        str(target),
+                        "exec",
+                    ),
+                    namespace,
+                )
                 get_guid = namespace["get_guid"]
                 self.assertEqual("a" * 32, get_guid("Assets:Known"))
                 stderr = StringIO()
                 with redirect_stderr(stderr), self.assertRaises(SystemExit) as caught:
                     get_guid(UNRESOLVED_PATH)
                 self.assertNotEqual(0, caught.exception.code)
-                self.assertNotIn(UNRESOLVED_PATH, stderr.getvalue() + str(caught.exception.code))
+                self.assertNotIn(
+                    UNRESOLVED_PATH, stderr.getvalue() + str(caught.exception.code)
+                )
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -7,6 +7,7 @@ Usage:
 2. Run: python3 scripts/amazon_gc_import.py review    # Review transactions
 3. Run: python3 scripts/amazon_gc_import.py sql       # Generate SQL
 """
+
 import json
 import os
 import uuid
@@ -15,6 +16,7 @@ import re
 import unicodedata
 from datetime import datetime
 from pathlib import Path
+
 
 # Load accounts from JSON
 def find_project_root():
@@ -30,7 +32,9 @@ def find_project_root():
 
 
 PROJECT_ROOT = find_project_root()
-ACCOUNTS_FILE = PROJECT_ROOT / ".kiro/skills/gnucash-import/references/account-guid-cache.json"
+ACCOUNTS_FILE = (
+    PROJECT_ROOT / ".kiro/skills/gnucash-import/references/account-guid-cache.json"
+)
 
 
 def load_accounts():
@@ -54,13 +58,14 @@ def load_accounts():
 
 ACCOUNTS = load_accounts()
 
+
 def get_guid(path):
     """Return the cached GUID for an account path, or exit when it is missing.
 
     An unresolved path would otherwise be written as account_guid 'None'.
     The error omits the path because it can come from statement data.
     """
-    guid = ACCOUNTS.get(path) or ACCOUNTS.get('Root Account:' + path)
+    guid = ACCOUNTS.get(path) or ACCOUNTS.get("Root Account:" + path)
     if guid is None:
         print(
             "Error: an account path is missing from account-guid-cache.json. "
@@ -70,8 +75,11 @@ def get_guid(path):
         sys.exit(1)
     return guid
 
-AMAZON_GC_ACCOUNT = get_guid('Assets:JPY - Current Assets:Prepaid:Amazon Gift Certificate')
-JPY_CURRENCY = 'a77d4ee821e04f02bb7429e437c645e4'
+
+AMAZON_GC_ACCOUNT = get_guid(
+    "Assets:JPY - Current Assets:Prepaid:Amazon Gift Certificate"
+)
+JPY_CURRENCY = "a77d4ee821e04f02bb7429e437c645e4"
 
 # ============================================================
 # Statement data loading
@@ -108,7 +116,11 @@ def load_raw_data(file_name=RAW_DATA_FILE, environment_variable="GNUCASH_RAW_DAT
     The environment variable, when set, names the file to read instead.
     """
     configured = os.environ.get(environment_variable)
-    path = Path(configured) if configured else Path(__file__).resolve().with_name(file_name)
+    path = (
+        Path(configured)
+        if configured
+        else Path(__file__).resolve().with_name(file_name)
+    )
     try:
         # newline="" keeps a carriage return inside a field from splitting a row.
         with open(path, encoding="utf-8-sig", newline="") as raw_file:
@@ -128,7 +140,7 @@ RAW_DATA = load_raw_data()
 
 def parse_date(date_str):
     """Parse Japanese date format (YYYY年M月D日)."""
-    match = re.match(r'(\d+)年(\d+)月(\d+)日', date_str)
+    match = re.match(r"(\d+)年(\d+)月(\d+)日", date_str)
     if match:
         return datetime(int(match.group(1)), int(match.group(2)), int(match.group(3)))
     return None
@@ -136,63 +148,69 @@ def parse_date(date_str):
 
 def parse_amount(amount_str):
     """Parse amount (￥N or -￥N)."""
-    amount_str = amount_str.replace(',', '').replace('￥', '')
+    amount_str = amount_str.replace(",", "").replace("￥", "")
     return int(amount_str)
 
 
 def parse_transactions(raw_data):
     """Parse RAW_DATA into transactions, grouping by description+balance."""
-    lines = [l for l in raw_data.strip().split('\n') if l.strip()]
-    
+    lines = [l for l in raw_data.strip().split("\n") if l.strip()]
+
     # Group lines by (description, balance) for multi-split transactions
     groups = {}
     for line in lines:
-        parts = line.split('\t')
+        parts = line.split("\t")
         if len(parts) < 5:
             continue
         date_str, desc, amount_str, balance, account = parts[:5]
-        item = parts[5] if len(parts) > 5 else ''
+        item = parts[5] if len(parts) > 5 else ""
         key = (date_str, desc, balance)
         if key not in groups:
             groups[key] = []
-        groups[key].append({
-            'date': parse_date(date_str),
-            'desc': desc,
-            'amount': parse_amount(amount_str),
-            'balance': balance,
-            'account': account,
-            'item': item.strip(),
-        })
-    
+        groups[key].append(
+            {
+                "date": parse_date(date_str),
+                "desc": desc,
+                "amount": parse_amount(amount_str),
+                "balance": balance,
+                "account": account,
+                "item": item.strip(),
+            }
+        )
+
     # Convert to transaction list
     transactions = []
-    for key, splits in sorted(groups.items(), key=lambda x: x[1][0]['date'], reverse=True):
-        total_amount = sum(s['amount'] for s in splits)
-        transactions.append({
-            'date': splits[0]['date'],
-            'desc': splits[0]['desc'],
-            'total_amount': total_amount,
-            'splits': splits,
-        })
+    for key, splits in sorted(
+        groups.items(), key=lambda x: x[1][0]["date"], reverse=True
+    ):
+        total_amount = sum(s["amount"] for s in splits)
+        transactions.append(
+            {
+                "date": splits[0]["date"],
+                "desc": splits[0]["desc"],
+                "total_amount": total_amount,
+                "splits": splits,
+            }
+        )
     return transactions
 
 
 def get_description(tx):
     """Extract description from transaction."""
-    desc = tx['desc']
-    if 'Amazon Pay' in desc and 'からのギフトカード' in desc:
-        return 'Amazon Pay'
-    if 'Amazon Payの注文に適用' in desc:
-        return 'Amazon Pay'
-    if 'Amazon.co.jpの注文に適用' in desc:
-        return 'Amazon'
-    if 'ギフトカードが追加されました' in desc:
+    desc = tx["desc"]
+    if "Amazon Pay" in desc and "からのギフトカード" in desc:
+        return "Amazon Pay"
+    if "Amazon Payの注文に適用" in desc:
+        return "Amazon Pay"
+    if "Amazon.co.jpの注文に適用" in desc:
+        return "Amazon"
+    if "ギフトカードが追加されました" in desc:
         # Use item field as description if available
-        if tx['splits'][0]['item']:
-            return tx['splits'][0]['item']
+        if tx["splits"][0]["item"]:
+            return tx["splits"][0]["item"]
         return None
-    if '解除' in desc:
-        return 'Amazon'
+    if "解除" in desc:
+        return "Amazon"
     return None
 
 
@@ -200,15 +218,19 @@ def output_review(transactions):
     """Output review table."""
     # Resolve every account before printing so an unmapped row cannot look approved.
     for tx in transactions:
-        for split in tx['splits']:
-            get_guid(split['account'])
+        for split in tx["splits"]:
+            get_guid(split["account"])
 
-    print(f"{'ID':<6} {'Date':<14} {'Type':<8} {'Item':<25} {'Desc':<20} {'Transfer':<45} {'Increase':>10} {'Decrease':>10}")
+    print(
+        f"{'ID':<6} {'Date':<14} {'Type':<8} {'Item':<25} {'Desc':<20} {'Transfer':<45} {'Increase':>10} {'Decrease':>10}"
+    )
     print("-" * 145)
 
     prev_date = None
     for idx, tx in enumerate(transactions, 1):
-        weekday = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][tx['date'].weekday()]
+        weekday = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][
+            tx["date"].weekday()
+        ]
         date_str = f"{tx['date'].strftime('%Y-%m-%d')}"
         date_display = f"{date_str} ({weekday})"
 
@@ -217,29 +239,41 @@ def output_review(transactions):
         prev_date = date_str
 
         # Determine type
-        if tx['total_amount'] > 0:
-            tx_type = 'Charge'
-        elif tx['total_amount'] < 0:
-            tx_type = 'Payment'
+        if tx["total_amount"] > 0:
+            tx_type = "Charge"
+        elif tx["total_amount"] < 0:
+            tx_type = "Payment"
         else:
-            tx_type = 'Refund'
+            tx_type = "Refund"
 
         description = get_description(tx)
-        
-        if len(tx['splits']) == 1:
-            split = tx['splits'][0]
-            increase = f"￥{tx['total_amount']:,}" if tx['total_amount'] > 0 else ""
-            decrease = f"￥{abs(tx['total_amount']):,}" if tx['total_amount'] < 0 else ""
-            print(f"{idx:<6} {date_display:<14} {tx_type:<8} {split['item']:<25} {description or '':<20} {split['account']:<45} {increase:>10} {decrease:>10}")
+
+        if len(tx["splits"]) == 1:
+            split = tx["splits"][0]
+            increase = f"￥{tx['total_amount']:,}" if tx["total_amount"] > 0 else ""
+            decrease = (
+                f"￥{abs(tx['total_amount']):,}" if tx["total_amount"] < 0 else ""
+            )
+            print(
+                f"{idx:<6} {date_display:<14} {tx_type:<8} {split['item']:<25} {description or '':<20} {split['account']:<45} {increase:>10} {decrease:>10}"
+            )
         else:
             # Multi-split: show header then splits
-            increase = f"￥{tx['total_amount']:,}" if tx['total_amount'] > 0 else ""
-            decrease = f"￥{abs(tx['total_amount']):,}" if tx['total_amount'] < 0 else ""
-            print(f"{idx:<6} {date_display:<14} {tx_type:<8} {'':<25} {description or '':<20} {'':<45} {increase:>10} {decrease:>10}")
-            for sub_idx, split in enumerate(tx['splits'], 1):
-                sub_increase = f"￥{split['amount']:,}" if split['amount'] > 0 else ""
-                sub_decrease = f"￥{abs(split['amount']):,}" if split['amount'] < 0 else ""
-                print(f"{idx}-{sub_idx:<4} {'':<14} {'':<8} {split['item']:<25} {'':<20} {split['account']:<45} {sub_increase:>10} {sub_decrease:>10}")
+            increase = f"￥{tx['total_amount']:,}" if tx["total_amount"] > 0 else ""
+            decrease = (
+                f"￥{abs(tx['total_amount']):,}" if tx["total_amount"] < 0 else ""
+            )
+            print(
+                f"{idx:<6} {date_display:<14} {tx_type:<8} {'':<25} {description or '':<20} {'':<45} {increase:>10} {decrease:>10}"
+            )
+            for sub_idx, split in enumerate(tx["splits"], 1):
+                sub_increase = f"￥{split['amount']:,}" if split["amount"] > 0 else ""
+                sub_decrease = (
+                    f"￥{abs(split['amount']):,}" if split["amount"] < 0 else ""
+                )
+                print(
+                    f"{idx}-{sub_idx:<4} {'':<14} {'':<8} {split['item']:<25} {'':<20} {split['account']:<45} {sub_increase:>10} {sub_decrease:>10}"
+                )
 
 
 def output_sql(transactions):
@@ -249,29 +283,45 @@ def output_sql(transactions):
 
     total = len(transactions)
     for idx, tx in enumerate(transactions, 1):
-        tx_guid = str(uuid.uuid4()).replace('-', '')
+        tx_guid = str(uuid.uuid4()).replace("-", "")
         reverse_idx = total - idx + 1
         minutes, seconds = divmod(reverse_idx, 60)
-        date_str = tx['date'].strftime(f'%Y-%m-%d 12:{minutes:02d}:{seconds:02d}')
+        date_str = tx["date"].strftime(f"%Y-%m-%d 12:{minutes:02d}:{seconds:02d}")
         description = get_description(tx)
-        desc_sql = f"'{description.replace(chr(39), chr(39)*2)}'" if description else 'NULL'
+        desc_sql = (
+            f"'{description.replace(chr(39), chr(39) * 2)}'" if description else "NULL"
+        )
 
-        print(f"-- Transaction {idx}: {tx['date'].strftime('%Y-%m-%d')} {description or 'N/A'} ￥{tx['total_amount']:,}")
-        print(f"INSERT INTO transactions (guid, currency_guid, num, post_date, enter_date, description)")
-        print(f"VALUES ('{tx_guid}', '{JPY_CURRENCY}', '', '{date_str}', NOW(), {desc_sql});")
+        print(
+            f"-- Transaction {idx}: {tx['date'].strftime('%Y-%m-%d')} {description or 'N/A'} ￥{tx['total_amount']:,}"
+        )
+        print(
+            f"INSERT INTO transactions (guid, currency_guid, num, post_date, enter_date, description)"
+        )
+        print(
+            f"VALUES ('{tx_guid}', '{JPY_CURRENCY}', '', '{date_str}', NOW(), {desc_sql});"
+        )
 
         # Amazon GC split (asset side)
-        split_guid = str(uuid.uuid4()).replace('-', '')
-        print(f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)")
-        print(f"VALUES ('{split_guid}', '{tx_guid}', '{AMAZON_GC_ACCOUNT}', '', '', 'c', NULL, {tx['total_amount']}, 1, {tx['total_amount']}, 1, NULL);")
+        split_guid = str(uuid.uuid4()).replace("-", "")
+        print(
+            f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)"
+        )
+        print(
+            f"VALUES ('{split_guid}', '{tx_guid}', '{AMAZON_GC_ACCOUNT}', '', '', 'c', NULL, {tx['total_amount']}, 1, {tx['total_amount']}, 1, NULL);"
+        )
 
         # Expense/Income splits
-        for split in tx['splits']:
-            split_guid = str(uuid.uuid4()).replace('-', '')
-            account_guid = get_guid(split['account'])
-            amount = -split['amount']  # Reverse for double-entry
-            print(f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)")
-            print(f"VALUES ('{split_guid}', '{tx_guid}', '{account_guid}', '', '', 'c', NULL, {amount}, 1, {amount}, 1, NULL);")
+        for split in tx["splits"]:
+            split_guid = str(uuid.uuid4()).replace("-", "")
+            account_guid = get_guid(split["account"])
+            amount = -split["amount"]  # Reverse for double-entry
+            print(
+                f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)"
+            )
+            print(
+                f"VALUES ('{split_guid}', '{tx_guid}', '{account_guid}', '', '', 'c', NULL, {amount}, 1, {amount}, 1, NULL);"
+            )
 
         print()
 
@@ -279,21 +329,24 @@ def output_sql(transactions):
 
 
 def main():
-    if len(sys.argv) < 2 or sys.argv[1] not in ['review', 'sql']:
+    if len(sys.argv) < 2 or sys.argv[1] not in ["review", "sql"]:
         print("Usage: python3 amazon_gc_import.py [review|sql]", file=sys.stderr)
         sys.exit(1)
 
     if not RAW_DATA.strip():
-        print("Error: statement data is empty. Write it to raw.txt next to this script or set GNUCASH_RAW_DATA.", file=sys.stderr)
+        print(
+            "Error: statement data is empty. Write it to raw.txt next to this script or set GNUCASH_RAW_DATA.",
+            file=sys.stderr,
+        )
         sys.exit(1)
 
     transactions = parse_transactions(RAW_DATA)
 
-    if sys.argv[1] == 'review':
+    if sys.argv[1] == "review":
         output_review(transactions)
     else:
         output_sql(transactions)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

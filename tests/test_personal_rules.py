@@ -185,16 +185,25 @@ class PersonalRulesTest(unittest.TestCase):
                 1,
                 {"currency": "JPY", "desc": "振込＊EXAMPLE A", "amount": 12345},
             )
+
     def test_mufg_missing_self_transfer_rule_is_not_guessed(self):
-        module = self._import_script("mufg_bank", {"nearest_station": "Example Station"})
-        with self.assertRaisesRegex(ValueError, "transfer_rules.mufg_bank.self_transfer"):
+        module = self._import_script(
+            "mufg_bank", {"nearest_station": "Example Station"}
+        )
+        with self.assertRaisesRegex(
+            ValueError, "transfer_rules.mufg_bank.self_transfer"
+        ):
             module.get_transaction_info(
                 1, {"desc": "振込 EXAMPLE NAME", "amount": 1000}
             )
 
     def test_sony_missing_self_transfer_rule_is_not_guessed(self):
-        module = self._import_script("sony_bank", {"nearest_station": "Example Station"})
-        with self.assertRaisesRegex(ValueError, "transfer_rules.sony_bank.self_transfer"):
+        module = self._import_script(
+            "sony_bank", {"nearest_station": "Example Station"}
+        )
+        with self.assertRaisesRegex(
+            ValueError, "transfer_rules.sony_bank.self_transfer"
+        ):
             module.get_transaction_info(
                 1,
                 {"currency": "JPY", "desc": "振込 EXAMPLE NAME", "amount": 1000},
@@ -251,7 +260,9 @@ class PersonalRulesTest(unittest.TestCase):
         for source_slug, personal_tx, public_tx, expected_path in cases:
             with self.subTest(source_slug=source_slug):
                 personal = self._personal_settings()
-                personal["transfer_rules"][source_slug][next(iter(personal["transfer_rules"][source_slug]))] = "PRIVATE VALUE"
+                personal["transfer_rules"][source_slug][
+                    next(iter(personal["transfer_rules"][source_slug]))
+                ] = "PRIVATE VALUE"
                 module = self._import_script(source_slug, personal)
                 module.get_transaction_info(1, public_tx)
                 with self.assertRaises(ValueError) as caught:
@@ -272,14 +283,28 @@ class PersonalRulesTest(unittest.TestCase):
             ("sony_bank", "self_transfer", "contains", 7),
         )
         transactions = {
-            "docomo_smtb_net_bank": {"currency": "JPY", "desc": "振込＊EXAMPLE A", "amount": 12345},
+            "docomo_smtb_net_bank": {
+                "currency": "JPY",
+                "desc": "振込＊EXAMPLE A",
+                "amount": 12345,
+            },
             "mufg_bank": {"desc": "振込 EXAMPLE NAME", "amount": 1000},
-            "sony_bank": {"currency": "JPY", "desc": "振込 EXAMPLE NAME", "amount": 1000},
+            "sony_bank": {
+                "currency": "JPY",
+                "desc": "振込 EXAMPLE NAME",
+                "amount": 1000,
+            },
         }
         for source_slug, rule_name, field, invalid_value in mutations:
-            with self.subTest(source_slug=source_slug, field=field, value_type=type(invalid_value).__name__):
+            with self.subTest(
+                source_slug=source_slug,
+                field=field,
+                value_type=type(invalid_value).__name__,
+            ):
                 personal = self._personal_settings()
-                personal["transfer_rules"][source_slug][rule_name][field] = invalid_value
+                personal["transfer_rules"][source_slug][rule_name][field] = (
+                    invalid_value
+                )
                 module = self._import_script(source_slug, personal)
                 with self.assertRaisesRegex(
                     ValueError,
@@ -300,12 +325,16 @@ class PersonalRulesTest(unittest.TestCase):
                     if source_slug == "sony_bank"
                     else {"desc": "振込 UNKNOWN", "amount": 1}
                 )
-                with self.assertRaisesRegex(ValueError, rf"transfer_rules\.{source_slug}\.unknown_rule"):
+                with self.assertRaisesRegex(
+                    ValueError, rf"transfer_rules\.{source_slug}\.unknown_rule"
+                ):
                     module.get_transaction_info(1, transaction)
             with self.subTest(source_slug=source_slug, kind="field"):
                 personal = self._personal_settings()
                 rule_name = next(iter(personal["transfer_rules"][source_slug]))
-                personal["transfer_rules"][source_slug][rule_name]["unknown_field"] = "PRIVATE VALUE"
+                personal["transfer_rules"][source_slug][rule_name]["unknown_field"] = (
+                    "PRIVATE VALUE"
+                )
                 module = self._import_script(source_slug, personal)
                 transaction = (
                     {"currency": "JPY", "desc": "振込＊UNKNOWN", "amount": 1}
@@ -323,17 +352,32 @@ class PersonalRulesTest(unittest.TestCase):
             ("amount", float("nan"), "family_split.amount"),
             ("splits", [], "family_split.splits"),
             ("splits", "PRIVATE VALUE", "family_split.splits"),
-            ("splits", [{"account": "Assets:Example", "amount": True}], "family_split.splits.0.amount"),
-            ("splits", [{"account": "Assets:Example", "amount": -9999}], "family_split.splits"),
+            (
+                "splits",
+                [{"account": "Assets:Example", "amount": True}],
+                "family_split.splits.0.amount",
+            ),
+            (
+                "splits",
+                [{"account": "Assets:Example", "amount": -9999}],
+                "family_split.splits",
+            ),
         )
         for field, invalid_value, expected_path in mutations:
             with self.subTest(field=field, value_type=type(invalid_value).__name__):
                 personal = self._personal_settings()
-                personal["transfer_rules"]["docomo_smtb_net_bank"]["family_split"][field] = invalid_value
+                personal["transfer_rules"]["docomo_smtb_net_bank"]["family_split"][
+                    field
+                ] = invalid_value
                 module = self._import_script("docomo_smtb_net_bank", personal)
                 with self.assertRaisesRegex(ValueError, expected_path):
                     module.get_transaction_info(
-                        1, {"currency": "JPY", "desc": "振込＊EXAMPLE B", "amount": -10000}
+                        1,
+                        {
+                            "currency": "JPY",
+                            "desc": "振込＊EXAMPLE B",
+                            "amount": -10000,
+                        },
                     )
 
     def test_malformed_json_is_deferred_and_does_not_leak(self):
@@ -350,20 +394,27 @@ class PersonalRulesTest(unittest.TestCase):
                 )
                 with self.assertRaises(ValueError) as caught:
                     module.get_transaction_info(1, transaction)
-                self.assertIn(source_slug.split("_")[0].upper(), str(caught.exception).upper())
+                self.assertIn(
+                    source_slug.split("_")[0].upper(), str(caught.exception).upper()
+                )
                 self.assertIn("personal.json", str(caught.exception))
                 self.assertNotIn("PRIVATE VALUE", str(caught.exception))
 
     def test_malformed_containers_are_source_specific_and_redacted(self):
         cases = (
             ({"transfer_rules": "PRIVATE VALUE"}, "transfer_rules"),
-            ({"transfer_rules": {"mufg_bank": "PRIVATE VALUE"}}, "transfer_rules.mufg_bank"),
+            (
+                {"transfer_rules": {"mufg_bank": "PRIVATE VALUE"}},
+                "transfer_rules.mufg_bank",
+            ),
         )
         for personal, expected_path in cases:
             with self.subTest(expected_path=expected_path):
                 module = self._import_script("mufg_bank", personal)
                 with self.assertRaises(ValueError) as caught:
-                    module.get_transaction_info(1, {"desc": "振込 UNKNOWN", "amount": 1})
+                    module.get_transaction_info(
+                        1, {"desc": "振込 UNKNOWN", "amount": 1}
+                    )
                 message = str(caught.exception)
                 self.assertIn("MUFG Bank", message)
                 self.assertIn(expected_path, message)
@@ -371,11 +422,20 @@ class PersonalRulesTest(unittest.TestCase):
 
     def test_transit_scripts_reject_malformed_settings_without_leaking(self):
         for source_slug, operation, source_name in (
-            ("pasmo", lambda module: module.get_railway_company("A", "B"), "Mobile PASMO"),
+            (
+                "pasmo",
+                lambda module: module.get_railway_company("A", "B"),
+                "Mobile PASMO",
+            ),
             ("suica", lambda module: module._init_business_pairs(), "Mobile Suica"),
         ):
-            for personal in ('{"nearest_station": "PRIVATE VALUE"', {"nearest_station": 7}):
-                with self.subTest(source_slug=source_slug, value_type=type(personal).__name__):
+            for personal in (
+                '{"nearest_station": "PRIVATE VALUE"',
+                {"nearest_station": 7},
+            ):
+                with self.subTest(
+                    source_slug=source_slug, value_type=type(personal).__name__
+                ):
                     module = self._import_script(source_slug, personal)
                     with self.assertRaises(ValueError) as caught:
                         operation(module)
@@ -389,7 +449,6 @@ class PersonalRulesTest(unittest.TestCase):
             with self.subTest(source_slug=source_slug):
                 module = self._import_script(source_slug, None)
                 self.assertEqual("", module.NEAREST_STATION)
-
 
     def test_pasmo_uses_nearest_station_for_railway_detection(self):
         module = self._import_script("pasmo", self._personal_settings())
@@ -417,7 +476,6 @@ class PersonalRulesTest(unittest.TestCase):
             "type": "入",
         }
         self.assertTrue(module.is_business_trip(tx))
-
 
     def test_rejects_source_marker_only_personal_matches(self):
         cases = []
@@ -468,7 +526,9 @@ class PersonalRulesTest(unittest.TestCase):
                 value=invalid_value,
             ):
                 personal = self._personal_settings()
-                personal["transfer_rules"][source_slug][rule_name][field] = invalid_value
+                personal["transfer_rules"][source_slug][rule_name][field] = (
+                    invalid_value
+                )
                 module = self._import_script(source_slug, personal)
                 with self.assertRaises(ValueError) as caught:
                     module.get_transaction_info(1, transaction)
@@ -497,8 +557,6 @@ class PersonalRulesTest(unittest.TestCase):
                 self.assertIn(expected_key, message)
                 self.assertNotIn(invalid_value, message)
 
-
-
     def test_pasmo_missing_nearest_station_rejects_ambiguous_classification(self):
         for personal in (None, {}, {"nearest_station": "   "}):
             with self.subTest(personal=personal):
@@ -519,7 +577,9 @@ class PersonalRulesTest(unittest.TestCase):
         )
         for station1, station2, expected in cases:
             with self.subTest(station1=station1):
-                self.assertEqual(expected, module.get_railway_company(station1, station2))
+                self.assertEqual(
+                    expected, module.get_railway_company(station1, station2)
+                )
 
     def test_pasmo_accounts_are_loaded_from_source_specific_personal_settings(self):
         module = self._import_script("pasmo", self._personal_settings())
@@ -587,7 +647,9 @@ class PersonalRulesTest(unittest.TestCase):
             for invalid_value in values:
                 with self.subTest(source_slug=source_slug, value=invalid_value):
                     personal = self._personal_settings()
-                    personal["transfer_rules"][source_slug][rule_name][field] = invalid_value
+                    personal["transfer_rules"][source_slug][rule_name][field] = (
+                        invalid_value
+                    )
                     module = self._import_script(source_slug, personal)
                     with self.assertRaises(ValueError) as caught:
                         module.get_transaction_info(1, transaction)
@@ -596,5 +658,7 @@ class PersonalRulesTest(unittest.TestCase):
                         f"transfer_rules.{source_slug}.{rule_name}.{field}", message
                     )
                     self.assertNotIn(invalid_value, message)
+
+
 if __name__ == "__main__":
     unittest.main()

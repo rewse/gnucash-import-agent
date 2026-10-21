@@ -111,12 +111,16 @@ def validate_sql(
     allow_counterparty_unreconciled: bool = False,
 ) -> ValidationResult:
     """Validate one generated SQL file and return its row counts."""
-    _require(re.fullmatch(_GUID, source_account_guid) is not None, "invalid source GUID")
+    _require(
+        re.fullmatch(_GUID, source_account_guid) is not None, "invalid source GUID"
+    )
     _require(
         re.fullmatch(_GUID, expected_currency_guid) is not None,
         "invalid expected currency GUID",
     )
-    _require(source_account_guid in account_guids, "source account is absent from cache")
+    _require(
+        source_account_guid in account_guids, "source account is absent from cache"
+    )
     statements = split_sql_statements(sql)
     _require(len(statements) >= 4, "SQL contains no complete transaction")
     _require(statements[0].upper() == "BEGIN", "SQL must start with BEGIN")
@@ -124,7 +128,9 @@ def validate_sql(
 
     transaction_order: list[str] = []
     timestamps: list[str] = []
-    splits_by_transaction: dict[str, list[tuple[str, Fraction, int, int]]] = defaultdict(list)
+    splits_by_transaction: dict[str, list[tuple[str, Fraction, int, int]]] = (
+        defaultdict(list)
+    )
     known_guids: set[str] = set()
     current_transaction: str | None = None
     split_count = 0
@@ -159,7 +165,9 @@ def validate_sql(
             continue
 
         split_match = _SPLIT_RE.fullmatch(statement)
-        _require(split_match is not None, "SQL contains a forbidden or malformed statement")
+        _require(
+            split_match is not None, "SQL contains a forbidden or malformed statement"
+        )
         (
             guid,
             tx_guid,
@@ -170,8 +178,12 @@ def validate_sql(
             quantity_num,
             quantity_denom,
         ) = split_match.groups()
-        _require(current_transaction is not None, "split appears before its transaction")
-        _require(tx_guid == current_transaction, "split is not adjacent to its transaction")
+        _require(
+            current_transaction is not None, "split appears before its transaction"
+        )
+        _require(
+            tx_guid == current_transaction, "split is not adjacent to its transaction"
+        )
         _require(guid not in known_guids, "duplicate generated GUID")
         known_guids.add(guid)
         _require(account_guid in account_guids, "split account is absent from cache")
@@ -223,7 +235,9 @@ def validate_sql(
         by_date[timestamp[:10]].append(timestamp)
     for date, values in by_date.items():
         _require(len(values) == len(set(values)), f"duplicate post_date time on {date}")
-        _require(values == sorted(values, reverse=True), f"unstable same-day order on {date}")
+        _require(
+            values == sorted(values, reverse=True), f"unstable same-day order on {date}"
+        )
 
     return ValidationResult(len(transaction_order), split_count)
 
@@ -277,9 +291,7 @@ def main() -> int:
             source_guid,
             set(accounts.values()),
             arguments.currency_guid,
-            allow_counterparty_unreconciled=(
-                arguments.allow_counterparty_unreconciled
-            ),
+            allow_counterparty_unreconciled=(arguments.allow_counterparty_unreconciled),
         )
     except (OSError, ValidationError) as error:
         print(f"Error: {error}", file=sys.stderr)

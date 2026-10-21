@@ -7,6 +7,7 @@ Usage:
 3. Run: python3 scripts/amazon_mastercard_gold_import.py review
 4. Run: python3 scripts/amazon_mastercard_gold_import.py sql
 """
+
 import json
 import os
 import re
@@ -15,6 +16,7 @@ import uuid
 import unicodedata
 from datetime import date
 from pathlib import Path
+
 
 def find_project_root():
     configured_root = os.environ.get("GNUCASH_IMPORT_ROOT")
@@ -29,7 +31,9 @@ def find_project_root():
 
 
 PROJECT_ROOT = find_project_root()
-ACCOUNTS_FILE = PROJECT_ROOT / ".kiro/skills/gnucash-import/references/account-guid-cache.json"
+ACCOUNTS_FILE = (
+    PROJECT_ROOT / ".kiro/skills/gnucash-import/references/account-guid-cache.json"
+)
 
 
 def load_accounts():
@@ -55,17 +59,17 @@ ACCOUNTS = load_accounts()
 
 
 def get_guid(path):
-    return ACCOUNTS.get(path) or ACCOUNTS.get('Root Account:' + path)
+    return ACCOUNTS.get(path) or ACCOUNTS.get("Root Account:" + path)
 
 
-SOURCE_ACCOUNT = get_guid('Liabilities:Credit Card:Amazon MasterCard Gold')
-DINING = get_guid('Expenses:Foods:Dining')
-REVOLUT = get_guid('Assets:JPY - Current Assets:Prepaid:Revolut')
-JPY_CURRENCY = 'a77d4ee821e04f02bb7429e437c645e4'
+SOURCE_ACCOUNT = get_guid("Liabilities:Credit Card:Amazon MasterCard Gold")
+DINING = get_guid("Expenses:Foods:Dining")
+REVOLUT = get_guid("Assets:JPY - Current Assets:Prepaid:Revolut")
+JPY_CURRENCY = "a77d4ee821e04f02bb7429e437c645e4"
 
 ACCOUNT_NAMES = {
-    DINING: 'Expenses:Foods:Dining',
-    REVOLUT: 'Assets:Prepaid:Revolut',
+    DINING: "Expenses:Foods:Dining",
+    REVOLUT: "Assets:Prepaid:Revolut",
 }
 
 # ============================================================
@@ -103,7 +107,11 @@ def load_raw_data(file_name=RAW_DATA_FILE, environment_variable="GNUCASH_RAW_DAT
     The environment variable, when set, names the file to read instead.
     """
     configured = os.environ.get(environment_variable)
-    path = Path(configured) if configured else Path(__file__).resolve().with_name(file_name)
+    path = (
+        Path(configured)
+        if configured
+        else Path(__file__).resolve().with_name(file_name)
+    )
     try:
         # newline="" keeps a carriage return inside a field from splitting a row.
         with open(path, encoding="utf-8-sig", newline="") as raw_file:
@@ -123,94 +131,119 @@ RAW_DATA = load_raw_data()
 # EDIT BELOW: Manual overrides by ID (1-based)
 # Format: ID: (ACCOUNT_GUID, 'Description') or ID: (ACCOUNT_GUID, None)
 # ============================================================
-MANUAL_OVERRIDES = {
-}
+MANUAL_OVERRIDES = {}
 
 
 def normalize(s):
     """Convert full-width ASCII to half-width."""
-    return s.translate(str.maketrans(
-        'ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺａｂｃｄｅｆｇｈｉｊｋｌｍｎｏｐｑｒｓｔｕｖｗｘｙｚ０１２３４５６７８９．＊　',
-        'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.* '))
+    return s.translate(
+        str.maketrans(
+            "ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺａｂｃｄｅｆｇｈｉｊｋｌｍｎｏｐｑｒｓｔｕｖｗｘｙｚ０１２３４５６７８９．＊　",
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.* ",
+        )
+    )
 
 
 def parse_transactions(raw_data):
     transactions = []
-    for line in raw_data.strip().split('\n'):
+    for line in raw_data.strip().split("\n"):
         line = line.rstrip()
-        if not line or 'ご利用分' in line or 'お支払金額総合計' in line:
+        if not line or "ご利用分" in line or "お支払金額総合計" in line:
             continue
-        m = re.match(r'\t?(\d{2})/(\d{2})/(\d{2})\t', line)
+        m = re.match(r"\t?(\d{2})/(\d{2})/(\d{2})\t", line)
         if not m:
             continue
-        parts = line.lstrip('\t').split('\t')
+        parts = line.lstrip("\t").split("\t")
         yy, mm, dd = int(m.group(1)), int(m.group(2)), int(m.group(3))
         year = 2000 + yy
         merchant = parts[1].strip()
         # Auto-detect format: confirmed has amount at index 2, unconfirmed at index 6.
         # Confirmed fee rows (annual fee, ATM fee) leave index 2 empty and bill at index 5.
-        if re.match(r'[\d,]+$', parts[2].strip()):
-            amount = int(parts[2].replace(',', ''))
-            remarks = ''
-            if len(parts) > 7 and parts[7].strip() in ('USD', 'EUR', 'GBP', 'SGD', 'AUD', 'CAD', 'HKD', 'THB', 'TRY', 'TWD'):
+        if re.match(r"[\d,]+$", parts[2].strip()):
+            amount = int(parts[2].replace(",", ""))
+            remarks = ""
+            if len(parts) > 7 and parts[7].strip() in (
+                "USD",
+                "EUR",
+                "GBP",
+                "SGD",
+                "AUD",
+                "CAD",
+                "HKD",
+                "THB",
+                "TRY",
+                "TWD",
+            ):
                 remarks = f"{parts[6].strip()} {parts[7].strip()}"
             elif len(parts) > 6 and parts[6].strip():
                 remarks = parts[6].strip()
-        elif not parts[2].strip() and len(parts) > 5 and re.match(r'[\d,]+$', parts[5].strip()):
-            amount = int(parts[5].replace(',', ''))
-            remarks = parts[6].strip() if len(parts) > 6 else ''
+        elif (
+            not parts[2].strip()
+            and len(parts) > 5
+            and re.match(r"[\d,]+$", parts[5].strip())
+        ):
+            amount = int(parts[5].replace(",", ""))
+            remarks = parts[6].strip() if len(parts) > 6 else ""
         else:
-            amount = int(parts[6].replace(',', ''))
-            remarks = ''
-        transactions.append({
-            'date': date(year, mm, dd),
-            'amount': -amount,
-            'merchant': merchant,
-            'merchant_norm': normalize(merchant),
-            'remarks': remarks,
-            'remarks_norm': normalize(remarks),
-        })
+            amount = int(parts[6].replace(",", ""))
+            remarks = ""
+        transactions.append(
+            {
+                "date": date(year, mm, dd),
+                "amount": -amount,
+                "merchant": merchant,
+                "merchant_norm": normalize(merchant),
+                "remarks": remarks,
+                "remarks_norm": normalize(remarks),
+            }
+        )
     return transactions
 
 
 def get_transaction_info(idx, tx):
     if idx in MANUAL_OVERRIDES:
         return MANUAL_OVERRIDES[idx]
-    m = tx['merchant_norm']
-    r = tx['remarks_norm']
-    if 'AMZ*' in r and 'アマゾン社員食堂' in tx['remarks']:
-        return DINING, 'AMZ Employee Cafe'
-    if m in ('SEVEN-ELEVEN', 'セブン－イレブン'):
-        return DINING, 'SEVEN-ELEVEN'
-    if 'ファミリーマート' in tx['merchant']:
-        return DINING, 'Family Mart'
-    if 'ローソン' in tx['merchant']:
-        return DINING, 'LAWSON'
+    m = tx["merchant_norm"]
+    r = tx["remarks_norm"]
+    if "AMZ*" in r and "アマゾン社員食堂" in tx["remarks"]:
+        return DINING, "AMZ Employee Cafe"
+    if m in ("SEVEN-ELEVEN", "セブン－イレブン"):
+        return DINING, "SEVEN-ELEVEN"
+    if "ファミリーマート" in tx["merchant"]:
+        return DINING, "Family Mart"
+    if "ローソン" in tx["merchant"]:
+        return DINING, "LAWSON"
     # Revolut top-ups appear as a masked reference such as "R **1234*".
-    if re.match(r'^R +\*\*\d+\*', m):
+    if re.match(r"^R +\*\*\d+\*", m):
         return REVOLUT, None
-    raise ValueError(f"Unknown transaction at ID {idx}: {tx['merchant']} / {tx['remarks']}")
+    raise ValueError(
+        f"Unknown transaction at ID {idx}: {tx['merchant']} / {tx['remarks']}"
+    )
 
 
 def output_review(transactions):
-    print(f"{'ID':<4} {'Date':<14} {'Merchant':<30} {'Desc':<25} {'Transfer':<35} {'Amount':>10}")
-    print('-' * 122)
+    print(
+        f"{'ID':<4} {'Date':<14} {'Merchant':<30} {'Desc':<25} {'Transfer':<35} {'Amount':>10}"
+    )
+    print("-" * 122)
     prev_date = None
     for idx, tx in enumerate(transactions, 1):
-        if prev_date and prev_date != tx['date']:
-            print('-' * 122)
-        prev_date = tx['date']
+        if prev_date and prev_date != tx["date"]:
+            print("-" * 122)
+        prev_date = tx["date"]
         account, description = get_transaction_info(idx, tx)
-        weekday = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+        weekday = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
         date_str = f"{tx['date']} {weekday[tx['date'].weekday()]}"
-        transfer = ACCOUNT_NAMES.get(account, account or '')
+        transfer = ACCOUNT_NAMES.get(account, account or "")
         amt = f"¥{abs(tx['amount']):,}"
-        merchant_display = tx['merchant_norm'][:28]
-        print(f"{idx:<4} {date_str:<14} {merchant_display:<30} {description or '':<25} {transfer:<35} {amt:>10}")
+        merchant_display = tx["merchant_norm"][:28]
+        print(
+            f"{idx:<4} {date_str:<14} {merchant_display:<30} {description or '':<25} {transfer:<35} {amt:>10}"
+        )
 
 
 def output_sql(transactions):
-    print('BEGIN;')
+    print("BEGIN;")
     print()
     total = len(transactions)
     for idx, tx in enumerate(transactions, 1):
@@ -221,30 +254,50 @@ def output_sql(transactions):
         reverse_idx = total - idx + 1
         minutes, seconds = divmod(reverse_idx, 60)
         date_str = f"{tx['date']} 00:{minutes:02d}:{seconds:02d}"
-        desc_sql = f"'{description.replace(chr(39), chr(39)*2)}'" if description else 'NULL'
-        print(f"INSERT INTO transactions (guid, currency_guid, num, post_date, enter_date, description)")
-        print(f"VALUES ('{tx_guid}', '{JPY_CURRENCY}', '', '{date_str}', NOW(), {desc_sql});")
-        print(f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)")
-        print(f"VALUES ('{s1_guid}', '{tx_guid}', '{SOURCE_ACCOUNT}', '', '', 'c', NULL, {tx['amount']}, 1, {tx['amount']}, 1, NULL);")
-        print(f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)")
-        print(f"VALUES ('{s2_guid}', '{tx_guid}', '{account}', '', '', 'c', NULL, {-tx['amount']}, 1, {-tx['amount']}, 1, NULL);")
+        desc_sql = (
+            f"'{description.replace(chr(39), chr(39) * 2)}'" if description else "NULL"
+        )
+        print(
+            f"INSERT INTO transactions (guid, currency_guid, num, post_date, enter_date, description)"
+        )
+        print(
+            f"VALUES ('{tx_guid}', '{JPY_CURRENCY}', '', '{date_str}', NOW(), {desc_sql});"
+        )
+        print(
+            f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)"
+        )
+        print(
+            f"VALUES ('{s1_guid}', '{tx_guid}', '{SOURCE_ACCOUNT}', '', '', 'c', NULL, {tx['amount']}, 1, {tx['amount']}, 1, NULL);"
+        )
+        print(
+            f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)"
+        )
+        print(
+            f"VALUES ('{s2_guid}', '{tx_guid}', '{account}', '', '', 'c', NULL, {-tx['amount']}, 1, {-tx['amount']}, 1, NULL);"
+        )
         print()
-    print('COMMIT;')
+    print("COMMIT;")
 
 
 def main():
-    if len(sys.argv) < 2 or sys.argv[1] not in ('review', 'sql'):
-        print('Usage: python3 amazon_mastercard_gold_import.py [review|sql]', file=sys.stderr)
+    if len(sys.argv) < 2 or sys.argv[1] not in ("review", "sql"):
+        print(
+            "Usage: python3 amazon_mastercard_gold_import.py [review|sql]",
+            file=sys.stderr,
+        )
         sys.exit(1)
     if not RAW_DATA.strip():
-        print('Error: statement data is empty. Write it to raw.txt next to this script or set GNUCASH_RAW_DATA.', file=sys.stderr)
+        print(
+            "Error: statement data is empty. Write it to raw.txt next to this script or set GNUCASH_RAW_DATA.",
+            file=sys.stderr,
+        )
         sys.exit(1)
     transactions = parse_transactions(RAW_DATA)
-    if sys.argv[1] == 'review':
+    if sys.argv[1] == "review":
         output_review(transactions)
     else:
         output_sql(transactions)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

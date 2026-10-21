@@ -174,15 +174,23 @@ The source account may already hold `n` transactions created by GnuCash schedule
 
 List every update and deletion in the review. Put them in a separate SQL file from the inserts, because `validate_sql.py` accepts only inserts. Guard each statement with `reconcile_state = 'n'` and a GUID, require the rollback trial to report no `UPDATE 0` or `DELETE 0`, and after commit confirm that no `n` split remains in the updated transactions and that each still balances.
 
-```sql
+Pass query values as psql variables and feed the SQL through a quoted heredoc, so psql quotes each value with `:'name'` and the shell does not expand anything inside the query. Never paste statement text or account names into the SQL itself. Set `DB_HOST`, `DB_PORT`, `DB_USER`, and `DB_NAME` as in the account GUID cache recipe:
+
+```bash
+PGPASSWORD="$(op read "op://gnucash/gnucash-db/password")" psql -X -v ON_ERROR_STOP=1 \
+  -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" \
+  -v account_name='Example Account' -v start_date='2099-01-01' -v end_date='2099-01-31' <<'SQL'
 SELECT t.post_date::date, t.description, s.value_num, s.value_denom, s.reconcile_state
 FROM transactions t
 JOIN splits s ON t.guid = s.tx_guid
 JOIN accounts a ON s.account_guid = a.guid
-WHERE a.name = '{account_name}'
-  AND t.post_date::date BETWEEN '{start_date}' AND '{end_date}'
+WHERE a.name = :'account_name'
+  AND t.post_date::date BETWEEN :'start_date' AND :'end_date'
 ORDER BY t.post_date, t.guid;
+SQL
 ```
+
+psql does not substitute variables in a `-c` string, so always use standard input or `-f` for these queries. Quote each `-v` value in single quotes on the command line; if a value contains a single quote, write it as `'\''`.
 
 ## Credit Cards
 
@@ -193,14 +201,15 @@ A payment matching the billing total is a duplicate candidate, not proof that ev
 Use this query only to find billing-total candidates:
 
 ```sql
+-- Run with -v account_name='...' -v billing_month='YYYY-MM' -v total_amount=12345
 SELECT t.post_date::date, t.description, s.value_num, s.value_denom
 FROM transactions t
 JOIN splits s ON t.guid = s.tx_guid
 JOIN accounts a ON s.account_guid = a.guid
-WHERE a.name = '{account_name}'
+WHERE a.name = :'account_name'
   AND s.value_num > 0
-  AND to_char(t.post_date, 'YYYY-MM') = '{YYYY-MM}'
-  AND s.value_num = {total_amount};
+  AND to_char(t.post_date, 'YYYY-MM') = :'billing_month'
+  AND s.value_num = (:'total_amount')::bigint;
 ```
 
 Post a cash advance (キャッシング) as one transaction per statement row: credit the card, debit the cash account in the withdrawal currency with the local amount as the quantity, and debit `Expenses:Interest` with any interest billed on that row. Confirm that the cash account's commodity matches the withdrawal currency before generating SQL. Cash advances are often repaid early by a separate debit (繰上返済) and then do not count toward the billing total; record that debit as a payment and derive its interest as the debited amount minus the repaid principal.

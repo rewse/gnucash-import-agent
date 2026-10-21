@@ -114,7 +114,8 @@ RAW_DATA = load_raw_data()
 
 # ============================================================
 # EDIT BELOW: Manual overrides by ID (1-based)
-# Format: ID: (ACCOUNT_GUID, 'Description') or ID: (ACCOUNT_GUID, None)
+# Format: ID: (ACCOUNT_PATH_OR_GUID, 'Description') or ID: (ACCOUNT_PATH_OR_GUID, None)
+# None stores a NULL description. Review and SQL both apply the override.
 # ============================================================
 MANUAL_OVERRIDES = {
 }
@@ -157,17 +158,26 @@ def parse_transactions(raw_data):
     return transactions
 
 
+def get_transaction_info(idx, tx):
+    """Return (account_label, description) after applying MANUAL_OVERRIDES."""
+    if idx in MANUAL_OVERRIDES:
+        return MANUAL_OVERRIDES[idx]
+    return tx['splits'][0]['account'], tx['desc']
+
+
+def resolve_account(account):
+    """Return the GUID for an account path, or the value itself when it is a GUID."""
+    if len(account) == 32 and all(character in '0123456789abcdef' for character in account):
+        return account
+    return get_guid(account)
+
+
 def output_review(transactions):
     print(f"{'ID':<4} {'Date':<14} {'Type':<5} {'Desc':<50} {'Transfer':<45} {'Increase':>10} {'Decrease':>10}")
     print("-" * 143)
 
     prev_date = None
     for idx, tx in enumerate(transactions, 1):
-        if idx in MANUAL_OVERRIDES:
-            override = MANUAL_OVERRIDES[idx]
-            if isinstance(override[0], str) and not override[0].startswith('{'):
-                tx['splits'][0]['account'] = override[0]
-
         weekday = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][tx['date'].weekday()]
         date_str = tx['date'].strftime('%Y-%m-%d')
         date_display = f"{date_str} {weekday}"
@@ -177,9 +187,10 @@ def output_review(transactions):
         prev_date = date_str
 
         split = tx['splits'][0]
+        account, description = get_transaction_info(idx, tx)
         increase = f"{split['points']:,}" if split['points'] > 0 else ""
         decrease = f"{abs(split['points']):,}" if split['points'] < 0 else ""
-        print(f"{idx:<4} {date_display:<14} {tx['type']:<5} {tx['desc']:<50} {split['account']:<45} {increase:>10} {decrease:>10}")
+        print(f"{idx:<4} {date_display:<14} {tx['type']:<5} {description or '':<50} {account:<45} {increase:>10} {decrease:>10}")
 
 
 def output_sql(transactions):
@@ -194,7 +205,7 @@ def output_sql(transactions):
         date_str = tx['date'].strftime(f'%Y-%m-%d 00:{minutes:02d}:{seconds:02d}')
 
         split = tx['splits'][0]
-        desc = tx['desc']
+        account, desc = get_transaction_info(idx, tx)
         desc_sql = sql_string(desc)
         points = split['points']
 
@@ -207,7 +218,7 @@ def output_sql(transactions):
         print(f"VALUES ('{source_split_guid}', '{tx_guid}', '{SOURCE_ACCOUNT}', '', '', 'c', NULL, {points}, 1, {points}, 1, NULL);")
 
         transfer_split_guid = uuid.uuid4().hex
-        account_guid = get_guid(split['account'])
+        account_guid = resolve_account(account)
         amount = -points
         print(f"INSERT INTO splits (guid, tx_guid, account_guid, memo, action, reconcile_state, reconcile_date, value_num, value_denom, quantity_num, quantity_denom, lot_guid)")
         print(f"VALUES ('{transfer_split_guid}', '{tx_guid}', '{account_guid}', '', '', 'c', NULL, {amount}, 1, {amount}, 1, NULL);")

@@ -244,5 +244,24 @@ class ImportRegressionTest(unittest.TestCase):
                     )
 
 
+    def test_amazon_point_manual_overrides_apply_to_review_and_sql(self):
+        module = self._import_script("amazon_point", extra_accounts={"Expenses:Example Override"})
+        override_guid = module.ACCOUNTS["Expenses:Example Override"]
+        raw = "2030/01/02\tExample purchase\t利用\t-10\tExpenses:Supplies\n"
+        module.MANUAL_OVERRIDES[1] = ("Expenses:Example Override", "Example override")
+
+        review = StringIO()
+        with redirect_stdout(review):
+            module.output_review(module.parse_transactions(raw))
+        sql = StringIO()
+        with redirect_stdout(sql):
+            module.output_sql(module.parse_transactions(raw))
+
+        self.assertIn("Expenses:Example Override", review.getvalue())
+        self.assertIn("Example override", review.getvalue())
+        self.assertIn(f"'{override_guid}'", sql.getvalue())
+        self.assertIn("NOW(), 'Example override');", sql.getvalue())
+        self.assertNotIn("'None'", sql.getvalue())
+
 if __name__ == "__main__":
     unittest.main()

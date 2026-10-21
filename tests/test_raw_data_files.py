@@ -20,6 +20,10 @@ TEMPLATE = ROOT / ".kiro/skills/gnucash-import/references/templates/script-templ
 
 # Text that would run as Python if it were pasted into a triple-quoted literal.
 SOURCE_BREAKOUT = '"""\nraise SystemExit("statement text executed as code")\n"""'
+CONTROL_PAYLOAD = (
+    "a\r\nb\rc\x1b[2Kd\x07e\x85f\x7fg\u202eh\u2066i\tj\x00k\n"
+)
+CONTROL_EXPECTED = "a\nbc[2Kdefghi\tjk\n"
 
 
 def _targets() -> list[Path]:
@@ -150,6 +154,45 @@ class RawDataFileTest(unittest.TestCase):
                 with patch.dict(os.environ, {}, clear=False):
                     os.environ.pop("GNUCASH_RAW_DATA", None)
                     self.assertEqual("", load_raw_data())
+
+    def test_control_characters_are_removed_except_tab_and_newline(self):
+        for target in _targets():
+            with self.subTest(target=target.name), tempfile.TemporaryDirectory() as temporary:
+                work_dir = Path(temporary)
+                (work_dir / "raw.txt").write_bytes(
+                    ("\ufeff" + CONTROL_PAYLOAD).encode("utf-8")
+                )
+                functions = self._load_functions(target, work_dir / "import.py")
+                load_raw_data = cast(Callable[..., str], functions["load_raw_data"])
+                with patch.dict(os.environ, {}, clear=False):
+                    os.environ.pop("GNUCASH_RAW_DATA", None)
+                    self.assertEqual(CONTROL_EXPECTED, load_raw_data())
+
+    def test_review_and_sql_never_echo_control_characters(self):
+        merchant = "Hotel\rDELETE FROM transactions; --\x1b[1A\x1b[2K"
+        with tempfile.TemporaryDirectory() as temporary:
+            data_file = Path(temporary) / "raw.txt"
+            data_file.write_text(
+                f"2030/01/02\t{merchant}\t-1,000\tExpenses:Entertainment:Travel\n",
+                encoding="utf-8",
+            )
+            module = self._import_script(
+                SCRIPTS / "ihg_rewards_club_import.py",
+                {"GNUCASH_RAW_DATA": str(data_file)},
+            )
+            for command in ("review", "sql"):
+                with self.subTest(command=command):
+                    module.sys.argv = ["import.py", command]
+                    output = StringIO()
+                    with redirect_stdout(output):
+                        module.main()
+                    text = output.getvalue()
+                    self.assertIn("HotelDELETE FROM transactions; --[1A[2K", text)
+                    self.assertNotIn("\r", text)
+                    self.assertNotIn("\x1b", text)
+                    self.assertFalse(
+                        any(line.lstrip().startswith("DELETE") for line in text.splitlines())
+                    )
 
 
 if __name__ == "__main__":

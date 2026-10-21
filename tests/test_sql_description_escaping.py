@@ -38,8 +38,9 @@ def executable_sql(sql: str) -> str:
             index += 1
             continue
         if sql.startswith("--", index):
-            newline = sql.find("\n", index)
-            index = len(sql) if newline == -1 else newline
+            # PostgreSQL ends a line comment at either a newline or a carriage return.
+            ends = [end for end in (sql.find("\n", index), sql.find("\r", index)) if end != -1]
+            index = min(ends) if ends else len(sql)
             continue
         result.append(character)
         index += 1

@@ -68,7 +68,7 @@ python3 "$work_dir/import.py" review
 python3 "$work_dir/import.py" sql > "$work_dir/import.sql"
 ```
 
-Each script reads its statement data from a UTF-8 file next to the copied script: `raw.txt` by default, or the file named by `GNUCASH_RAW_DATA`. Sources with several statement forms document their additional file names, such as `raw-points.txt`, in the source reference and the script header. Never paste statement text into a script or a shell command line. Write the rows to the file with a file-writing tool, not with `echo`, `printf`, or a heredoc, because statement text can contain quotes, `$(`, or other shell syntax.
+Each script reads its statement data from a UTF-8 file next to the copied script: `raw.txt` by default, or the file named by `GNUCASH_RAW_DATA`. Sources with several statement forms document their additional file names, such as `raw-points.txt`, in the source reference and the script header. Never paste statement text into a script or a shell command line. Write the rows to the file with a file-writing tool, not with `echo`, `printf`, or a heredoc, because statement text can contain quotes, `$(`, or other shell syntax. The scripts drop control characters other than tab and newline, and bidirectional formatting characters, when they load the file, so the review table and SQL comments show the same text that the user approved.
 
 When running from another directory, set the repository root explicitly:
 

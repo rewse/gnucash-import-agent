@@ -12,6 +12,7 @@ import os
 import uuid
 import sys
 import re
+import unicodedata
 from datetime import datetime
 from pathlib import Path
 
@@ -65,6 +66,27 @@ JPY_CURRENCY = 'a77d4ee821e04f02bb7429e437c645e4'
 RAW_DATA_FILE = "raw.txt"
 
 
+# Bidirectional formatting characters can reorder review table columns.
+BIDI_CONTROLS = frozenset(
+    "\u061c\u200e\u200f\u202a\u202b\u202c\u202d\u202e\u2066\u2067\u2068\u2069"
+)
+
+
+def strip_control_characters(text):
+    """Remove control characters other than tab and newline.
+
+    Statement text is echoed into SQL comments, where PostgreSQL ends a
+    comment at a carriage return, and into the review table, where terminal
+    escapes can rewrite rows. Stripping at load time keeps both identical.
+    """
+    return "".join(
+        character
+        for character in text
+        if character in "\t\n"
+        or (unicodedata.category(character) != "Cc" and character not in BIDI_CONTROLS)
+    )
+
+
 def load_raw_data(file_name=RAW_DATA_FILE, environment_variable="GNUCASH_RAW_DATA"):
     """Read statement data from a UTF-8 file next to this script.
 
@@ -80,7 +102,7 @@ def load_raw_data(file_name=RAW_DATA_FILE, environment_variable="GNUCASH_RAW_DAT
             text = raw_file.read()
     except FileNotFoundError:
         return ""
-    return text.replace("\r\n", "\n")
+    return strip_control_characters(text.replace("\r\n", "\n"))
 
 
 # ============================================================

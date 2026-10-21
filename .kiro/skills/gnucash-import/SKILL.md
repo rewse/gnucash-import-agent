@@ -96,18 +96,38 @@ When a source reference explicitly requires verified counterparty splits to rema
 
 Immediately before execution, rerun row-level duplicate detection against the live database. Confirm that every referenced account exists and that the expected currency GUID has the source reference's namespace and mnemonic. Query both `transactions` and `splits` to confirm that every generated GUID has zero matches. A prior check or a matching statement total is not sufficient.
 
-Test the exact inspected SQL against the target database with only its terminal `COMMIT;` changed to `ROLLBACK;`. Create the rollback copy inside `work_dir` and require psql to stop on the first error:
+Test the exact inspected SQL against the target database with only its terminal `COMMIT;` changed to `ROLLBACK;`. Create the rollback copy inside `work_dir` and require psql to stop on the first error. The helper refuses a file unless it is exactly one `BEGIN;` ... `COMMIT;` block with no other transaction control (`ABORT`, `BEGIN`, `COMMIT`, `END`, `PREPARE`, `RELEASE`, `ROLLBACK`, `SAVEPOINT`, `START`) at the start of any statement, because an inner `COMMIT` would make the trial permanent. It also refuses backslashes, which psql runs as meta-commands such as `\!`, block comments, and dollar quoting, which would hide statements from the check. Use the same helper for the separate UPDATE/DELETE correction file:
 
 ```bash
-python3 - "$work_dir/import.sql" "$work_dir/rollback.sql" <<'PY'
+python3 -I - "$work_dir/import.sql" "$work_dir/rollback.sql" <<'PY'
 from pathlib import Path
+import re
 import sys
 
 source, destination = map(Path, sys.argv[1:])
-sql = source.read_text().rstrip()
-if not sql.endswith("COMMIT;"):
-    raise SystemExit("generated SQL does not end with COMMIT;")
-destination.write_text(sql[:-len("COMMIT;")] + "ROLLBACK;\n")
+sql = source.read_text(encoding="utf-8")
+# psql runs backslash meta-commands such as \! from -f files.
+if "\\" in sql or "/*" in sql:
+    raise SystemExit("refusing SQL that contains a backslash or a block comment")
+# Scan literals, quoted identifiers, and line comments left to right so a
+# quote inside a comment, or "--" inside a literal, cannot hide a statement.
+# PostgreSQL ends a line comment at CR or LF.
+code = re.sub(r"'(?:[^']|'')*'|\"(?:[^\"]|\"\")*\"|--[^\n\r]*", " ", sql)
+if "'" in code or '"' in code or "$" in code:
+    raise SystemExit("refusing SQL with an unterminated quote or dollar quoting")
+statements = [part.split()[0].upper() for part in code.split(";") if part.strip()]
+control = {"ABORT", "BEGIN", "COMMIT", "END", "PREPARE", "RELEASE", "ROLLBACK", "SAVEPOINT", "START"}
+if (
+    len(statements) < 2
+    or statements[0] != "BEGIN"
+    or statements[-1] != "COMMIT"
+    or any(keyword in control for keyword in statements[1:-1])
+):
+    raise SystemExit("SQL must be one BEGIN; ... COMMIT; block with no other transaction control")
+body = sql.rstrip()
+if not body.endswith("COMMIT;"):
+    raise SystemExit("SQL does not end with COMMIT;")
+destination.write_text(body[: -len("COMMIT;")] + "ROLLBACK;\n", encoding="utf-8")
 PY
 
 PGOPTIONS='-c standard_conforming_strings=on' \

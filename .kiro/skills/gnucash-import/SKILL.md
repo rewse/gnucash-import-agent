@@ -131,12 +131,22 @@ destination.write_text(body[: -len("COMMIT;")] + "ROLLBACK;\n", encoding="utf-8"
 PY
 
 PGOPTIONS='-c standard_conforming_strings=on' \
-  PGPASSWORD="$DB_PASSWORD" psql -X -v ON_ERROR_STOP=1 \
+  PGPASSWORD="$(op read "op://gnucash/gnucash-db/password")" psql -X -v ON_ERROR_STOP=1 \
   -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" \
   -f "$work_dir/rollback.sql"
 ```
 
-Execute the inspected `import.sql` with the same `PGOPTIONS`, `ON_ERROR_STOP=1`, and `standard_conforming_strings=on` only after the rollback trial succeeds. When one approved import run has multiple SQL files, execute their inspected bodies inside one outer `BEGIN`/`COMMIT` transaction so a failure cannot leave a partial multi-source import.
+Read the database password with `op read` in the same command that runs `psql`, as above. Never export it, assign it to a shell variable, or pass it to an import script, because exported variables are inherited by every later command in the session.
+
+Execute the inspected `import.sql` with the same `PGOPTIONS`, `ON_ERROR_STOP=1`, and `standard_conforming_strings=on` only after the rollback trial succeeds:
+
+```bash
+PGOPTIONS='-c standard_conforming_strings=on' \
+  PGPASSWORD="$(op read "op://gnucash/gnucash-db/password")" psql -X -v ON_ERROR_STOP=1 \
+  -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" \
+  -f "$work_dir/import.sql"
+```
+ When one approved import run has multiple SQL files, execute their inspected bodies inside one outer `BEGIN`/`COMMIT` transaction so a failure cannot leave a partial multi-source import.
 
 After commit, query by the generated transaction GUIDs and verify the exact expected transaction and split counts, every imported split has its expected `reconcile_state` (`c` by default, with only documented source-specific counterparty exceptions), every transaction balances using rational `value_num / value_denom`, and all expected source and transfer account mappings are present. Keep the SQL and logs in the owner-only `work_dir` until post-checks pass. Then delete them, or move required audit artifacts to an owner-only location. Never write database passwords to an artifact or log.
 

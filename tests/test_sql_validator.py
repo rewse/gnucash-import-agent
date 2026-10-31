@@ -9,7 +9,7 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-VALIDATOR = ROOT / ".kiro/skills/gnucash-import/scripts/validate_sql.py"
+VALIDATOR = ROOT / ".agents/skills/gnucash-import/scripts/validate_sql.py"
 SOURCE = "1" * 32
 TARGET = "2" * 32
 CURRENCY = "3" * 32

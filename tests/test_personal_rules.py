@@ -25,7 +25,7 @@ class PersonalRulesTest(unittest.TestCase):
         self._old_root = os.environ.get("GNUCASH_IMPORT_ROOT")
         self._temporary_directory = tempfile.TemporaryDirectory()
         self.project_root = Path(self._temporary_directory.name)
-        references = self.project_root / ".kiro/skills/gnucash-import/references"
+        references = self.project_root / ".agents/skills/gnucash-import/references"
         references.mkdir(parents=True)
         os.environ["GNUCASH_IMPORT_ROOT"] = str(self.project_root)
 
@@ -60,7 +60,7 @@ class PersonalRulesTest(unittest.TestCase):
                 "Income:Example": "4" * 32,
             }
         )
-        references = self.project_root / ".kiro/skills/gnucash-import/references"
+        references = self.project_root / ".agents/skills/gnucash-import/references"
         (references / "account-guid-cache.json").write_text(
             json.dumps({"accounts": accounts})
         )

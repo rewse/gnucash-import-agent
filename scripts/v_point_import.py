@@ -22,7 +22,7 @@ def find_project_root():
     candidates = [Path(configured_root)] if configured_root else []
     candidates.extend([Path.cwd(), Path(__file__).resolve().parent.parent])
     for candidate in candidates:
-        if (candidate / ".kiro/skills/gnucash-import").is_dir():
+        if (candidate / ".agents/skills/gnucash-import").is_dir():
             return candidate
     raise FileNotFoundError(
         "Cannot find the repository root. Run from the repository root or set GNUCASH_IMPORT_ROOT."
@@ -31,7 +31,7 @@ def find_project_root():
 
 PROJECT_ROOT = find_project_root()
 ACCOUNTS_FILE = (
-    PROJECT_ROOT / ".kiro/skills/gnucash-import/references/account-guid-cache.json"
+    PROJECT_ROOT / ".agents/skills/gnucash-import/references/account-guid-cache.json"
 )
 
 

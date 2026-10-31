@@ -3,8 +3,8 @@
 *.swo
 *~
 
-.kiro/skills/gnucash-import/references/account-guid-cache.json
-.kiro/skills/gnucash-import/references/personal.json
+.agents/skills/gnucash-import/references/account-guid-cache.json
+.agents/skills/gnucash-import/references/personal.json
 
 __pycache__/
 scripts/raw*.txt

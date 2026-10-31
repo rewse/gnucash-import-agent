@@ -12,7 +12,9 @@ from pathlib import Path
 from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
-TEMPLATE = ROOT / ".kiro/skills/gnucash-import/references/templates/script-template.py"
+TEMPLATE = (
+    ROOT / ".agents/skills/gnucash-import/references/templates/script-template.py"
+)
 INJECTED_VALUE = "x'); SELECT 1; --"
 UNRESOLVED_PATH = "Expenses:Example Unresolved"
 FAIL_FAST_SCRIPTS = (
@@ -58,7 +60,7 @@ class AccountCacheTest(unittest.TestCase):
                 tempfile.TemporaryDirectory() as temporary,
             ):
                 project_root = Path(temporary)
-                references = project_root / ".kiro/skills/gnucash-import/references"
+                references = project_root / ".agents/skills/gnucash-import/references"
                 references.mkdir(parents=True)
                 accounts = {
                     path: f"{position + 1:032x}"
@@ -89,7 +91,7 @@ class AccountCacheTest(unittest.TestCase):
         target = ROOT / "scripts/amazon_gc_import.py"
         with tempfile.TemporaryDirectory() as temporary:
             project_root = Path(temporary)
-            references = project_root / ".kiro/skills/gnucash-import/references"
+            references = project_root / ".agents/skills/gnucash-import/references"
             references.mkdir(parents=True)
             accounts = {path: "a" * 32 for path in self._account_paths(target)}
             (references / "account-guid-cache.json").write_text(

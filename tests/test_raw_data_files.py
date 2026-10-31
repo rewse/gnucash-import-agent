@@ -17,7 +17,9 @@ from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS = ROOT / "scripts"
-TEMPLATE = ROOT / ".kiro/skills/gnucash-import/references/templates/script-template.py"
+TEMPLATE = (
+    ROOT / ".agents/skills/gnucash-import/references/templates/script-template.py"
+)
 
 # Text that would run as Python if it were pasted into a triple-quoted literal.
 SOURCE_BREAKOUT = '"""\nraise SystemExit("statement text executed as code")\n"""'
@@ -93,7 +95,7 @@ class RawDataFileTest(unittest.TestCase):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         project_root = Path(temporary.name)
-        references = project_root / ".kiro/skills/gnucash-import/references"
+        references = project_root / ".agents/skills/gnucash-import/references"
         references.mkdir(parents=True)
         accounts = {
             path: f"{index + 1:032x}" for index, path in enumerate(sorted(paths))

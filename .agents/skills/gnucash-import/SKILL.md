@@ -111,7 +111,7 @@ test -s "$PGSSLROOTCERT" || { echo "Missing RDS CA bundle: $PGSSLROOTCERT" >&2; 
 Run the shared static validator after generating and manually inspecting SQL. Pass the exact source account path from the selected source reference and the expected currency GUID verified against the live database:
 
 ```bash
-python3 .kiro/skills/gnucash-import/scripts/validate_sql.py \
+python3 .agents/skills/gnucash-import/scripts/validate_sql.py \
   --source-account 'Assets:JPY - Current Assets:Prepaid:Example' \
   --currency-guid 'a77d4ee821e04f02bb7429e437c645e4' \
   "$work_dir/import.sql"
@@ -184,7 +184,7 @@ Use [`references/account-guid-cache.json`](references/account-guid-cache.json) t
 ```bash
 set -euo pipefail
 
-cache_path=.kiro/skills/gnucash-import/references/account-guid-cache.json
+cache_path=.agents/skills/gnucash-import/references/account-guid-cache.json
 cache_dir=$(dirname "$cache_path")
 cache_tmp=$(mktemp "$cache_dir/.account-guid-cache.json.XXXXXX")
 trap 'rm -f "$cache_tmp"' EXIT
@@ -279,14 +279,14 @@ Post a cash advance (キャッシング) as one transaction per statement row: c
 Create the ignored settings file from the tracked example with owner-only permissions:
 
 ```bash
-install -m 600 .kiro/skills/gnucash-import/references/personal.example.json \
-  .kiro/skills/gnucash-import/references/personal.json
+install -m 600 .agents/skills/gnucash-import/references/personal.example.json \
+  .agents/skills/gnucash-import/references/personal.json
 ```
 
-Edit `.kiro/skills/gnucash-import/references/personal.json` with local personal settings. Keep its mode at `0600`; verify the mode on macOS without printing the file:
+Edit `.agents/skills/gnucash-import/references/personal.json` with local personal settings. Keep its mode at `0600`; verify the mode on macOS without printing the file:
 
 ```bash
-stat -f '%Lp' .kiro/skills/gnucash-import/references/personal.json
+stat -f '%Lp' .agents/skills/gnucash-import/references/personal.json
 ```
 
 Use `import_not_before` for user-confirmed inclusive source-stream cutoffs, `nearest_station` for source-specific transit classification, `accounts.pasmo` for PASMO source and shopping account paths, and `transfer_rules` for source-specific personal transfer mappings. Read only the source key required by the selected script. Validate each configured cutoff as an ISO `YYYY-MM-DD` date and fail with a clear value-free error when it is malformed. Fail with a clear value-free error when a required setting or mapping is absent; do not infer a default account or cutoff. Resolve account paths through `account-guid-cache.json`.

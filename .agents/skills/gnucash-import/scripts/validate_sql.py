@@ -244,7 +244,7 @@ def validate_sql(
 
 def find_project_root() -> Path:
     for candidate in Path(__file__).resolve().parents:
-        if (candidate / ".kiro/skills/gnucash-import").is_dir():
+        if (candidate / ".agents/skills/gnucash-import").is_dir():
             return candidate
     raise ValidationError("cannot locate repository root")
 
@@ -279,7 +279,8 @@ def main() -> int:
     parser.add_argument(
         "--account-cache",
         type=Path,
-        default=root / ".kiro/skills/gnucash-import/references/account-guid-cache.json",
+        default=root
+        / ".agents/skills/gnucash-import/references/account-guid-cache.json",
     )
     arguments = parser.parse_args()
     try:

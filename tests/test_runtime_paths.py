@@ -9,7 +9,9 @@ from typing import Any, cast
 from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
-TEMPLATE = ROOT / ".kiro/skills/gnucash-import/references/templates/script-template.py"
+TEMPLATE = (
+    ROOT / ".agents/skills/gnucash-import/references/templates/script-template.py"
+)
 
 
 @contextmanager
@@ -51,7 +53,7 @@ class RuntimePathTest(unittest.TestCase):
 
     @staticmethod
     def _root(path: Path) -> Path:
-        (path / ".kiro/skills/gnucash-import").mkdir(parents=True)
+        (path / ".agents/skills/gnucash-import").mkdir(parents=True)
         return path
 
     def test_all_resolvers_honor_precedence_fallback_spaces_and_failure(self):

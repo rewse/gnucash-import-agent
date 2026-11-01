@@ -37,6 +37,12 @@ class SkillDocsTest(unittest.TestCase):
                 self.assertIn("PGSSLMODE=verify-full ", command)
                 self.assertIn("PGSSLROOTCERT=", command)
 
+    def test_multiple_sql_files_run_separately_as_validated(self):
+        text = SKILL.read_text(encoding="utf-8")
+        self.assertNotRegex(text, r"(?i)outer `?BEGIN")
+        self.assertIn("Execute each validated SQL file separately", text)
+        self.assertIn("Never concatenate SQL files", text)
+
 
 if __name__ == "__main__":
     unittest.main()

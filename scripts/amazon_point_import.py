@@ -148,16 +148,31 @@ def sql_string(value):
     return "'" + value.replace("'", "''") + "'"
 
 
+def check_field_count(line_number, parts, expected):
+    """Exit when a row does not have one of the expected field counts.
+
+    A tab or newline inside a statement field would otherwise shift columns
+    or split the row. The error omits the row because it comes from
+    statement data.
+    """
+    if len(parts) not in expected:
+        print(
+            f"Error: line {line_number} has {len(parts)} tab-separated fields; "
+            f"expected {' or '.join(str(count) for count in expected)}.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+
 def parse_transactions(raw_data):
     """Parse RAW_DATA into transactions. Each row is an independent transaction."""
     transactions = []
-    for line in raw_data.strip().split("\n"):
+    for line_number, line in enumerate(raw_data.strip().split("\n"), 1):
         line = line.strip()
         if not line:
             continue
         parts = line.split("\t")
-        if len(parts) < 5:
-            continue
+        check_field_count(line_number, parts, (5,))
         date_str, desc, tx_type, points_str, account = parts[:5]
         date = datetime.strptime(date_str, "%Y/%m/%d")
         points = int(points_str.replace(",", "").replace("+", ""))

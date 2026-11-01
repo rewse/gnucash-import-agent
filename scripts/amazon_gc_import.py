@@ -152,16 +152,35 @@ def parse_amount(amount_str):
     return int(amount_str)
 
 
+def check_field_count(line_number, parts, expected):
+    """Exit when a row does not have one of the expected field counts.
+
+    A tab or newline inside a statement field would otherwise shift columns
+    or split the row. The error omits the row because it comes from
+    statement data.
+    """
+    if len(parts) not in expected:
+        print(
+            f"Error: line {line_number} has {len(parts)} tab-separated fields; "
+            f"expected {' or '.join(str(count) for count in expected)}.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+
 def parse_transactions(raw_data):
     """Parse RAW_DATA into transactions, grouping by description+balance."""
-    lines = [l for l in raw_data.strip().split("\n") if l.strip()]
+    lines = [
+        (line_number, line)
+        for line_number, line in enumerate(raw_data.strip().split("\n"), 1)
+        if line.strip()
+    ]
 
     # Group lines by (description, balance) for multi-split transactions
     groups = {}
-    for line in lines:
+    for line_number, line in lines:
         parts = line.split("\t")
-        if len(parts) < 5:
-            continue
+        check_field_count(line_number, parts, (5, 6))
         date_str, desc, amount_str, balance, account = parts[:5]
         item = parts[5] if len(parts) > 5 else ""
         key = (date_str, desc, balance)

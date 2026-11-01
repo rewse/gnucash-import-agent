@@ -319,14 +319,29 @@ def sql_jpy(transactions):
 # ── USD Stocks ────────────────────────────────────────────────
 
 
+def check_field_count(line_number, parts, expected):
+    """Exit when a row does not have one of the expected field counts.
+
+    A tab or newline inside a statement field would otherwise shift columns
+    or split the row. The error omits the row because it comes from
+    statement data.
+    """
+    if len(parts) not in expected:
+        print(
+            f"Error: line {line_number} has {len(parts)} tab-separated fields; "
+            f"expected {' or '.join(str(count) for count in expected)}.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+
 def parse_usd_stock(raw_data):
     transactions = []
-    for line in raw_data.strip().split("\n"):
+    for line_number, line in enumerate(raw_data.strip().split("\n"), 1):
         if not line.strip() or line.startswith("DATE"):
             continue
         parts = line.split("\t")
-        if len(parts) < 8:
-            continue
+        check_field_count(line_number, parts, (8,))
         dt, ticker, tx_type, qty, exec_amt, fees, tax, settlement = parts[:8]
         y, m, d = dt.split("/")
         transactions.append(

@@ -143,15 +143,30 @@ RAW_DATA = load_raw_data()
 MANUAL_OVERRIDES = {}
 
 
+def check_field_count(line_number, parts, expected):
+    """Exit when a row does not have one of the expected field counts.
+
+    A tab or newline inside a statement field would otherwise shift columns
+    or split the row. The error omits the row because it comes from
+    statement data.
+    """
+    if len(parts) not in expected:
+        print(
+            f"Error: line {line_number} has {len(parts)} tab-separated fields; "
+            f"expected {' or '.join(str(count) for count in expected)}.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+
 def parse_transactions(raw_data):
     """Parse RAW_DATA into list of transaction dicts."""
     transactions = []
-    for line in raw_data.strip().split("\n"):
+    for line_number, line in enumerate(raw_data.strip().split("\n"), 1):
         if not line.strip():
             continue
         parts = line.split("\t")
-        if len(parts) < 4:
-            continue
+        check_field_count(line_number, parts, (4,))
         date_str, desc, amount_str, account = parts[:4]
         transactions.append(
             {

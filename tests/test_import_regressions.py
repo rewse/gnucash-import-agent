@@ -281,6 +281,154 @@ class ImportRegressionTest(unittest.TestCase):
                     module.output_review(transactions)
                 self.assertNotIn("Example Unresolved", stderr.getvalue())
 
+    def test_tab_separated_parsers_reject_unexpected_field_counts(self):
+        account = "Expenses:Example Account"
+        # (source, parser, valid rows, rows with a missing or an extra field)
+        cases = (
+            (
+                "amazon_gc",
+                "parse_transactions",
+                (
+                    f"2030年1月2日\tExample order\t-￥100\t￥900\t{account}",
+                    f"2030年1月2日\tExample order\t-￥100\t￥900\t{account}\tItem",
+                ),
+                (
+                    "2030年1月2日\tExample order\t-￥100\t￥900",
+                    f"2030年1月2日\tExample order\t-￥100\t￥900\t{account}\tItem\tX",
+                ),
+            ),
+            (
+                "amazon_point",
+                "parse_transactions",
+                (f"2030/01/02\tExample\tUse\t-10\t{account}",),
+                (
+                    "2030/01/02\tExample\tUse\t-10",
+                    f"2030/01/02\tExample\tUse\t-10\t{account}\tX",
+                ),
+            ),
+            (
+                "ana_mileage_club",
+                "parse_transactions",
+                (f"2030/01/02\tExample\t10\t{account}",),
+                ("2030/01/02\tExample\t10", f"2030/01/02\tExample\t10\t{account}\tX"),
+            ),
+            (
+                "ana_sky_coin",
+                "parse_transactions",
+                (f"2030/01/02\tExample\t10\t{account}",),
+                ("2030/01/02\tExample\t10", f"2030/01/02\tExample\t10\t{account}\tX"),
+            ),
+            (
+                "bic_point",
+                "parse_transactions",
+                (f"2030/01/02\tUse\tExample\t-10\t{account}",),
+                (
+                    "2030/01/02\tUse\tExample\t-10",
+                    f"2030/01/02\tUse\tExample\t-10\t{account}\tX",
+                ),
+            ),
+            (
+                "dpoint",
+                "parse_transactions",
+                ("2030/01/02\tExample\t+10",),
+                ("2030/01/02\tExample", "2030/01/02\tExample\t+10\tX"),
+            ),
+            (
+                "hapitas",
+                "parse_transactions",
+                ("2030/01/02\tExample\t10",),
+                ("2030/01/02\tExample", "2030/01/02\tExample\t10\tX"),
+            ),
+            (
+                "ihg_rewards_club",
+                "parse_transactions",
+                (f"2030/01/02\tExample\t10\t{account}",),
+                ("2030/01/02\tExample\t10", f"2030/01/02\tExample\t10\t{account}\tX"),
+            ),
+            (
+                "jre_point",
+                "parse_transactions",
+                ("2030/01/02\tExample\tDetail\t+10",),
+                ("2030/01/02\tExample\tDetail", "2030/01/02\tExample\tDetail\t+10\tX"),
+            ),
+            (
+                "marriott_rewards",
+                "parse_transactions",
+                (f"2030/01/02\tExample\t10\t{account}",),
+                ("2030/01/02\tExample\t10", f"2030/01/02\tExample\t10\t{account}\tX"),
+            ),
+            (
+                "ponta",
+                "parse_transactions",
+                ("2030/01/02\tExample\tType\t+10",),
+                ("2030/01/02\tExample\tType", "2030/01/02\tExample\tType\t+10\tX"),
+            ),
+            (
+                "rakuten_super_point",
+                "parse_transactions",
+                ("2030/01/02\tService\tDetail\t獲得\t10\tExample",),
+                (
+                    "2030/01/02\tService\tDetail\t獲得\t10",
+                    "2030/01/02\tService\tDetail\t獲得\t10\tExample\tX",
+                ),
+            ),
+            (
+                "sbi_securities",
+                "parse_usd_stock",
+                ("2030/01/02\tQQQ\t売却\t1\t500.00\t2.50\t0.25\t497.25",),
+                (
+                    "2030/01/02\tQQQ\t売却\t1\t500.00\t2.50\t0.25",
+                    "2030/01/02\tQQQ\t売却\t1\t500.00\t2.50\t0.25\t497.25\tX",
+                ),
+            ),
+            (
+                "sompo_japan_dc",
+                "parse_transactions",
+                ("2030/01/02\t2030/01/03\tExample Fund\t1\t1.0\t1\t買 掛金",),
+                (
+                    "2030/01/02\t2030/01/03\tExample Fund\t1\t1.0\t1",
+                    "2030/01/02\t2030/01/03\tExample Fund\t1\t1.0\t1\t買 掛金\tX",
+                ),
+            ),
+            (
+                "v_point",
+                "parse_transactions",
+                ("2030/01/02\tExample\t10", "2030/01/02\tExample\t10\t期間限定"),
+                ("2030/01/02\tExample", "2030/01/02\tExample\t10\t期間限定\tX"),
+            ),
+            (
+                "world_of_hyatt",
+                "parse_transactions",
+                (f"2030/01/02\tExample\t10\t{account}",),
+                ("2030/01/02\tExample\t10", f"2030/01/02\tExample\t10\t{account}\tX"),
+            ),
+            (
+                "yodobashi_gold_point",
+                "parse_transactions",
+                (f"2030/01/02\tUse\tExample\t-10\t{account}",),
+                (
+                    "2030/01/02\tUse\tExample\t-10",
+                    f"2030/01/02\tUse\tExample\t-10\t{account}\tX",
+                ),
+            ),
+        )
+        for source_slug, parser_name, valid_rows, invalid_rows in cases:
+            module = self._import_script(source_slug, extra_accounts={account})
+            parse = getattr(module, parser_name)
+            for row in valid_rows:
+                with self.subTest(source_slug=source_slug, row=row):
+                    self.assertEqual(1, len(parse(row + "\n")))
+            for row in invalid_rows:
+                with self.subTest(source_slug=source_slug, row=row):
+                    raw = valid_rows[0] + "\n" + row + "\n"
+                    with (
+                        redirect_stderr(StringIO()) as stderr,
+                        self.assertRaises(SystemExit),
+                    ):
+                        parse(raw)
+                    self.assertIn("line 2", stderr.getvalue())
+                    self.assertNotIn("Example", stderr.getvalue())
+
     def test_docomo_purpose_rows_use_purpose_source_and_skip_mirrors(self):
         module = self._import_script("docomo_smtb_net_bank")
         transactions = module.parse_transactions(

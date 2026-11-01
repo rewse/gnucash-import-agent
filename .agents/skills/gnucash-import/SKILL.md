@@ -104,6 +104,8 @@ export PGSSLROOTCERT="${GNUCASH_DB_SSLROOTCERT:-$HOME/.postgresql/rds-global-bun
 test -s "$PGSSLROOTCERT" || { echo "Missing RDS CA bundle: $PGSSLROOTCERT" >&2; false; }
 ```
 
+A later command can run in a new shell that lacks these exports, and psql then connects with `prefer` without any warning. Set `PGSSLMODE` and `PGSSLROOTCERT` inline on every `psql` command as well, as the examples below do.
+
 `verify-full` checks that the host name matches the server certificate, so `op://gnucash/gnucash-db/server` must hold the Aurora endpoint DNS name ending in `.rds.amazonaws.com`, not an IP address or a private alias. When verification fails, stop and report the error. Never lower `sslmode` or unset `PGSSLROOTCERT` to work around it.
 
 ### SQL validation and execution
@@ -158,6 +160,7 @@ destination.write_text(body[: -len("COMMIT;")] + "ROLLBACK;\n", encoding="utf-8"
 PY
 
 PGOPTIONS='-c standard_conforming_strings=on' \
+  PGSSLMODE=verify-full PGSSLROOTCERT="${GNUCASH_DB_SSLROOTCERT:-$HOME/.postgresql/rds-global-bundle.pem}" \
   PGPASSWORD="$(op read "op://gnucash/gnucash-db/password")" psql -X -v ON_ERROR_STOP=1 \
   -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" \
   -f "$work_dir/rollback.sql"
@@ -169,6 +172,7 @@ Execute the inspected `import.sql` with the same `PGOPTIONS`, `ON_ERROR_STOP=1`,
 
 ```bash
 PGOPTIONS='-c standard_conforming_strings=on' \
+  PGSSLMODE=verify-full PGSSLROOTCERT="${GNUCASH_DB_SSLROOTCERT:-$HOME/.postgresql/rds-global-bundle.pem}" \
   PGPASSWORD="$(op read "op://gnucash/gnucash-db/password")" psql -X -v ON_ERROR_STOP=1 \
   -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" \
   -f "$work_dir/import.sql"
@@ -196,7 +200,7 @@ DB_USER=$(op read "op://gnucash/gnucash-db/username")
 export PGSSLMODE=verify-full
 export PGSSLROOTCERT="${GNUCASH_DB_SSLROOTCERT:-$HOME/.postgresql/rds-global-bundle.pem}"
 test -s "$PGSSLROOTCERT"
-PGPASSWORD=$(op read "op://gnucash/gnucash-db/password") psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -t -A -c "
+PGSSLMODE=verify-full PGSSLROOTCERT="$PGSSLROOTCERT" PGPASSWORD=$(op read "op://gnucash/gnucash-db/password") psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -t -A -c "
 WITH RECURSIVE path_list AS (
    SELECT guid, parent_guid, name, name::text AS path, hidden, placeholder FROM accounts WHERE parent_guid IS NULL
    UNION ALL
@@ -237,7 +241,8 @@ List every update and deletion in the review. Put them in a separate SQL file fr
 Pass query values as psql variables and feed the SQL through a quoted heredoc, so psql quotes each value with `:'name'` and the shell does not expand anything inside the query. Never paste statement text or account names into the SQL itself. Use the connection settings from [Database connection](#database-connection):
 
 ```bash
-PGPASSWORD="$(op read "op://gnucash/gnucash-db/password")" psql -X -v ON_ERROR_STOP=1 \
+PGSSLMODE=verify-full PGSSLROOTCERT="${GNUCASH_DB_SSLROOTCERT:-$HOME/.postgresql/rds-global-bundle.pem}" \
+  PGPASSWORD="$(op read "op://gnucash/gnucash-db/password")" psql -X -v ON_ERROR_STOP=1 \
   -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" \
   -v account_name='Example Account' -v start_date='2099-01-01' -v end_date='2099-01-31' <<'SQL'
 SELECT t.post_date::date, t.description, s.value_num, s.value_denom, s.reconcile_state
@@ -258,7 +263,7 @@ Import each confirmed statement row and register its payment transaction from th
 
 A payment matching the billing total is a duplicate candidate, not proof that every statement row was imported. Compare the statement line count, occurrence counts, dates, amounts, descriptions, and transaction details before declaring the billing cycle complete. Continue row-level duplicate detection even when the total matches.
 
-Use this query only to find billing-total candidates:
+Use this query only to find billing-total candidates, run through the same `psql` command and connection settings as the duplicate-detection query:
 
 ```sql
 -- Run with -v account_name='...' -v billing_month='YYYY-MM' -v total_amount=12345

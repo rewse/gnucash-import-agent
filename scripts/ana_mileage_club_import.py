@@ -56,6 +56,7 @@ def load_accounts():
 
 
 ACCOUNTS = load_accounts()
+ACCOUNT_NAMES = {guid: path for path, guid in ACCOUNTS.items()}
 
 
 def get_guid(path):
@@ -205,12 +206,13 @@ def output_review(transactions):
             print("-" * 125)
         prev_date = date_str
 
-        _, description = get_transaction_info(idx, tx)
+        account_guid, description = get_transaction_info(idx, tx)
+        transfer = ACCOUNT_NAMES.get(account_guid, account_guid)
         increase = f"{tx['amount']:,}" if tx["amount"] > 0 else ""
         decrease = f"{abs(tx['amount']):,}" if tx["amount"] < 0 else ""
 
         print(
-            f"{idx:<4} {date_str:<14} {description or '':<30} {tx['account']:<50} {increase:>10} {decrease:>10}"
+            f"{idx:<4} {date_str:<14} {description or '':<30} {transfer:<50} {increase:>10} {decrease:>10}"
         )
 
 

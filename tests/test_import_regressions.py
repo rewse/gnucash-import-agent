@@ -258,6 +258,67 @@ class ImportRegressionTest(unittest.TestCase):
         self.assertIn("NOW(), 'Example override');", sql.getvalue())
         self.assertNotIn("'None'", sql.getvalue())
 
+    def test_manual_overrides_show_booked_account_in_review(self):
+        statement_account = "Expenses:Example Statement"
+        override_account = "Expenses:Example Override"
+        cases = (
+            ("ana_mileage_club", f"2030/01/02\tExample\t-10\t{statement_account}\n"),
+            ("ana_sky_coin", f"2030/01/02\tExample\t-10\t{statement_account}\n"),
+            ("bic_point", f"2030/01/02\tUse\tExample\t-10\t{statement_account}\n"),
+            (
+                "yodobashi_gold_point",
+                f"2030/01/02\tUse\tExample\t-10\t{statement_account}\n",
+            ),
+        )
+        for source_slug, raw in cases:
+            with self.subTest(source_slug=source_slug):
+                module = self._import_script(
+                    source_slug, extra_accounts={statement_account, override_account}
+                )
+                override_guid = module.ACCOUNTS[override_account]
+                module.MANUAL_OVERRIDES[1] = (override_guid, "Example override")
+                transactions = module.parse_transactions(raw)
+
+                review = StringIO()
+                with redirect_stdout(review):
+                    module.output_review(transactions)
+                sql = StringIO()
+                with redirect_stdout(sql):
+                    module.output_sql(transactions)
+
+                self.assertIn(override_account, review.getvalue())
+                self.assertNotIn(statement_account, review.getvalue())
+                self.assertIn(f"'{override_guid}'", sql.getvalue())
+
+    def test_sbi_usd_stock_review_shows_fund_account_and_rejects_unknown_ticker(
+        self,
+    ):
+        fund_prefix = "Assets:USD - Current Assets:Securities:SBI Securities:Entertainment Account"
+        module = self._import_script(
+            "sbi_securities",
+            extra_accounts={
+                f"{fund_prefix}:Invesco QQQ Trust Series 1",
+                f"{fund_prefix}:Vanguard Information Technology Index Fund ETF",
+            },
+        )
+        override_guid = module.get_guid(module.FUND_MAP_USD["VGT"])
+        module.MANUAL_OVERRIDES_USD_STOCK[1] = (override_guid, "Example override")
+        transactions = module.parse_usd_stock(
+            "2030/01/02\tQQQ\t売却\t1\t500.00\t2.50\t0.25\t497.25\n"
+        )
+
+        review = StringIO()
+        with redirect_stdout(review):
+            module.review_usd_stock(transactions)
+        self.assertIn(module.ACCOUNT_NAMES[override_guid], review.getvalue())
+
+        module.MANUAL_OVERRIDES_USD_STOCK.clear()
+        unknown = module.parse_usd_stock(
+            "2030/01/02\tXXXX\t売却\t1\t500.00\t2.50\t0.25\t497.25\n"
+        )
+        with redirect_stdout(StringIO()), self.assertRaises(ValueError):
+            module.review_usd_stock(unknown)
+
     def test_review_rejects_unresolved_statement_account_paths(self):
         cases = (
             (

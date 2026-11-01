@@ -370,19 +370,21 @@ def get_usd_stock_info(idx, tx):
 
 def review_usd_stock(transactions):
     print(
-        f"{'ID':<4} {'Date':<14} {'Ticker':<6} {'Type':<6} {'Qty':>5} {'Exec':>12} {'Fees':>10} {'Tax':>10} {'Settlement':>12}"
+        f"{'ID':<4} {'Date':<14} {'Ticker':<6} {'Type':<6} {'Qty':>5} {'Fund Account':<48} {'Exec':>12} {'Fees':>10} {'Tax':>10} {'Settlement':>12}"
     )
-    print("-" * 82)
+    print("-" * 131)
     prev_date = None
     for idx, tx in enumerate(transactions, 1):
         d = tx["date"]
         weekday = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][d.weekday()]
         date_str = f"{d.isoformat()} {weekday}"
         if prev_date and prev_date != d:
-            print("-" * 82)
+            print("-" * 131)
         prev_date = d
+        fund_account, _ = get_usd_stock_info(idx, tx)
+        fund_name = ACCOUNT_NAMES.get(fund_account, fund_account or "")
         print(
-            f"{idx:<4} {date_str:<14} {tx['ticker']:<6} {'Sell' if tx['is_sell'] else 'Buy':<6} {tx['quantity']:>5} ${tx['exec_amount']:>10,.2f} ${tx['fees']:>8,.2f} ${tx['tax']:>8,.2f} ${tx['settlement']:>10,.2f}"
+            f"{idx:<4} {date_str:<14} {tx['ticker']:<6} {'Sell' if tx['is_sell'] else 'Buy':<6} {tx['quantity']:>5} {fund_name:<48} ${tx['exec_amount']:>10,.2f} ${tx['fees']:>8,.2f} ${tx['tax']:>8,.2f} ${tx['settlement']:>10,.2f}"
         )
 
 

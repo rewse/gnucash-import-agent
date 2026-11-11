@@ -37,6 +37,16 @@ class SkillDocsTest(unittest.TestCase):
                 self.assertIn("PGSSLMODE=verify-full ", command)
                 self.assertIn("PGSSLROOTCERT=", command)
 
+    def test_database_item_is_read_by_id(self):
+        text = SKILL.read_text(encoding="utf-8")
+        self.assertNotIn("op://gnucash/gnucash-db/", text)
+        self.assertIn("op://gnucash/n4k5eoi3jxo7ynmsfxisls7liu/server", text)
+
+    def test_tunnel_access_keeps_host_verification(self):
+        text = SKILL.read_text(encoding="utf-8")
+        self.assertIn("export PGHOSTADDR=127.0.0.1", text)
+        self.assertNotIn("over the internet from the office", text)
+
     def test_multiple_sql_files_run_separately_as_validated(self):
         text = SKILL.read_text(encoding="utf-8")
         self.assertNotRegex(text, r"(?i)outer `?BEGIN")

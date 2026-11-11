@@ -81,7 +81,7 @@ GNUCASH_IMPORT_ROOT=/path/to/gnucash-import-agent python3 "$work_dir/import.py" 
 
 ### Database connection
 
-The GnuCash database is Amazon Aurora PostgreSQL, reached over a VPN from home and over the internet from the office. Every `psql` connection must use TLS with certificate and host name verification (`sslmode=verify-full`) against the Amazon RDS global CA bundle. libpq's default `prefer` mode silently falls back to plaintext and never verifies the server.
+The GnuCash database is Amazon Aurora PostgreSQL in private subnets. It is reachable over the VPN from home, and from anywhere else only through an SSH tunnel (see below). Every `psql` connection must use TLS with certificate and host name verification (`sslmode=verify-full`) against the Amazon RDS global CA bundle. libpq's default `prefer` mode silently falls back to plaintext and never verifies the server.
 
 Download the bundle once, outside the repository. It is public CA material, not a secret; download it again when AWS announces an RDS CA rotation:
 
@@ -95,10 +95,10 @@ curl --fail --silent --show-error --proto '=https' --tlsv1.2 \
 Set `GNUCASH_DB_SSLROOTCERT` to use a bundle stored elsewhere. Before any `psql` command, set the connection variables in the same shell:
 
 ```bash
-DB_HOST=$(op read "op://gnucash/gnucash-db/server")
-DB_PORT=$(op read "op://gnucash/gnucash-db/port")
-DB_NAME=$(op read "op://gnucash/gnucash-db/database")
-DB_USER=$(op read "op://gnucash/gnucash-db/username")
+DB_HOST=$(op read "op://gnucash/n4k5eoi3jxo7ynmsfxisls7liu/server")
+DB_PORT=$(op read "op://gnucash/n4k5eoi3jxo7ynmsfxisls7liu/port")
+DB_NAME=$(op read "op://gnucash/n4k5eoi3jxo7ynmsfxisls7liu/database")
+DB_USER=$(op read "op://gnucash/n4k5eoi3jxo7ynmsfxisls7liu/username")
 export PGSSLMODE=verify-full
 export PGSSLROOTCERT="${GNUCASH_DB_SSLROOTCERT:-$HOME/.postgresql/rds-global-bundle.pem}"
 test -s "$PGSSLROOTCERT" || { echo "Missing RDS CA bundle: $PGSSLROOTCERT" >&2; false; }
@@ -106,7 +106,15 @@ test -s "$PGSSLROOTCERT" || { echo "Missing RDS CA bundle: $PGSSLROOTCERT" >&2; 
 
 A later command can run in a new shell that lacks these exports, and psql then connects with `prefer` without any warning. Set `PGSSLMODE` and `PGSSLROOTCERT` inline on every `psql` command as well, as the examples below do.
 
-`verify-full` checks that the host name matches the server certificate, so `op://gnucash/gnucash-db/server` must hold the Aurora endpoint DNS name ending in `.rds.amazonaws.com`, not an IP address or a private alias. When verification fails, stop and report the error. Never lower `sslmode` or unset `PGSSLROOTCERT` to work around it.
+`verify-full` checks that the host name matches the server certificate, so `op://gnucash/n4k5eoi3jxo7ynmsfxisls7liu/server` must hold the Aurora endpoint DNS name ending in `.rds.amazonaws.com`, not an IP address or a private alias. When verification fails, stop and report the error. Never lower `sslmode` or unset `PGSSLROOTCERT` to work around it.
+
+Away from home, forward a local port to the database through an SSH host that can reach it, and keep the tunnel open while psql runs. Leave `DB_HOST` as the endpoint name so `verify-full` still checks the certificate against it, set `DB_PORT` to the forwarded local port, and point libpq at the tunnel in the same shell:
+
+```bash
+export PGHOSTADDR=127.0.0.1
+```
+
+libpq connects to `PGHOSTADDR` and verifies the certificate against the host name given with `-h`. A shell without `PGHOSTADDR` tries the endpoint directly and fails to connect, so export it again rather than changing `DB_HOST`.
 
 ### SQL validation and execution
 
@@ -161,7 +169,7 @@ PY
 
 PGOPTIONS='-c standard_conforming_strings=on' \
   PGSSLMODE=verify-full PGSSLROOTCERT="${GNUCASH_DB_SSLROOTCERT:-$HOME/.postgresql/rds-global-bundle.pem}" \
-  PGPASSWORD="$(op read "op://gnucash/gnucash-db/password")" psql -X -v ON_ERROR_STOP=1 \
+  PGPASSWORD="$(op read "op://gnucash/n4k5eoi3jxo7ynmsfxisls7liu/password")" psql -X -v ON_ERROR_STOP=1 \
   -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" \
   -f "$work_dir/rollback.sql"
 ```
@@ -173,7 +181,7 @@ Execute the inspected `import.sql` with the same `PGOPTIONS`, `ON_ERROR_STOP=1`,
 ```bash
 PGOPTIONS='-c standard_conforming_strings=on' \
   PGSSLMODE=verify-full PGSSLROOTCERT="${GNUCASH_DB_SSLROOTCERT:-$HOME/.postgresql/rds-global-bundle.pem}" \
-  PGPASSWORD="$(op read "op://gnucash/gnucash-db/password")" psql -X -v ON_ERROR_STOP=1 \
+  PGPASSWORD="$(op read "op://gnucash/n4k5eoi3jxo7ynmsfxisls7liu/password")" psql -X -v ON_ERROR_STOP=1 \
   -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" \
   -f "$work_dir/import.sql"
 ```
@@ -193,14 +201,14 @@ cache_dir=$(dirname "$cache_path")
 cache_tmp=$(mktemp "$cache_dir/.account-guid-cache.json.XXXXXX")
 trap 'rm -f "$cache_tmp"' EXIT
 
-DB_HOST=$(op read "op://gnucash/gnucash-db/server")
-DB_PORT=$(op read "op://gnucash/gnucash-db/port")
-DB_NAME=$(op read "op://gnucash/gnucash-db/database")
-DB_USER=$(op read "op://gnucash/gnucash-db/username")
+DB_HOST=$(op read "op://gnucash/n4k5eoi3jxo7ynmsfxisls7liu/server")
+DB_PORT=$(op read "op://gnucash/n4k5eoi3jxo7ynmsfxisls7liu/port")
+DB_NAME=$(op read "op://gnucash/n4k5eoi3jxo7ynmsfxisls7liu/database")
+DB_USER=$(op read "op://gnucash/n4k5eoi3jxo7ynmsfxisls7liu/username")
 export PGSSLMODE=verify-full
 export PGSSLROOTCERT="${GNUCASH_DB_SSLROOTCERT:-$HOME/.postgresql/rds-global-bundle.pem}"
 test -s "$PGSSLROOTCERT"
-PGSSLMODE=verify-full PGSSLROOTCERT="$PGSSLROOTCERT" PGPASSWORD=$(op read "op://gnucash/gnucash-db/password") psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -t -A -c "
+PGSSLMODE=verify-full PGSSLROOTCERT="$PGSSLROOTCERT" PGPASSWORD=$(op read "op://gnucash/n4k5eoi3jxo7ynmsfxisls7liu/password") psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -t -A -c "
 WITH RECURSIVE path_list AS (
    SELECT guid, parent_guid, name, name::text AS path, hidden, placeholder FROM accounts WHERE parent_guid IS NULL
    UNION ALL
@@ -242,7 +250,7 @@ Pass query values as psql variables and feed the SQL through a quoted heredoc, s
 
 ```bash
 PGSSLMODE=verify-full PGSSLROOTCERT="${GNUCASH_DB_SSLROOTCERT:-$HOME/.postgresql/rds-global-bundle.pem}" \
-  PGPASSWORD="$(op read "op://gnucash/gnucash-db/password")" psql -X -v ON_ERROR_STOP=1 \
+  PGPASSWORD="$(op read "op://gnucash/n4k5eoi3jxo7ynmsfxisls7liu/password")" psql -X -v ON_ERROR_STOP=1 \
   -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" \
   -v account_name='Example Account' -v start_date='2099-01-01' -v end_date='2099-01-31' <<'SQL'
 SELECT t.post_date::date, t.description, s.value_num, s.value_denom, s.reconcile_state
